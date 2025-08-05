@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function GameRoom({ params }) {
   const [gameState, setGameState] = useState({
@@ -15,11 +15,13 @@ export default function GameRoom({ params }) {
   });
 
   const [playerHand, setPlayerHand] = useState([
-    { id: 1, name: 'Curupira', cost: 5, attack: 7, defense: 8, type: 'creature' },
-    { id: 2, name: 'Iara', cost: 4, attack: 6, defense: 5, type: 'creature' },
-    { id: 3, name: 'Saci-Pererê', cost: 3, attack: 5, defense: 6, type: 'creature' },
-    { id: 4, name: 'Proteção da Floresta', cost: 2, type: 'spell' },
-    { id: 5, name: 'Canto da Iara', cost: 3, type: 'spell' }
+    { id: 1, name: 'Curupira', cost: 5, attack: 7, defense: 8, type: 'creature', rarity: 'legendary' },
+    { id: 2, name: 'Iara', cost: 4, attack: 6, defense: 5, type: 'creature', rarity: 'epic' },
+    { id: 3, name: 'Saci-Pererê', cost: 3, attack: 5, defense: 6, type: 'creature', rarity: 'rare' },
+    { id: 4, name: 'Proteção da Floresta', cost: 2, type: 'spell', rarity: 'common' },
+    { id: 5, name: 'Canto da Iara', cost: 3, type: 'spell', rarity: 'rare' },
+    { id: 6, name: 'Boto Cor-de-Rosa', cost: 6, attack: 8, defense: 7, type: 'creature', rarity: 'legendary' },
+    { id: 7, name: 'Mula sem Cabeça', cost: 4, attack: 7, defense: 4, type: 'creature', rarity: 'epic' }
   ]);
 
   const [battlefield, setBattlefield] = useState({
@@ -42,14 +44,54 @@ export default function GameRoom({ params }) {
 
   const [newMessage, setNewMessage] = useState('');
 
+  // Simular ação do oponente
+  const simulateOpponentAction = useCallback(() => {
+    const actions = [
+      () => {
+        setGameLog(prev => [...prev, {
+          type: 'action',
+          message: 'Oponente jogou uma carta!'
+        }]);
+      },
+      () => {
+        if (battlefield.opponent.length > 0) {
+          setGameLog(prev => [...prev, {
+            type: 'combat',
+            message: 'Oponente atacou com suas criaturas!'
+          }]);
+          setGameState(prev => ({
+            ...prev,
+            playerHealth: Math.max(1, prev.playerHealth - 2)
+          }));
+        }
+      },
+      () => {
+        setGameLog(prev => [...prev, {
+          type: 'info',
+          message: 'Oponente finalizou o turno.'
+        }]);
+        setGameState(prev => ({
+          ...prev,
+          turn: 'player'
+        }));
+      }
+    ];
+
+    const randomAction = actions[Math.floor(Math.random() * actions.length)];
+    randomAction();
+  }, [battlefield.opponent.length]);
+
   useEffect(() => {
     // Simular atualizações do jogo em tempo real
     const gameInterval = setInterval(() => {
-      // Lógica de atualização do jogo seria implementada aqui
-    }, 1000);
+      // Simular ações do oponente periodicamente
+      if (gameState.turn === 'opponent' && Math.random() < 0.3) {
+        simulateOpponentAction();
+      }
+    }, 2000);
 
     return () => clearInterval(gameInterval);
-  }, []);
+  }, [gameState.turn, simulateOpponentAction]);
 
   const playCard = (card) => {
     if (gameState.turn !== 'player') {
@@ -170,6 +212,29 @@ export default function GameRoom({ params }) {
     setNewMessage('');
   };
 
+  // Função para obter cor da raridade
+  const getRarityColor = (rarity) => {
+    switch (rarity) {
+      case 'legendary': return 'border-yellow-400 bg-yellow-900/20';
+      case 'epic': return 'border-purple-400 bg-purple-900/20';
+      case 'rare': return 'border-blue-400 bg-blue-900/20';
+      default: return 'border-gray-400 bg-gray-900/20';
+    }
+  };
+
+  // Função para obter emoji da criatura
+  const getCreatureEmoji = (name) => {
+    const emojiMap = {
+      'Curupira': '🧙‍♂️',
+      'Iara': '🧜‍♀️',
+      'Saci-Pererê': '👹',
+      'Boto Cor-de-Rosa': '🐬',
+      'Mula sem Cabeça': '🐴',
+      'Boitatá': '🐍'
+    };
+    return emojiMap[name] || '🧙';
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white p-4">
       <div className="max-w-7xl mx-auto">
@@ -245,16 +310,16 @@ export default function GameRoom({ params }) {
                       key={creature.id}
                       className={`bg-green-900/50 p-3 rounded border cursor-pointer transition-all ${
                         creature.canAttack 
-                          ? 'border-green-400 hover:border-green-300' 
+                          ? 'border-green-400 hover:border-green-300 shadow-lg shadow-green-400/30' 
                           : 'border-green-600/50'
                       }`}
                     >
                       <div className="text-center">
-                        <div className="text-2xl mb-1">🧙</div>
+                        <div className="text-2xl mb-1">{getCreatureEmoji(creature.name)}</div>
                         <div className="text-xs font-bold">{creature.name}</div>
                         <div className="text-xs text-green-400">{creature.attack}/{creature.health}</div>
                         {creature.canAttack && (
-                          <div className="text-xs text-yellow-400 mt-1">Pode atacar</div>
+                          <div className="text-xs text-yellow-400 mt-1 animate-pulse">⚔️ Pronto</div>
                         )}
                       </div>
                     </div>
@@ -300,23 +365,31 @@ export default function GameRoom({ params }) {
                   <div
                     key={card.id}
                     onClick={() => setSelectedCard(card)}
-                    className={`min-w-32 bg-black/40 p-3 rounded border cursor-pointer transition-all ${
+                    className={`min-w-32 p-3 rounded border cursor-pointer transition-all ${getRarityColor(card.rarity)} ${
                       selectedCard?.id === card.id 
-                        ? 'border-blue-400 bg-blue-900/30' 
+                        ? 'ring-2 ring-blue-400 transform scale-105' 
                         : card.cost <= gameState.playerMana 
-                        ? 'border-gray-600 hover:border-gray-400' 
-                        : 'border-red-600/50 opacity-50'
+                        ? 'hover:border-gray-300 hover:transform hover:scale-105' 
+                        : 'opacity-50 cursor-not-allowed'
                     }`}
                   >
                     <div className="text-center">
                       <div className="text-2xl mb-1">
-                        {card.type === 'creature' ? '🧙' : '✨'}
+                        {card.type === 'creature' ? getCreatureEmoji(card.name) : '✨'}
                       </div>
                       <div className="text-xs font-bold mb-1">{card.name}</div>
                       <div className="text-xs text-yellow-400 mb-1">💎{card.cost}</div>
                       {card.type === 'creature' && (
-                        <div className="text-xs text-gray-400">{card.attack}/{card.defense}</div>
+                        <div className="text-xs text-gray-300">{card.attack}/{card.defense}</div>
                       )}
+                      <div className={`text-xs mt-1 px-1 rounded ${
+                        card.rarity === 'legendary' ? 'text-yellow-300' :
+                        card.rarity === 'epic' ? 'text-purple-300' :
+                        card.rarity === 'rare' ? 'text-blue-300' :
+                        'text-gray-300'
+                      }`}>
+                        {card.rarity}
+                      </div>
                     </div>
                   </div>
                 ))}

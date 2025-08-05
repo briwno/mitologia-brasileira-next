@@ -3,8 +3,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function PvPLobby() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('quick');
   const [playerDeck, setPlayerDeck] = useState('Deck Amazônico');
   const [isSearching, setIsSearching] = useState(false);
@@ -28,20 +30,26 @@ export default function PvPLobby() {
     // Simular busca por partida
     setTimeout(() => {
       setIsSearching(false);
-      // Redirecionar para jogo (simulado)
-      alert('Partida encontrada! Redirecionando...');
+      // Gerar ID da sala e redirecionar para o jogo
+      const roomId = 'QUICK' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      router.push(`/pvp/game/${roomId}`);
     }, 3000);
   };
 
   const handleJoinRoom = (roomId) => {
-    // Lógica para entrar na sala
-    alert(`Entrando na sala ${roomId}...`);
+    // Redirecionar diretamente para a sala de jogo
+    router.push(`/pvp/game/${roomId}`);
   };
 
   const handleCreateRoom = () => {
-    // Lógica para criar sala
+    // Criar sala e redirecionar
     const newRoomCode = 'ROOM' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    alert(`Sala criada! Código: ${newRoomCode}`);
+    router.push(`/pvp/game/${newRoomCode}`);
+  };
+
+  const handleDemoGame = () => {
+    // Método demo para acessar gameplay diretamente
+    router.push('/pvp/game/DEMO123');
   };
 
   return (
@@ -296,6 +304,14 @@ export default function PvPLobby() {
         </div>
 
         <div className="text-center mt-8">
+          {/* Botão Demo para testar gameplay */}
+          <button
+            onClick={handleDemoGame}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg transition-colors font-semibold mr-4"
+          >
+            🎮 Demo Gameplay
+          </button>
+          
           <Link
             href="/"
             className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold"
