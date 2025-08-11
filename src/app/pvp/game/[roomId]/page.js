@@ -18,30 +18,21 @@ export default function GameRoom({ params }) {
   });
 
   // Função para obter dados completos da carta
-  const getCardData = (cardName) => {
-    return cardsDatabase.find(card => card.name === cardName) || null;
+  const getCardData = (cardID) => {
+      const card = cardsDatabase.find(c => c.id === cardID);
+      if (!card) return null;
+      return card;
   };
 
   // 3 cartas na mão apenas
   const [playerHand, setPlayerHand] = useState([
-    getCardData('Curupira') || { id: 1, name: 'Curupira', cost: 5, attack: 7, defense: 8, type: 'creature', rarity: 'legendary' },
-    getCardData('Iara') || { id: 2, name: 'Iara', cost: 4, attack: 6, defense: 5, type: 'creature', rarity: 'epic' },
-    getCardData('Saci-Pererê') || { id: 3, name: 'Saci-Pererê', cost: 3, attack: 5, defense: 6, type: 'creature', rarity: 'rare' }
+    getCardData('cur001'), getCardData('cuc001'), getCardData('mul001')
   ]);
 
   // Uma carta ativa em campo para cada jogador
   const [activeCards, setActiveCards] = useState({
     player: null, // Carta ativa do jogador
-    opponent: getCardData('Boitatá') || { 
-      id: 101, 
-      name: 'Boitatá', 
-      attack: 9, 
-      defense: 7, 
-      health: 18, 
-      maxHealth: 18,
-      skillCooldown: 0,
-      ultimateCooldown: 0
-    }
+    opponent: getCardData('boi001') || null
   });
 
   // Estados para o novo visual
@@ -94,6 +85,51 @@ export default function GameRoom({ params }) {
   ]);
 
   const [newMessage, setNewMessage] = useState('');
+
+  // --- NOVO: Simulação de baralho e descarte ---
+  const [deck, setDeck] = useState([
+    getCardData('Boto'),
+    getCardData('Cuca'),
+    getCardData('Mula sem Cabeça'),
+    getCardData('Encourado'),
+    getCardData('Curupira'),
+    getCardData('Iara'),
+    getCardData('Saci-Pererê'),
+  ].filter(Boolean));
+  const [discardPile, setDiscardPile] = useState([]);
+  const [showSkillMenu, setShowSkillMenu] = useState(false);
+  const [bonusGlow, setBonusGlow] = useState(false);
+
+  // Compra automática de carta no início do turno do jogador
+  useEffect(() => {
+    if (gameState.turn === 'player') {
+      // Só compra se tiver menos de 3 cartas na mão e houver cartas no deck
+      if (playerHand.length < 3 && deck.length > 0) {
+        const newCard = deck[0];
+        setPlayerHand(prev => [...prev, newCard]);
+        setDeck(prev => prev.slice(1));
+        // Animação: classe CSS temporária
+        setBonusGlow(true);
+        setTimeout(() => setBonusGlow(false), 800);
+      }
+    }
+  }, [gameState.turn]);
+
+  // Bônus visual para Encantado na "casa" do campo
+  useEffect(() => {
+    if (!activeCards.player) return;
+    // Exemplo: Curupira na Floresta
+    if (
+      (currentField === 'floresta' && activeCards.player.name === 'Curupira') ||
+      (currentField === 'rio' && activeCards.player.name === 'Iara') ||
+      (currentField === 'caatinga' && activeCards.player.name === 'Saci-Pererê') ||
+      (currentField === 'pantanal' && activeCards.player.name === 'Boto')
+    ) {
+      setBonusGlow(true);
+    } else {
+      setBonusGlow(false);
+    }
+  }, [currentField, activeCards.player]);
 
   // Função para mudar campo a cada 2 turnos
   const changeField = useCallback(() => {
@@ -156,16 +192,11 @@ export default function GameRoom({ params }) {
       return;
     }
 
-    // Se já tem carta ativa, está trocando
+    // Se já tem carta ativa, vai para o descarte
     if (activeCards.player) {
-      // Trocar carta (volta para a mão)
-      setPlayerHand(prev => [...prev.filter(c => c.id !== card.id), activeCards.player]);
-    } else {
-      // Primeira carta em campo
-      setPlayerHand(prev => prev.filter(c => c.id !== card.id));
+      setDiscardPile(prev => [...prev, activeCards.player]);
     }
-
-    // Colocar nova carta ativa
+    setPlayerHand(prev => prev.filter(c => c.id !== card.id));
     setActiveCards(prev => ({
       ...prev,
       player: {
@@ -176,18 +207,13 @@ export default function GameRoom({ params }) {
         ultimateCooldown: 0
       }
     }));
-
-    setGameState(prev => ({
-      ...prev,
-      actionUsed: true
-    }));
-
+    setGameState(prev => ({ ...prev, actionUsed: true }));
     setGameLog(prev => [...prev, {
       type: 'action',
-      message: `Você colocou ${card.name} em campo!`
+      message: `Você colocou ${card.name} em campo! (Passiva ativada)`
     }]);
-
     setSelectedCard(null);
+    setShowSkillMenu(false);
   };
 
   // Usar habilidade da carta ativa
@@ -446,6 +472,11 @@ export default function GameRoom({ params }) {
     }
   };
 
+  // Ao clicar no Encantado ativo, mostra menu de habilidades
+  const handleActiveCardClick = () => {
+    if (activeCards.player) setShowSkillMenu(v => !v);
+  };
+
   return (
     <main className={`min-h-screen text-white relative overflow-hidden bg-gradient-to-br ${fields[currentField].bg}`}>
       {/* Background dinâmico baseado no campo atual */}
@@ -489,465 +520,175 @@ export default function GameRoom({ params }) {
         </div>
       </div>
       
-      <div className="relative z-10 h-screen p-2">
-        {/* Título da Arena - Topo Central */}
-        <div className="text-center mb-2">
-          <div className="inline-block bg-gradient-to-r from-amber-600/90 to-yellow-600/90 backdrop-blur-md rounded-xl px-4 py-2 border-2 border-yellow-400/50 shadow-2xl">
-            <h1 className="text-lg font-bold text-yellow-100 tracking-wide">
-              ⚔️ MITOLOGIA BRASILEIRA - BATALHA DOS ENCANTADOS ⚔️
-            </h1>
-            <div className="text-xs text-yellow-200 mt-1">
-              Arena: {params.roomId} • Turno {gameState.turnNumber}
-            </div>
-          </div>
-        </div>
-
-        {/* Layout Principal do Tabuleiro */}
-        <div className="flex-1 grid grid-cols-12 grid-rows-8 gap-2 h-full max-h-[calc(100vh-80px)]">
-          
-          {/* Info do Oponente - Canto Superior Esquerdo */}
-          <div className="col-span-3 row-span-2">
-            <div className="bg-gradient-to-br from-red-600/80 to-red-800/80 backdrop-blur-md rounded-xl p-3 border-2 border-red-400/50 shadow-xl h-full">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-8 h-8 bg-red-700/80 rounded-full flex items-center justify-center border-2 border-red-300/50">
-                  <span className="text-sm">🧙‍♂️</span>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-red-100">Oponente</div>
-                  <div className="text-xs text-red-300">Nível 12</div>
-                </div>
-              </div>
-              <div className="bg-red-900/60 rounded-lg p-2 text-center">
-                <div className="text-xs text-red-200 mb-1">Pontos de Vida</div>
-                <div className="text-lg font-bold text-red-100">❤️ {gameState.opponentHealth}</div>
-                <div className="text-xs text-red-300 mt-1">
-                  Ultimate: ⚡ {gameState.opponentUltimate}%
+      <div className="relative z-10 h-screen p-2 flex flex-col justify-between">
+        {/* Linha superior: Oponente e campo */}
+        <div className="flex flex-row justify-between items-start w-full">
+          {/* Canto superior esquerdo: Info do oponente */}
+          <div className="flex flex-col items-start gap-2 mt-2 ml-2">
+            <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1 shadow-lg">
+              <img src="/images/avatars/opponent.png" alt="Avatar Oponente" className="w-10 h-10 rounded-full border-2 border-red-400" />
+              <div>
+                <div className="font-bold text-red-200">Oponente</div>
+                <div className="flex items-center gap-1 text-sm">
+                  <span className="text-red-400">❤</span>
+                  <span>{gameState.opponentHealth}</span>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Indicador de Campo Atual - Centro Superior */}
-          <div className="col-span-6 row-span-1 flex justify-center items-center">
-            <div className="bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md rounded-xl px-4 py-2 border-2 border-purple-400/50 shadow-xl">
-              <div className="text-center">
-                <div className="text-2xl mb-1">{fields[currentField].icon}</div>
-                <div className="text-sm font-bold text-purple-100">{fields[currentField].name}</div>
-                <div className="text-xs text-purple-300">{fields[currentField].effect}</div>
-                <div className="text-xs text-purple-400 mt-1">
-                  Muda em {fieldChangeCountdown} turno(s)
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Baralho e Descarte - Lado Direito */}
-          <div className="col-span-3 row-span-8 flex flex-col justify-center space-y-4">
-            {/* Baralho de Compra */}
-            <div className="bg-gradient-to-br from-blue-600/80 to-blue-800/80 backdrop-blur-md rounded-xl p-3 border-2 border-blue-400/50 shadow-xl">
-              <div className="text-center">
-                <div className="w-16 h-20 bg-blue-700/80 rounded-lg border-2 border-blue-300/50 flex items-center justify-center mx-auto mb-2 shadow-lg">
-                  <span className="text-2xl">🃏</span>
-                </div>
-                <div className="text-sm font-bold text-blue-100">Compra</div>
-                <div className="text-xs text-blue-300">22 cartas</div>
-              </div>
-            </div>
-            
-            {/* Descarte */}
-            <div className="bg-gradient-to-br from-gray-600/80 to-gray-800/80 backdrop-blur-md rounded-xl p-3 border-2 border-gray-400/50 shadow-xl">
-              <div className="text-center">
-                <div className="w-16 h-20 bg-gray-700/80 rounded-lg border-2 border-gray-300/50 flex items-center justify-center mx-auto mb-2 shadow-lg">
-                  <span className="text-2xl">🗑️</span>
-                </div>
-                <div className="text-sm font-bold text-gray-100">Desencanto</div>
-                <div className="text-xs text-gray-300">5 cartas</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Espaço vazio - alinhamento */}
-          <div className="col-span-3 row-span-1"></div>
-
-          {/* Encantado Ativo do Oponente - Centro Superior */}
-          <div className="col-span-6 row-span-3">
-            <div className="bg-gradient-to-br from-red-800/60 to-red-900/60 backdrop-blur-md rounded-2xl p-4 border-3 border-red-400/40 shadow-2xl h-full relative">
-              {/* Plataforma mística */}
-              <div className="absolute inset-3 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-xl border border-red-300/30"></div>
-              
-              <div className="relative z-10 h-full flex flex-col justify-center">
-                <h3 className="text-center text-red-300 mb-3 font-bold text-sm">
-                  👑 ENCANTADO ATIVO - OPONENTE
-                </h3>
-                
-                {activeCards.opponent ? (
-                  <div className="flex justify-center">
-                    <div className="bg-gradient-to-br from-red-700/90 to-red-800/90 backdrop-blur-sm rounded-xl p-4 border-2 border-red-400/60 shadow-2xl relative max-w-48">
-                      {/* Indicadores de habilidade */}
-                      {activeCards.opponent.abilities && activeCards.opponent.abilities.length > 0 && (
-                        <div className="absolute -top-2 -right-2 flex space-x-1">
-                          {activeCards.opponent.abilities.slice(0, 2).map((ability, idx) => (
-                            <div
-                              key={idx}
-                              className="w-6 h-6 bg-purple-600/90 rounded-full flex items-center justify-center border-2 border-purple-300/50 shadow-lg"
-                              title={ability.name}
-                            >
-                              <span className="text-xs">
-                                {ability.type === 'damage' ? '⚔️' : 
-                                 ability.type === 'heal' ? '💚' :
-                                 ability.type === 'shield' ? '🛡️' : '✨'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="text-center">
-                        <div className="mb-2">
-                          <CardImage card={activeCards.opponent} size="medium" className="mx-auto" />
-                        </div>
-                        <div className="text-lg font-bold text-red-100 mb-2">{activeCards.opponent.name}</div>
-                        <div className="text-sm text-red-300 bg-black/50 rounded-lg px-3 py-1 mb-2">
-                          ❤️ {activeCards.opponent.health}/{activeCards.opponent.maxHealth}
-                        </div>
-                        {activeCards.opponent.abilities?.[0] && (
-                          <div className="text-xs text-purple-200 bg-purple-900/70 rounded-lg px-2 py-1">
-                            ⚡ {activeCards.opponent.abilities[0].name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-red-400/60 text-center py-8 text-lg">
-                    〰️ Nenhum Encantado Ativo 〰️
-                  </div>
+          {/* Centro superior: Encantado ativo do oponente */}
+          <div className="flex flex-col items-center flex-1">
+            <div className="relative flex flex-col items-center">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-t from-indigo-900/80 to-indigo-700/60 border-4 border-blue-400 flex items-center justify-center shadow-2xl mb-2 animate-pulse">
+                {activeCards.opponent && (
+                  <CardImage card={activeCards.opponent} className="w-24 h-24" />
                 )}
               </div>
+              <div className="text-center text-xs text-blue-200 font-semibold">
+                {activeCards.opponent?.name || '---'}
+              </div>
             </div>
           </div>
-
-          {/* Seu Encantado Ativo - Centro Inferior */}
-          <div className="col-span-6 row-span-3">
-            <div className="bg-gradient-to-br from-emerald-800/60 to-emerald-900/60 backdrop-blur-md rounded-2xl p-4 border-3 border-emerald-400/40 shadow-2xl h-full relative">
-              {/* Plataforma mística */}
-              <div className="absolute inset-3 bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 rounded-xl border border-emerald-300/30"></div>
-              
-              <div className="relative z-10 h-full flex flex-col justify-center">
-                <h3 className="text-center text-emerald-300 mb-3 font-bold text-sm">
-                  👑 SEU ENCANTADO ATIVO
-                </h3>
-                
-                {activeCards.player ? (
-                  <div className="flex justify-center">
-                    <div 
-                      className="bg-gradient-to-br from-emerald-700/90 to-emerald-800/90 backdrop-blur-sm rounded-xl p-4 border-2 border-emerald-400/60 shadow-2xl relative max-w-48 cursor-pointer hover:scale-105 transition-all"
-                      onClick={() => setSelectedCard(activeCards.player)}
-                    >
-                      {/* Indicadores de habilidade */}
-                      {activeCards.player.abilities && activeCards.player.abilities.length > 0 && (
-                        <div className="absolute -top-2 -right-2 flex space-x-1">
-                          {activeCards.player.abilities.slice(0, 2).map((ability, idx) => (
-                            <div
-                              key={idx}
-                              className="w-6 h-6 bg-purple-600/90 rounded-full flex items-center justify-center border-2 border-purple-300/50 shadow-lg"
-                              title={ability.name}
-                            >
-                              <span className="text-xs">
-                                {ability.type === 'damage' ? '⚔️' : 
-                                 ability.type === 'heal' ? '💚' :
-                                 ability.type === 'shield' ? '🛡️' : '✨'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Indicador de cooldown */}
-                      {activeCards.player.skillCooldown > 0 && (
-                        <div className="absolute -top-2 -left-2 w-6 h-6 bg-red-600/90 rounded-full flex items-center justify-center border-2 border-red-300/50 shadow-lg">
-                          <span className="text-xs font-bold">{activeCards.player.skillCooldown}</span>
-                        </div>
-                      )}
-                      
-                      <div className="text-center">
-                        <div className="mb-2">
-                          <CardImage card={activeCards.player} size="medium" className="mx-auto" />
-                        </div>
-                        <div className="text-lg font-bold text-emerald-100 mb-2">{activeCards.player.name}</div>
-                        <div className="text-sm text-emerald-300 bg-black/50 rounded-lg px-3 py-1 mb-2">
-                          ❤️ {activeCards.player.health}/{activeCards.player.maxHealth}
-                        </div>
-                        {activeCards.player.abilities?.[0] && (
-                          <div className="text-xs text-purple-200 bg-purple-900/70 rounded-lg px-2 py-1 mb-2">
-                            ⚡ {activeCards.player.abilities[0].name}
-                          </div>
-                        )}
-                        {!gameState.actionUsed && gameState.turn === 'player' && (
-                          <div className="text-xs text-yellow-300 font-bold animate-pulse">
-                            👆 Clique para usar habilidades
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-emerald-400/60 text-center py-8 text-lg">
-                    〰️ Escolha uma carta da sua mão 〰️
-                  </div>
+          {/* Lado direito: Pilha de compra */}
+          <div className="flex flex-col items-end gap-2 mt-2 mr-2">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-16 bg-blue-900/60 border-2 border-blue-400 rounded-lg flex items-center justify-center shadow-lg relative">
+                <span className="text-blue-200 font-bold">Compra</span>
+                {deck.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-blue-600 text-xs rounded-full px-2 py-0.5">{deck.length}</span>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Info do Jogador - Canto Inferior Esquerdo */}
-          <div className="col-span-3 row-span-1">
-            <div className="bg-gradient-to-br from-emerald-600/80 to-emerald-800/80 backdrop-blur-md rounded-xl p-3 border-2 border-emerald-400/50 shadow-xl h-full">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-8 h-8 bg-emerald-700/80 rounded-full flex items-center justify-center border-2 border-emerald-300/50">
-                  <span className="text-sm">🧙‍♂️</span>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-emerald-100">Você</div>
-                  <div className="text-xs text-emerald-300">Nível 8</div>
-                </div>
-              </div>
-              <div className="bg-emerald-900/60 rounded-lg p-2 text-center">
-                <div className="text-xs text-emerald-200 mb-1">Pontos de Vida</div>
-                <div className="text-lg font-bold text-emerald-100">❤️ {gameState.playerHealth}</div>
-                <div className="text-xs text-emerald-300 mt-1">
-                  Ultimate: ⚡ {gameState.playerUltimate}%
-                </div>
-              </div>
+              <span className="text-xs text-blue-300 mt-1">Baralho</span>
             </div>
           </div>
         </div>
 
-        {/* Mão do Jogador - Inferior Central (Sobrepostas como Genshin) */}
-        <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-30">
-          <div className="bg-gradient-to-r from-blue-900/90 via-indigo-900/90 to-purple-900/90 backdrop-blur-md rounded-xl px-4 py-3 border-2 border-blue-400/50 shadow-2xl">
-            <div className="text-center mb-2">
-              <h3 className="font-bold text-blue-100 text-sm">🃏 Sua Mão ({playerHand.length}/3)</h3>
-              <div className="text-xs text-blue-300">
-                {activeCards.player ? 'Clique para trocar carta ativa' : 'Escolha uma carta para colocar em campo'}
-              </div>
+        {/* Centro do tabuleiro: Campo e Encantados */}
+        <div className="relative flex flex-col items-center justify-center flex-1">
+          {/* Indicador de campo/terreno atual */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+            <div className="flex items-center gap-2 bg-black/60 px-4 py-1 rounded-full border-2 border-yellow-400 shadow-lg">
+              <span className="text-2xl">{fields[currentField].icon}</span>
+              <span className="font-bold text-yellow-100">{fields[currentField].name}</span>
             </div>
-            
-            <div className="flex justify-center space-x-1">
-              {playerHand.map((card, index) => (
-                <div
-                  key={card.id}
-                  onClick={() => playCard(card)}
-                  className={`relative cursor-pointer transition-all duration-300 ${
-                    gameState.turn === 'player' && !gameState.actionUsed
-                      ? 'hover:transform hover:-translate-y-3 hover:scale-110' 
-                      : 'opacity-70 cursor-not-allowed'
-                  }`}
-                  style={{
-                    marginLeft: index > 0 ? '-16px' : '0',
-                    zIndex: playerHand.length - index
-                  }}
-                >
-                  {/* Carta parcialmente escondida estilo Genshin */}
-                  <div className={`w-20 h-28 rounded-lg border-2 backdrop-blur-sm shadow-xl relative overflow-hidden ${getRarityColor(card.rarity)}`}>
-                    {/* Indicadores de habilidade */}
-                    {card.abilities && card.abilities.length > 0 && (
-                      <div className="absolute top-1 right-1 flex space-x-1">
-                        {card.abilities.slice(0, 2).map((ability, idx) => (
-                          <div
-                            key={idx}
-                            className="w-2 h-2 bg-purple-600/90 rounded-full flex items-center justify-center border border-purple-300/50"
-                            title={ability.name}
-                          >
-                            <span className="text-xs">
-                              {ability.type === 'damage' ? '⚔️' : 
-                               ability.type === 'heal' ? '💚' :
-                               ability.type === 'shield' ? '🛡️' : '✨'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="p-2 text-center h-full flex flex-col justify-between">
-                      <div className="mb-1">
-                        <CardImage card={card} size="small" className="mx-auto" />
-                      </div>
-                      <div className="text-xs font-bold text-white truncate">{card.name}</div>
-                      <div className="text-xs text-gray-300">
-                        ⚔️{card.attack} 🛡️{card.defense}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Indicador se pode usar */}
-                  {gameState.turn === 'player' && !gameState.actionUsed && (
-                    <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs text-green-300 font-bold animate-pulse bg-black/60 rounded px-1 py-0.5">
-                      {activeCards.player ? '🔄' : '🎯'}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <div className="text-xs text-yellow-200 mt-1">{fields[currentField].effect}</div>
           </div>
-        </div>
-
-        {/* Habilidades - Inferior Direito */}
-        <div className="fixed bottom-2 right-2 z-30">
-          {activeCards.player && (
-            <div className="bg-gradient-to-br from-purple-600/90 to-purple-800/90 backdrop-blur-md rounded-xl p-3 border-2 border-purple-400/50 shadow-2xl">
-              <h3 className="text-sm font-bold text-purple-100 mb-2 text-center">⚡ Habilidades</h3>
-              <div className="space-y-2">
-                {/* Skill */}
-                <button 
+          {/* Encantado ativo do jogador (centro inferior) */}
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+            <div
+              className={`w-32 h-32 rounded-full bg-gradient-to-b from-amber-900/80 to-yellow-700/60 border-4 border-yellow-400 flex items-center justify-center shadow-2xl mb-2 animate-pulse cursor-pointer transition-all duration-300 ${bonusGlow ? 'ring-4 ring-green-400 shadow-green-400/60' : ''} ${gameState.turn === 'player' ? 'animate-glow' : ''}`}
+              onClick={handleActiveCardClick}
+              title="Clique para ver habilidades"
+            >
+              {activeCards.player && (
+                <CardImage card={activeCards.player} className="w-24 h-24" />
+              )}
+            </div>
+            <div className="text-center text-xs text-yellow-200 font-semibold">
+              {activeCards.player?.name || '---'}
+            </div>
+            {/* Menu de habilidades ao clicar */}
+            {showSkillMenu && activeCards.player && (
+              <div className="flex flex-row gap-3 mt-2 animate-fade-in">
+                <button
+                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-blue-400 shadow-lg hover:bg-blue-900/80 transition"
                   onClick={useSkill}
-                  disabled={
-                    gameState.turn !== 'player' || 
-                    gameState.actionUsed || 
-                    !activeCards.player?.abilities?.[0] ||
-                    activeCards.player?.skillCooldown > 0
-                  }
-                  className="w-full bg-green-700/80 hover:bg-green-600/90 disabled:bg-gray-600/60 disabled:cursor-not-allowed rounded-lg p-2 transition-all relative min-w-40"
+                  disabled={gameState.actionUsed || activeCards.player.skillCooldown > 0}
+                  title="Habilidade Básica"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-green-100 font-semibold text-sm">
-                      🔥 {activeCards.player.abilities?.[0]?.name || 'Habilidade 1'}
-                    </span>
-                    {activeCards.player.skillCooldown > 0 && (
-                      <span className="bg-red-600/80 rounded-full px-1.5 py-0.5 text-xs font-bold">
-                        {activeCards.player.skillCooldown}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-lg">✨</span>
+                  <span className="text-xs mt-1">Skill</span>
+                  {activeCards.player.skillCooldown > 0 && (
+                    <span className="text-xs text-blue-200">{activeCards.player.skillCooldown}t</span>
+                  )}
                 </button>
-
-                {/* Ultimate */}
-                <button 
+                <button
+                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-yellow-400 shadow-lg hover:bg-yellow-900/80 transition"
                   onClick={useUltimate}
-                  disabled={
-                    gameState.turn !== 'player' || 
-                    gameState.actionUsed || 
-                    gameState.playerUltimate < 100 ||
-                    !activeCards.player?.abilities?.[1] && !activeCards.player?.abilities?.[0]
-                  }
-                  className="w-full bg-purple-700/80 hover:bg-purple-600/90 disabled:bg-gray-600/60 disabled:cursor-not-allowed rounded-lg p-2 transition-all relative"
+                  disabled={gameState.actionUsed || gameState.playerUltimate < 100}
+                  title="Ultimate"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-purple-100 font-semibold text-sm">
-                      💥 {activeCards.player.abilities?.[1]?.name || activeCards.player.abilities?.[0]?.name || 'Ultimate'}
-                    </span>
-                    {gameState.playerUltimate >= 100 && (
-                      <span className="bg-yellow-600/80 rounded-full px-1.5 py-0.5 text-xs font-bold animate-pulse">
-                        PRONTO
-                      </span>
-                    )}
-                  </div>
-                </button>
-
-                {/* Finalizar Turno */}
-                <button 
-                  onClick={endTurn}
-                  disabled={gameState.turn !== 'player'}
-                  className="w-full bg-yellow-700/80 hover:bg-yellow-600/90 disabled:bg-gray-600/60 disabled:cursor-not-allowed rounded-lg p-2 transition-all"
-                >
-                  <span className="text-yellow-100 font-semibold text-sm">
-                    🏁 Finalizar Turno
-                  </span>
+                  <span className="text-lg">💥</span>
+                  <span className="text-xs mt-1">Ultimate</span>
+                  <span className="text-xs text-yellow-200">{gameState.playerUltimate}/100</span>
                 </button>
               </div>
-              
-              {/* Status */}
-              <div className="mt-2 text-center">
-                <div className="text-xs text-purple-200 bg-black/40 rounded-lg px-2 py-1">
-                  {gameState.turn === 'player' ? 
-                    (gameState.actionUsed ? '✅ Ação usada' : '⚡ Seu turno') : 
-                    '⏳ Aguardando oponente'
-                  }
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Indicador de Turno - Superior */}
-        <div className="fixed top-2 left-1/2 transform -translate-x-1/2 z-20">
-          <div className={`px-4 py-2 rounded-xl border-2 backdrop-blur-md shadow-xl ${
-            gameState.turn === 'player' 
-              ? 'bg-emerald-600/90 border-emerald-400/50 text-emerald-100' 
-              : 'bg-red-600/90 border-red-400/50 text-red-100'
-          }`}>
-            <div className="text-sm font-bold text-center">
-              {gameState.turn === 'player' ? '⚡ SEU TURNO' : '⏳ TURNO DO OPONENTE'}
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Log e Chat - Lateral */}
-        <div className="fixed top-16 left-2 w-64 space-y-2 z-20">
-          {/* Log do Jogo */}
-          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border-2 border-gray-400/50 shadow-xl">
-            <h3 className="font-bold mb-2 text-gray-100 text-sm">📋 Log da Batalha</h3>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
-              {gameLog.slice(-5).map((entry, index) => (
-                <div
-                  key={index}
-                  className={`text-xs p-1.5 rounded-md ${
-                    entry.type === 'info' ? 'bg-blue-800/50 text-blue-200' :
-                    entry.type === 'action' ? 'bg-emerald-800/50 text-emerald-200' :
-                    'bg-red-800/50 text-red-200'
-                  }`}
-                >
-                  {entry.message}
+        {/* Linha inferior: Info do jogador, mão, habilidades */}
+        <div className="flex flex-row justify-between items-end w-full mb-4">
+          {/* Canto inferior esquerdo: Info do jogador */}
+          <div className="flex flex-col items-start gap-2 ml-2 mb-2">
+            <div className={`flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1 shadow-lg ${gameState.turn === 'player' ? 'ring-2 ring-yellow-400' : ''}`}>
+              <img src="/images/avatars/player.png" alt="Seu Avatar" className="w-10 h-10 rounded-full border-2 border-yellow-400" />
+              <div>
+                <div className="font-bold text-yellow-200">Você</div>
+                <div className="flex items-center gap-1 text-sm">
+                  <span className="text-yellow-400">❤</span>
+                  <span>{gameState.playerHealth}</span>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-
-          {/* Chat */}
-          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border-2 border-gray-400/50 shadow-xl">
-            <h3 className="font-bold mb-2 text-gray-100 text-sm">💬 Chat</h3>
-            <div className="space-y-1 max-h-24 overflow-y-auto mb-2">
-              {chatMessages.slice(-3).map((msg, index) => (
-                <div
-                  key={index}
-                  className={`text-xs p-1.5 rounded-md ${
-                    msg.player === 'player' ? 'bg-emerald-800/50 text-emerald-200' :
-                    msg.player === 'opponent' ? 'bg-red-800/50 text-red-200' :
-                    'bg-gray-800/50 text-gray-200'
-                  }`}
-                >
-                  <span className="font-semibold">
-                    {msg.player === 'player' ? 'Você' : 
-                     msg.player === 'opponent' ? 'Oponente' : 'Sistema'}:
-                  </span> {msg.message}
-                </div>
-              ))}
-            </div>
-            <div className="flex space-x-1">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
-                placeholder="Digite uma mensagem..."
-                className="flex-1 px-2 py-1 bg-black/50 border border-gray-500 rounded-md text-xs text-white focus:border-blue-400 focus:outline-none"
-              />
-              <button
-                onClick={sendChatMessage}
-                className="px-2 py-1 bg-blue-600/80 hover:bg-blue-700 rounded-md text-xs transition-colors"
+          {/* Inferior central: Mão do jogador */}
+          <div className="flex flex-row items-end justify-center flex-1 gap-[-2rem]">
+            {playerHand.map((card, idx) => (
+              <div
+                key={card.id}
+                className={`relative transition-transform duration-200 hover:z-20 hover:-translate-y-8 cursor-pointer -ml-8 ${selectedCard?.id === card.id ? 'ring-4 ring-yellow-400' : ''} ${bonusGlow && idx === playerHand.length - 1 ? 'animate-card-draw' : ''}`}
+                style={{ zIndex: idx + 1 }}
+                onClick={() => setSelectedCard(card)}
+                onDoubleClick={() => playCard(card)}
               >
-                📤
-              </button>
-            </div>
+                <CardImage card={card} className="w-20 h-28 rounded-lg border-2 border-white/30 shadow-lg" />
+              </div>
+            ))}
+          </div>
+          {/* Inferior direito: Habilidades */}
+          <div className="flex flex-col items-end gap-2 mr-4 mb-2">
+            {activeCards.player && (
+              <div className="flex flex-row gap-3">
+                {/* Habilidade 1 */}
+                <button
+                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-blue-400 shadow-lg hover:bg-blue-900/80 transition"
+                  onClick={useSkill}
+                  disabled={gameState.actionUsed || activeCards.player.skillCooldown > 0}
+                  title="Habilidade Básica"
+                >
+                  <span className="text-lg">✨</span>
+                  <span className="text-xs mt-1">Skill</span>
+                  {activeCards.player.skillCooldown > 0 && (
+                    <span className="text-xs text-blue-200">{activeCards.player.skillCooldown}t</span>
+                  )}
+                </button>
+                {/* Habilidade 2 (Ultimate) */}
+                <button
+                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-yellow-400 shadow-lg hover:bg-yellow-900/80 transition"
+                  onClick={useUltimate}
+                  disabled={gameState.actionUsed || gameState.playerUltimate < 100}
+                  title="Ultimate"
+                >
+                  <span className="text-lg">💥</span>
+                  <span className="text-xs mt-1">Ultimate</span>
+                  <span className="text-xs text-yellow-200">{gameState.playerUltimate}/100</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Botão Sair - Canto Superior Direito */}
-        <div className="fixed top-2 right-2 z-20">
-          <Link href="/pvp" className="px-3 py-2 bg-red-600/90 hover:bg-red-700 rounded-xl text-white font-bold transition-all border-2 border-red-400/50 backdrop-blur-md shadow-xl text-sm">
-            🚪 Sair da Arena
-          </Link>
+        {/* Lado esquerdo: Pilha de descarte */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
+          <div className="w-12 h-16 bg-gray-800/60 border-2 border-gray-400 rounded-lg flex items-center justify-center shadow-lg relative">
+            <span className="text-gray-200 font-bold">Descarte</span>
+            {discardPile.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-xs rounded-full px-2 py-0.5">{discardPile.length}</span>
+            )}
+          </div>
+          <span className="text-xs text-gray-300 mt-1">Desencanto</span>
         </div>
+        {/* Indicador de turno (brilho no avatar do jogador ativo) já incluso nas classes dos avatares) */}
       </div>
     </main>
   );

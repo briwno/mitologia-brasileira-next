@@ -116,12 +116,12 @@ export default function Login() {
         </div>
 
         <div className="mt-4 text-center">
-          <a
+          <link
             href="/"
             className="text-gray-400 hover:text-gray-300 text-sm"
           >
             ← Voltar ao início
-          </a>
+          </link>
         </div>
       </div>
     </main>
