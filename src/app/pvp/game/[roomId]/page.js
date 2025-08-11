@@ -2,9 +2,18 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { cardsDatabase } from '../../../../data/cardsDatabase';
 import CardImage from '../../../../components/Card/CardImage';
+import BoardBackground from '../../../../components/Board/BoardBackground';
+import { 
+  PlayerInfo, 
+  FieldIndicator, 
+  CardInField, 
+  Hand, 
+  DeckPile, 
+  SkillButtons 
+} from '../../../../components/Game';
 
 export default function GameRoom({ params }) {
   const [gameState, setGameState] = useState({
@@ -17,12 +26,21 @@ export default function GameRoom({ params }) {
     actionUsed: false // Se já usou ação no turno (skill/ultimate/troca)
   });
 
-  // Função para obter dados completos da carta
-  const getCardData = (cardID) => {
-      const card = cardsDatabase.find(c => c.id === cardID);
-      if (!card) return null;
-      return card;
-  };
+  // Função para buscar carta por id e garantir todos os campos necessários
+  function getCardData(cardID) {
+    if (!cardID) return null;
+    const card = cardsDatabase.find(c => c.id === cardID);
+    if (!card) return null;
+    // Garante que abilities sempre existe e tem basic/ultimate/passive
+    return {
+      ...card,
+      abilities: {
+        basic: card.abilities?.basic || null,
+        ultimate: card.abilities?.ultimate || null,
+        passive: card.abilities?.passive || null
+      }
+    };
+  }
 
   // 3 cartas na mão apenas
   const [playerHand, setPlayerHand] = useState([
@@ -45,30 +63,35 @@ export default function GameRoom({ params }) {
       name: 'Floresta Misteriosa', 
       icon: '🌲', 
       bg: 'from-green-800/40 to-green-900/40',
+      bgImage: '/images/backgrounds/forest.jpg',
       effect: 'Curupira +2 Defesa'
     },
     rio: { 
       name: 'Correnteza do Rio', 
       icon: '🌊', 
       bg: 'from-blue-800/40 to-blue-900/40',
+      bgImage: '/images/backgrounds/river.jpg',
       effect: 'Iara +2 Ataque'
     },
     caatinga: { 
       name: 'Caatinga Seca', 
       icon: '🌵', 
       bg: 'from-yellow-800/40 to-orange-900/40',
+      bgImage: '/images/backgrounds/caatinga.jpg',
       effect: 'Saci +1 Velocidade'
     },
     pantanal: { 
       name: 'Pântano Sombrio', 
       icon: '🐊', 
       bg: 'from-purple-800/40 to-gray-900/40',
+      bgImage: '/images/backgrounds/swamp.jpg',
       effect: 'Boto +3 Vida'
     },
     lua: { 
       name: 'Lua Cheia Ascendente', 
       icon: '🌕', 
       bg: 'from-indigo-800/40 to-purple-900/40',
+      bgImage: '/images/backgrounds/moon.jpg',
       effect: 'Todos +1 Habilidade'
     }
   }), []);
@@ -113,7 +136,7 @@ export default function GameRoom({ params }) {
         setTimeout(() => setBonusGlow(false), 800);
       }
     }
-  }, [gameState.turn]);
+  }, [gameState.turn, deck, playerHand.length]);
 
   // Bônus visual para Encantado na "casa" do campo
   useEffect(() => {
@@ -131,18 +154,25 @@ export default function GameRoom({ params }) {
     }
   }, [currentField, activeCards.player]);
 
-  // Função para mudar campo a cada 2 turnos
-  const changeField = useCallback(() => {
-    const fieldKeys = Object.keys(fields);
-    const currentIndex = fieldKeys.indexOf(currentField);
-    const nextIndex = (currentIndex + 1) % fieldKeys.length;
-    setCurrentField(fieldKeys[nextIndex]);
-    setFieldChangeCountdown(2);
+  // Novo: animação de transição de campo
+  const [fieldTransitioning, setFieldTransitioning] = useState(false);
+  const fieldBgRef = useRef(null);
 
-    setGameLog(prev => [...prev, {
-      type: 'info',
-      message: `⚡ Campo mudou para: ${fields[fieldKeys[nextIndex]].name}!`
-    }]);
+  // Função para mudar campo a cada 2 turnos, agora com animação
+  const changeField = useCallback(() => {
+    setFieldTransitioning(true);
+    setTimeout(() => {
+      const fieldKeys = Object.keys(fields);
+      const currentIndex = fieldKeys.indexOf(currentField);
+      const nextIndex = (currentIndex + 1) % fieldKeys.length;
+      setCurrentField(fieldKeys[nextIndex]);
+      setFieldChangeCountdown(2);
+      setFieldTransitioning(false);
+      setGameLog(prev => [...prev, {
+        type: 'info',
+        message: `⚡ Campo mudou para: ${fields[fieldKeys[nextIndex]].name}!`
+      }]);
+    }, 900); // tempo da transição
   }, [currentField, fields]);
 
   // Simular ação do oponente
@@ -234,7 +264,7 @@ export default function GameRoom({ params }) {
     }
 
     const card = activeCards.player;
-    const skill = card.abilities?.[0]; // Primeira habilidade como skill
+    const skill = card.abilities?.basic; // Habilidade básica como skill
 
     if (!skill) {
       alert('Esta carta não possui habilidade!');
@@ -283,7 +313,7 @@ export default function GameRoom({ params }) {
     }
 
     const card = activeCards.player;
-    const ultimate = card.abilities?.[1] || card.abilities?.[0]; // Segunda habilidade como ultimate
+    const ultimate = card.abilities?.ultimate || card.abilities?.basic; // Ultimate é a habilidade ultimate, se não tiver, usa a básica
 
     if (!ultimate) {
       alert('Esta carta não possui ultimate!');
@@ -418,10 +448,10 @@ export default function GameRoom({ params }) {
     const actions = ['skill', 'wait'];
     const action = actions[Math.floor(Math.random() * actions.length)];
 
-    if (action === 'skill' && activeCards.opponent.abilities?.[0]) {
+    if (action === 'skill' && activeCards.opponent.abilities?.basic) {
       // Oponente usa habilidade
-      const skill = activeCards.opponent.abilities[0];
-      
+      const skill = activeCards.opponent.abilities.basic;
+
       if (skill.type === 'damage' && activeCards.player) {
         const damage = skill.value || 10;
         setActiveCards(prev => ({
@@ -477,219 +507,242 @@ export default function GameRoom({ params }) {
     if (activeCards.player) setShowSkillMenu(v => !v);
   };
 
+  // Painel de debug
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugState, setDebugState] = useState({
+    playerHP: gameState.playerHealth,
+    opponentHP: gameState.opponentHealth,
+    field: currentField,
+    playerActive: activeCards.player?.id || '',
+    opponentActive: activeCards.opponent?.id || '',
+    hand: playerHand.map(c => c.id).join(',')
+  });
+
+  // Atualiza debugState ao mudar o jogo
+  useEffect(() => {
+    setDebugState({
+      playerHP: gameState.playerHealth,
+      opponentHP: gameState.opponentHealth,
+      field: currentField,
+      playerActive: activeCards.player?.id || '',
+      opponentActive: activeCards.opponent?.id || '',
+      hand: playerHand.map(c => c.id).join(',')
+    });
+  }, [gameState, currentField, activeCards, playerHand]);
+
+  function handleDebugChange(e) {
+    const { name, value } = e.target;
+    setDebugState(prev => ({ ...prev, [name]: value }));
+  }
+
+  function applyDebugState() {
+    setGameState(prev => ({
+      ...prev,
+      playerHealth: Number(debugState.playerHP),
+      opponentHealth: Number(debugState.opponentHP)
+    }));
+    setCurrentField(debugState.field);
+    setActiveCards(prev => ({
+      ...prev,
+      player: getCardData(debugState.playerActive),
+      opponent: getCardData(debugState.opponentActive)
+    }));
+    setPlayerHand(debugState.hand.split(',').map(id => getCardData(id)).filter(Boolean));
+  }
+
+  function debugPassTurn() {
+    endTurn();
+  }
+
+  // Função para obter a imagem de fundo do campo atual
+  const getFieldBgImage = () => {
+    return fields[currentField]?.bgImage || '/images/backgrounds/forest.jpg';
+  };
+
   return (
-    <main className={`min-h-screen text-white relative overflow-hidden bg-gradient-to-br ${fields[currentField].bg}`}>
-      {/* Background dinâmico baseado no campo atual */}
-      <div className="absolute inset-0">
-        {/* Textura de fundo baseada no campo */}
-        <div className="absolute inset-0 opacity-30">
-          {currentField === 'floresta' && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(34,197,94,0.3)_1px,transparent_1px)] bg-[length:60px_60px]"></div>
-          )}
-          {currentField === 'rio' && (
-            <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(59,130,246,0.2)_25%,transparent_25%,transparent_75%,rgba(59,130,246,0.2)_75%)] bg-[length:40px_40px]"></div>
-          )}
-          {currentField === 'caatinga' && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.3)_1px,transparent_1px)] bg-[length:80px_80px]"></div>
-          )}
-          {currentField === 'pantanal' && (
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,185,129,0.2)_50%,rgba(107,114,128,0.2)_50%)] bg-[length:60px_30px]"></div>
-          )}
-          {currentField === 'lua' && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(147,51,234,0.4)_1px,transparent_1px)] bg-[length:100px_100px]"></div>
-          )}
-        </div>
-        
-        {/* Elementos decorativos do campo */}
-        <div className="absolute inset-0 opacity-20">
-          {currentField === 'floresta' && (
-            <div className="text-6xl absolute top-10 left-10 animate-pulse">🌲</div>
-          )}
-          {currentField === 'rio' && (
-            <div className="text-6xl absolute top-20 right-20 animate-bounce">🌊</div>
-          )}
-          {currentField === 'caatinga' && (
-            <div className="text-6xl absolute bottom-20 left-20 animate-pulse">🌵</div>
-          )}
-          {currentField === 'pantanal' && (
-            <div className="text-6xl absolute top-1/3 right-10 animate-bounce">🐊</div>
-          )}
-          {currentField === 'lua' && (
-            <div className="text-8xl absolute top-10 right-1/3 animate-pulse">🌕</div>
-          )}
-        </div>
-      </div>
-      
-      <div className="relative z-10 h-screen p-2 flex flex-col justify-between">
-        {/* Linha superior: Oponente e campo */}
-        <div className="flex flex-row justify-between items-start w-full">
-          {/* Canto superior esquerdo: Info do oponente */}
-          <div className="flex flex-col items-start gap-2 mt-2 ml-2">
-            <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1 shadow-lg">
-              <img src="/images/avatars/opponent.png" alt="Avatar Oponente" className="w-10 h-10 rounded-full border-2 border-red-400" />
-              <div>
-                <div className="font-bold text-red-200">Oponente</div>
-                <div className="flex items-center gap-1 text-sm">
-                  <span className="text-red-400">❤</span>
-                  <span>{gameState.opponentHealth}</span>
-                </div>
-              </div>
-            </div>
+    <BoardBackground bgImage={getFieldBgImage()}>
+      {/* Botão flutuante de debug */}
+      <button
+        onClick={() => setDebugOpen(v => !v)}
+        style={{ position: 'fixed', top: 16, right: 16, zIndex: 1000 }}
+        className="bg-pink-700 text-white px-3 py-2 rounded-full shadow-lg hover:bg-pink-800 transition"
+      >
+        {debugOpen ? 'Fechar Debug' : 'Debug'}
+      </button>
+      {debugOpen && (
+        <div className="fixed top-20 right-4 z-[1001] bg-black/90 text-white p-4 rounded-xl shadow-2xl w-80 border-2 border-pink-600 flex flex-col gap-2 animate-fade-in">
+          <div className="font-bold text-lg mb-2">Painel de Debug</div>
+          <label className="flex flex-col text-xs mb-1">HP Jogador
+            <input type="number" name="playerHP" value={debugState.playerHP} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1" />
+          </label>
+          <label className="flex flex-col text-xs mb-1">HP Oponente
+            <input type="number" name="opponentHP" value={debugState.opponentHP} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1" />
+          </label>
+          <label className="flex flex-col text-xs mb-1">Campo/Terreno
+            <select name="field" value={debugState.field} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1">
+              {Object.keys(fields).map(f => (
+                <option key={f} value={f}>{fields[f].name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col text-xs mb-1">Carta Ativa Jogador (id)
+            <input type="text" name="playerActive" value={debugState.playerActive} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1" />
+          </label>
+          <label className="flex flex-col text-xs mb-1">Carta Ativa Oponente (id)
+            <input type="text" name="opponentActive" value={debugState.opponentActive} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1" />
+          </label>
+          <label className="flex flex-col text-xs mb-1">Cartas na Mão (ids separados por vírgula)
+            <input type="text" name="hand" value={debugState.hand} onChange={handleDebugChange} className="bg-gray-800 rounded px-2 py-1 mt-1" />
+          </label>
+          <div className="flex gap-2 mt-2">
+            <button onClick={applyDebugState} className="bg-green-700 px-3 py-1 rounded hover:bg-green-800">Aplicar</button>
+            <button onClick={debugPassTurn} className="bg-blue-700 px-3 py-1 rounded hover:bg-blue-800">Passar Turno</button>
           </div>
-          {/* Centro superior: Encantado ativo do oponente */}
-          <div className="flex flex-col items-center flex-1">
-            <div className="relative flex flex-col items-center">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-t from-indigo-900/80 to-indigo-700/60 border-4 border-blue-400 flex items-center justify-center shadow-2xl mb-2 animate-pulse">
-                {activeCards.opponent && (
-                  <CardImage card={activeCards.opponent} className="w-24 h-24" />
-                )}
-              </div>
-              <div className="text-center text-xs text-blue-200 font-semibold">
-                {activeCards.opponent?.name || '---'}
-              </div>
-            </div>
+        </div>
+      )}
+
+      <main className={`min-h-screen text-white relative overflow-hidden bg-gradient-to-br ${fields[currentField].bg}`}>
+        {/* Fundo animado do campo */}
+        <div ref={fieldBgRef} className={`absolute inset-0 z-0 transition-all duration-1000 ${fieldTransitioning ? 'opacity-0 scale-105 blur-sm' : 'opacity-100 scale-100 blur-0'}`}>
+          {/* Textura de fundo baseada no campo */}
+          <div className="absolute inset-0 opacity-30">
+            {currentField === 'floresta' && (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(34,197,94,0.3)_1px,transparent_1px)] bg-[length:60px_60px]"></div>
+            )}
+            {currentField === 'rio' && (
+              <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(59,130,246,0.2)_25%,transparent_25%,transparent_75%,rgba(59,130,246,0.2)_75%)] bg-[length:40px_40px]"></div>
+            )}
+            {currentField === 'caatinga' && (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.3)_1px,transparent_1px)] bg-[length:80px_80px]"></div>
+            )}
+            {currentField === 'pantanal' && (
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,185,129,0.2)_50%,rgba(107,114,128,0.2)_50%)] bg-[length:60px_30px]"></div>
+            )}
+            {currentField === 'lua' && (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(147,51,234,0.4)_1px,transparent_1px)] bg-[length:100px_100px]"></div>
+            )}
           </div>
-          {/* Lado direito: Pilha de compra */}
-          <div className="flex flex-col items-end gap-2 mt-2 mr-2">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-16 bg-blue-900/60 border-2 border-blue-400 rounded-lg flex items-center justify-center shadow-lg relative">
-                <span className="text-blue-200 font-bold">Compra</span>
-                {deck.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-600 text-xs rounded-full px-2 py-0.5">{deck.length}</span>
-                )}
-              </div>
-              <span className="text-xs text-blue-300 mt-1">Baralho</span>
-            </div>
+          {/* Elementos decorativos do campo */}
+          <div className="absolute inset-0 opacity-20 pointer-events-none">
+            {currentField === 'floresta' && (
+              <div className="text-7xl absolute top-10 left-10 animate-pulse-slow">🌲</div>
+            )}
+            {currentField === 'rio' && (
+              <div className="text-7xl absolute top-20 right-20 animate-bounce">🌊</div>
+            )}
+            {currentField === 'caatinga' && (
+              <div className="text-7xl absolute bottom-20 left-20 animate-pulse">🌵</div>
+            )}
+            {currentField === 'pantanal' && (
+              <div className="text-7xl absolute top-1/3 right-10 animate-bounce">🐊</div>
+            )}
+            {currentField === 'lua' && (
+              <div className="text-9xl absolute top-10 right-1/3 animate-pulse">🌕</div>
+            )}
           </div>
         </div>
 
-        {/* Centro do tabuleiro: Campo e Encantados */}
-        <div className="relative flex flex-col items-center justify-center flex-1">
-          {/* Indicador de campo/terreno atual */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
-            <div className="flex items-center gap-2 bg-black/60 px-4 py-1 rounded-full border-2 border-yellow-400 shadow-lg">
-              <span className="text-2xl">{fields[currentField].icon}</span>
-              <span className="font-bold text-yellow-100">{fields[currentField].name}</span>
+        <div className="relative z-10 h-screen p-2 flex flex-col justify-between">
+          {/* Linha superior: Oponente e campo */}
+          <div className="flex flex-row justify-between items-start w-full">
+            {/* Canto superior esquerdo: Info do oponente */}
+            <div className="flex flex-col items-start gap-2 mt-2 ml-2">
+              <PlayerInfo 
+                avatar="/images/avatars/opponent.png" 
+                name="Oponente" 
+                hp={gameState.opponentHealth} 
+                color="red" 
+                isActive={gameState.turn === 'opponent'} 
+              />
             </div>
-            <div className="text-xs text-yellow-200 mt-1">{fields[currentField].effect}</div>
+            
+            {/* Centro superior: Encantado ativo do oponente */}
+            <CardInField
+              card={activeCards.opponent}
+              position="opponent"
+            />
+            
+            {/* Lado direito: Pilha de compra */}
+            <DeckPile 
+              count={deck.length}
+              type="deck"
+              position="right"
+            />
           </div>
-          {/* Encantado ativo do jogador (centro inferior) */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
-            <div
-              className={`w-32 h-32 rounded-full bg-gradient-to-b from-amber-900/80 to-yellow-700/60 border-4 border-yellow-400 flex items-center justify-center shadow-2xl mb-2 animate-pulse cursor-pointer transition-all duration-300 ${bonusGlow ? 'ring-4 ring-green-400 shadow-green-400/60' : ''} ${gameState.turn === 'player' ? 'animate-glow' : ''}`}
+
+          {/* Centro do tabuleiro: Campo e Encantados */}
+          <div className="relative flex flex-col items-center justify-center flex-1">
+            {/* Indicador de campo/terreno atual */}
+            <FieldIndicator 
+              currentField={currentField}
+              fields={fields}
+              fieldTransitioning={fieldTransitioning}
+            />
+            
+            {/* Encantado ativo do jogador (centro inferior) */}
+            <CardInField
+              card={activeCards.player}
+              position="player"
+              bonusGlow={bonusGlow}
+              isActive={gameState.turn === 'player'}
               onClick={handleActiveCardClick}
-              title="Clique para ver habilidades"
-            >
+              showMenu={showSkillMenu}
+              onSkillClick={useSkill}
+              onUltimateClick={useUltimate}
+              onEndTurnClick={endTurn}
+              skillCooldown={activeCards.player?.skillCooldown || 0}
+              ultimateCharge={gameState.playerUltimate}
+              actionUsed={gameState.actionUsed}
+            />
+          </div>
+
+          {/* Linha inferior: Info do jogador, mão, habilidades */}
+          <div className="flex flex-row justify-between items-end w-full mb-4">
+            {/* Canto inferior esquerdo: Info do jogador */}
+            <div className="flex flex-col items-start gap-2 ml-2 mb-2">
+              <PlayerInfo 
+                avatar="/images/avatars/player.jpg" 
+                name="Você" 
+                hp={gameState.playerHealth} 
+                color="yellow" 
+                isActive={gameState.turn === 'player'} 
+              />
+            </div>
+            
+            {/* Inferior central: Mão do jogador */}
+            <Hand
+              cards={playerHand}
+              selectedCard={selectedCard}
+              onCardSelect={setSelectedCard}
+              onCardPlay={playCard}
+              bonusGlow={bonusGlow}
+              newCardIndex={playerHand.length - 1}
+            />
+            
+            {/* Inferior direito: Habilidades */}
+            <div className="flex flex-col items-end gap-2 mr-4 mb-2">
               {activeCards.player && (
-                <CardImage card={activeCards.player} className="w-24 h-24" />
+                <SkillButtons
+                  card={activeCards.player}
+                  onSkillClick={useSkill}
+                  onUltimateClick={useUltimate}
+                  skillCooldown={activeCards.player.skillCooldown || 0}
+                  ultimateCharge={gameState.playerUltimate}
+                  actionUsed={gameState.actionUsed}
+                  layout="horizontal"
+                />
               )}
             </div>
-            <div className="text-center text-xs text-yellow-200 font-semibold">
-              {activeCards.player?.name || '---'}
-            </div>
-            {/* Menu de habilidades ao clicar */}
-            {showSkillMenu && activeCards.player && (
-              <div className="flex flex-row gap-3 mt-2 animate-fade-in">
-                <button
-                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-blue-400 shadow-lg hover:bg-blue-900/80 transition"
-                  onClick={useSkill}
-                  disabled={gameState.actionUsed || activeCards.player.skillCooldown > 0}
-                  title="Habilidade Básica"
-                >
-                  <span className="text-lg">✨</span>
-                  <span className="text-xs mt-1">Skill</span>
-                  {activeCards.player.skillCooldown > 0 && (
-                    <span className="text-xs text-blue-200">{activeCards.player.skillCooldown}t</span>
-                  )}
-                </button>
-                <button
-                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-yellow-400 shadow-lg hover:bg-yellow-900/80 transition"
-                  onClick={useUltimate}
-                  disabled={gameState.actionUsed || gameState.playerUltimate < 100}
-                  title="Ultimate"
-                >
-                  <span className="text-lg">💥</span>
-                  <span className="text-xs mt-1">Ultimate</span>
-                  <span className="text-xs text-yellow-200">{gameState.playerUltimate}/100</span>
-                </button>
-              </div>
-            )}
           </div>
+          {/* Lado esquerdo: Pilha de descarte */}
+          <DeckPile 
+            count={discardPile.length}
+            type="discard"
+            position="left"
+          />
+          {/* Indicador de turno (brilho no avatar do jogador ativo) já incluso nas classes dos avatares) */}
         </div>
-
-        {/* Linha inferior: Info do jogador, mão, habilidades */}
-        <div className="flex flex-row justify-between items-end w-full mb-4">
-          {/* Canto inferior esquerdo: Info do jogador */}
-          <div className="flex flex-col items-start gap-2 ml-2 mb-2">
-            <div className={`flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1 shadow-lg ${gameState.turn === 'player' ? 'ring-2 ring-yellow-400' : ''}`}>
-              <img src="/images/avatars/player.png" alt="Seu Avatar" className="w-10 h-10 rounded-full border-2 border-yellow-400" />
-              <div>
-                <div className="font-bold text-yellow-200">Você</div>
-                <div className="flex items-center gap-1 text-sm">
-                  <span className="text-yellow-400">❤</span>
-                  <span>{gameState.playerHealth}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Inferior central: Mão do jogador */}
-          <div className="flex flex-row items-end justify-center flex-1 gap-[-2rem]">
-            {playerHand.map((card, idx) => (
-              <div
-                key={card.id}
-                className={`relative transition-transform duration-200 hover:z-20 hover:-translate-y-8 cursor-pointer -ml-8 ${selectedCard?.id === card.id ? 'ring-4 ring-yellow-400' : ''} ${bonusGlow && idx === playerHand.length - 1 ? 'animate-card-draw' : ''}`}
-                style={{ zIndex: idx + 1 }}
-                onClick={() => setSelectedCard(card)}
-                onDoubleClick={() => playCard(card)}
-              >
-                <CardImage card={card} className="w-20 h-28 rounded-lg border-2 border-white/30 shadow-lg" />
-              </div>
-            ))}
-          </div>
-          {/* Inferior direito: Habilidades */}
-          <div className="flex flex-col items-end gap-2 mr-4 mb-2">
-            {activeCards.player && (
-              <div className="flex flex-row gap-3">
-                {/* Habilidade 1 */}
-                <button
-                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-blue-400 shadow-lg hover:bg-blue-900/80 transition"
-                  onClick={useSkill}
-                  disabled={gameState.actionUsed || activeCards.player.skillCooldown > 0}
-                  title="Habilidade Básica"
-                >
-                  <span className="text-lg">✨</span>
-                  <span className="text-xs mt-1">Skill</span>
-                  {activeCards.player.skillCooldown > 0 && (
-                    <span className="text-xs text-blue-200">{activeCards.player.skillCooldown}t</span>
-                  )}
-                </button>
-                {/* Habilidade 2 (Ultimate) */}
-                <button
-                  className="flex flex-col items-center bg-black/60 px-3 py-2 rounded-lg border-2 border-yellow-400 shadow-lg hover:bg-yellow-900/80 transition"
-                  onClick={useUltimate}
-                  disabled={gameState.actionUsed || gameState.playerUltimate < 100}
-                  title="Ultimate"
-                >
-                  <span className="text-lg">💥</span>
-                  <span className="text-xs mt-1">Ultimate</span>
-                  <span className="text-xs text-yellow-200">{gameState.playerUltimate}/100</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Lado esquerdo: Pilha de descarte */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
-          <div className="w-12 h-16 bg-gray-800/60 border-2 border-gray-400 rounded-lg flex items-center justify-center shadow-lg relative">
-            <span className="text-gray-200 font-bold">Descarte</span>
-            {discardPile.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-xs rounded-full px-2 py-0.5">{discardPile.length}</span>
-            )}
-          </div>
-          <span className="text-xs text-gray-300 mt-1">Desencanto</span>
-        </div>
-        {/* Indicador de turno (brilho no avatar do jogador ativo) já incluso nas classes dos avatares) */}
-      </div>
-    </main>
+      </main>
+    </BoardBackground>
   );
 }
