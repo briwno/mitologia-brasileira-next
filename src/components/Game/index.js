@@ -5,3 +5,12 @@ export { default as CardInField } from './CardInField';
 export { default as Hand } from './Hand';
 export { default as DeckPile } from './DeckPile';
 export { default as SkillButtons } from './SkillButtons';
+
+// New TCG-style components
+export { default as ActiveZone } from './ActiveZone';
+export { default as BenchZone } from './BenchZone';
+export { default as Playmat } from './Playmat';
+export { default as GameZones } from './GameZones';
+export { default as PlayerHand } from './PlayerHand';
+export { default as PlayerHUD } from './PlayerHUD';
+export { default as EndTurnButton } from './EndTurnButton';

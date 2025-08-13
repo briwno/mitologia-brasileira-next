@@ -4,30 +4,81 @@
 import Image from 'next/image';
 
 export default function PlayerInfo({ avatar, name, hp, color, isActive, position = "left" }) {
+  const maxHp = 100;
+  const hpPercentage = (hp / maxHp) * 100;
+  
+  // Cores baseadas no jogador
+  const colors = {
+    player: {
+      border: 'border-blue-400',
+      bg: 'from-blue-600/60 to-blue-800/60',
+      ring: 'ring-blue-400',
+      hpBar: 'from-blue-500 to-blue-600',
+      text: 'text-blue-300'
+    },
+    opponent: {
+      border: 'border-red-400', 
+      bg: 'from-red-600/60 to-red-800/60',
+      ring: 'ring-red-400',
+      hpBar: 'from-red-500 to-red-600',
+      text: 'text-red-300'
+    }
+  };
+
+  const isPlayerColor = name === 'Você';
+  const currentColors = isPlayerColor ? colors.player : colors.opponent;
+
   return (
-    <div className={`flex flex-col items-center gap-1 ${isActive ? 'ring-4 ring-yellow-400 animate-glow' : ''}`} style={{ minWidth: 70 }}>
-      <div className="relative flex items-center justify-center">
-        {/* Moldura tribal animada */}
-        <div className="absolute -inset-1 z-0 rounded-full border-4 border-green-900 bg-gradient-to-br from-green-700/60 to-yellow-800/60 shadow-xl animate-pulse-slow" style={{ filter: 'blur(2px)' }}></div>
-        
-        {/* Avatar */}
-        <Image 
-          src={avatar} 
-          alt={name} 
-          width={56}
-          height={56}
-          className="w-14 h-14 rounded-full border-4 border-yellow-700 z-10 object-cover" 
-        />
-        
-        {/* Barra de vida */}
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/80 px-2 py-0.5 rounded-full border-2 border-yellow-400 shadow">
-          <span className="text-red-400 text-lg">❤</span>
-          <span className="text-yellow-100 font-bold text-sm">{hp}</span>
+    <div className={`flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-xl p-3 border ${currentColors.border} ${isActive ? `ring-2 ${currentColors.ring} animate-pulse` : ''} transition-all duration-300`}>
+      {/* Avatar com moldura aprimorada */}
+      <div className="relative">
+        <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${currentColors.bg} blur-sm ${isActive ? 'animate-pulse' : ''}`}></div>
+        <div className="relative">
+          <Image 
+            src={avatar} 
+            alt={name} 
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-full border-2 border-white/50 object-cover relative z-10" 
+          />
+          {/* Indicador de turno */}
+          {isActive && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+              <span className="text-xs text-black">🎯</span>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Nome do jogador */}
-      <span className="text-xs font-bold text-yellow-200 drop-shadow">{name}</span>
+      {/* Informações do jogador */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-bold text-white truncate">{name}</span>
+          <span className={`text-xs ${currentColors.text} font-medium`}>
+            {isActive ? '▶️ Jogando' : '⏸️ Aguardando'}
+          </span>
+        </div>
+        
+        {/* Barra de vida aprimorada */}
+        <div className="relative">
+          <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+            <div 
+              className={`h-full bg-gradient-to-r ${hpPercentage > 30 ? 'from-green-500 to-green-600' : hpPercentage > 15 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'} transition-all duration-500 relative`}
+              style={{ width: `${hpPercentage}%` }}
+            >
+              {/* Brilho na barra de vida */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            </div>
+          </div>
+          
+          {/* Texto da vida */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-bold text-white drop-shadow-md">
+              ❤️ {hp}/{maxHp}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
