@@ -16,8 +16,13 @@ export default function PlayerHUD({
     >
       <div className="flex gap-4 items-center">
         {/* Placeholder avatar circle */}
-        <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-[10px] uppercase tracking-wider ${isPlayer ? 'bg-blue-700 text-blue-100' : 'bg-red-700 text-red-100'} border border-white/10`}>
-          {player.name?.slice(0,2) || 'PL'}
+        <div className="relative">
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-[10px] uppercase tracking-wider ${isPlayer ? 'bg-blue-700 text-blue-100' : 'bg-red-700 text-red-100'} border border-white/10`}>
+            {player.name?.slice(0,2) || 'PL'}
+          </div>
+          {player.isActive && (
+            <div className={`absolute inset-0 rounded-full animate-ping ${isPlayer ? 'bg-blue-400/30' : 'bg-red-400/30'}`} />
+          )}
         </div>
         <div className="flex-1 flex flex-col gap-2">
           <div className={`text-sm font-bold ${isPlayer ? 'text-blue-200' : 'text-red-200'} leading-none`}>{player.name}</div>
