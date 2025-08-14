@@ -2,8 +2,10 @@
 "use client";
 
 import Image from 'next/image';
+import { useState } from 'react';
 
 export default function PlayerInfo({ avatar, name, hp, color, isActive, position = "left" }) {
+  const [avatarErrored, setAvatarErrored] = useState(false);
   const maxHp = 100;
   const hpPercentage = (hp / maxHp) * 100;
   
@@ -35,11 +37,12 @@ export default function PlayerInfo({ avatar, name, hp, color, isActive, position
         <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${currentColors.bg} blur-sm ${isActive ? 'animate-pulse' : ''}`}></div>
         <div className="relative">
           <Image 
-            src={avatar} 
+            src={!avatar || avatarErrored ? '/images/placeholder.svg' : avatar} 
             alt={name} 
             width={48}
             height={48}
             className="w-12 h-12 rounded-full border-2 border-white/50 object-cover relative z-10" 
+            onError={() => setAvatarErrored(true)}
           />
           {/* Indicador de turno */}
           {isActive && (

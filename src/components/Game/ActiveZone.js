@@ -15,6 +15,7 @@ export default function ActiveZone({
 }) {
   const isPlayer = position === 'player';
   const baseShadow = '0 10px 30px -6px rgba(0,0,0,0.85)';
+  const [imgErrored, setImgErrored] = useState(false);
   return (
     <div className="relative">
       <div
@@ -30,7 +31,7 @@ export default function ActiveZone({
         )}
         {card && (
           <>
-            {card.images?.portrait && (
+            {card.images?.portrait && !imgErrored && (
               <Image
                 src={card.images.portrait}
                 alt={card.name}
@@ -39,12 +40,17 @@ export default function ActiveZone({
                 quality={100}
                 className="w-full h-full object-cover rounded-2xl pointer-events-none select-none will-change-transform"
                 priority={false}
+                onError={() => setImgErrored(true)}
               />
             )}
-            {!card.images?.portrait && (
-              <span className="text-[12px] font-bold text-white leading-tight line-clamp-3 px-2 text-center">
-                {card.name}
-              </span>
+            {(!card.images?.portrait || imgErrored) && (
+              <Image
+                src="/images/placeholder.svg"
+                alt={`Placeholder de ${card.name}`}
+                width={320}
+                height={440}
+                className="w-full h-full object-cover rounded-2xl pointer-events-none select-none will-change-transform"
+              />
             )}
             <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm px-1.5 py-1.5 flex flex-col items-center gap-1">
               <span className="text-[12px] font-semibold text-neutral-100 leading-tight truncate max-w-full">{card.name}</span>

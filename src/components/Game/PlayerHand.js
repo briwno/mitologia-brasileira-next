@@ -74,9 +74,13 @@ export default function PlayerHand({
                   )}
                   {/* Fallback */}
                   {!card.images?.portrait && (
-                    <span className="text-[11px] font-semibold text-white px-2 text-center leading-tight">
-                      {card.name}
-                    </span>
+                    <Image
+                      src="/images/placeholder.svg"
+                      alt={`Placeholder de ${card.name}`}
+                      width={240}
+                      height={360}
+                      className="w-full h-full object-cover select-none pointer-events-none will-change-transform"
+                    />
                   )}
                   {/* Nome overlay */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-[2px] px-1 pb-1 pt-0.5 text-[9px] leading-tight font-medium text-neutral-100 text-center space-y-0.5">

@@ -15,6 +15,7 @@ export default function BenchZone({
   highlightSelectable = false
 }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [errorIndices, setErrorIndices] = useState(new Set());
   const isPlayer = position === 'player';
   const slots = Array(maxSlots).fill(null).map((_, idx) => cards[idx] || null);
   const baseShadow = '0 10px 26px -6px rgba(0,0,0,0.85)';
@@ -42,7 +43,7 @@ export default function BenchZone({
                 <div className="absolute inset-0 backface-hidden">
                   {(canSeeHidden || card.foiRevelada) ? (
                     <>
-                      {card.images?.portrait ? (
+                      {card.images?.portrait && !errorIndices.has(index) ? (
                         <Image
                           src={card.images.portrait}
                           alt={card.name}
@@ -50,11 +51,21 @@ export default function BenchZone({
                           height={280}
                           quality={95}
                           className="w-full h-full object-cover pointer-events-none select-none will-change-transform"
+                          onError={() => setErrorIndices(prev => {
+                            const next = new Set(Array.from(prev));
+                            next.add(index);
+                            return next;
+                          })}
                         />
                       ) : (
-                        <span className="line-clamp-3 leading-tight text-white px-1 flex items-center justify-center h-full">
-                          {card.name}
-                        </span>
+                        <Image
+                          src="/images/placeholder.svg"
+                          alt={`Placeholder de ${card.name}`}
+                          width={200}
+                          height={280}
+                          quality={95}
+                          className="w-full h-full object-cover pointer-events-none select-none will-change-transform"
+                        />
                       )}
                       <div className="absolute bottom-0 left-0 right-0 bg-black/65 px-1.5 py-1 flex flex-col items-center backdrop-blur-sm space-y-0.5">
                         <span className="text-[11px] font-medium text-neutral-100 truncate w-full leading-tight">{card.name}</span>

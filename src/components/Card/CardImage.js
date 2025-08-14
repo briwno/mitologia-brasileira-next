@@ -31,32 +31,24 @@ export default function CardImage({
   };
 
   const getPlaceholderContent = () => {
+    // For undiscovered cards, keep the mystery tile
     if (!card.discovered) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+        <div className="flex flex-col items-center justify-center h-full text-gray-400">
           <div className="text-4xl mb-2">❓</div>
           <div className="text-xs text-center">Não descoberto</div>
         </div>
       );
     }
-
-    // Emoji baseado na categoria
-    const categoryEmojis = {
-      'Guardiões da Floresta': '🌳',
-      'Espíritos das Águas': '🌊',
-      'Assombrações': '👻',
-      'Entidades Travessas': '😈',
-      'Protetores Ancestrais': '🔮',
-      'Metamorfos': '🦋'
-    };
-
-    const emoji = categoryEmojis[card.category] || '🎭';
-
+    // Generic branded placeholder
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <div className="text-4xl mb-2">{emoji}</div>
-        <div className="text-xs text-center font-semibold">{card.name}</div>
-      </div>
+      <Image
+        src="/images/placeholder.svg"
+        alt={`Placeholder de ${card.name}`}
+        fill
+        className="object-cover"
+        onLoad={handleImageLoad}
+      />
     );
   };
 
@@ -73,7 +65,7 @@ export default function CardImage({
       )}
 
       {/* Imagem da carta ou placeholder */}
-      {card.discovered && card.images?.portrait && !imageError ? (
+  {card.discovered && card.images?.portrait && !imageError ? (
         <Image
           src={card.images.portrait}
           alt={card.name}
