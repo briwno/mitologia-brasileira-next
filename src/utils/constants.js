@@ -29,10 +29,9 @@ export const GAME_CONSTANTS = {
 
   // Raridades
   RARITIES: {
-    COMMON: 'Comum',
-    RARE: 'Raro',
-    EPIC: 'Épico',
-    LEGENDARY: 'Lendário'
+  EPIC: 'Épico',
+  LEGENDARY: 'Lendário',
+  MYTHIC: 'Mítico'
   },
 
   // Regiões

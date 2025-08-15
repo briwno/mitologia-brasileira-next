@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PageLayout from '../../components/UI/PageLayout';
 
 export default function PvPLobby() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function PvPLobby() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -242,12 +243,20 @@ export default function PvPLobby() {
 
                 {(() => {
                   const selectedDeck = availableDecks.find(d => d.name === playerDeck);
-                  return selectedDeck && (
+                  if (!selectedDeck) return null;
+                  const colorMap = {
+                    green: 'bg-green-600',
+                    yellow: 'bg-yellow-600',
+                    purple: 'bg-purple-600',
+                    blue: 'bg-blue-600',
+                  };
+                  const badgeBg = colorMap[selectedDeck.color] || 'bg-gray-600';
+                  return (
                     <div className="bg-black/40 p-3 rounded">
                       <div className="font-semibold mb-1">{selectedDeck.name}</div>
                       <div className="text-sm text-gray-400 mb-2">{selectedDeck.theme}</div>
                       <div className="text-xs">
-                        <span className={`px-2 py-1 rounded bg-${selectedDeck.color}-600`}>
+                        <span className={`px-2 py-1 rounded ${badgeBg}`}>
                           {selectedDeck.cards} cartas
                         </span>
                       </div>
@@ -320,6 +329,6 @@ export default function PvPLobby() {
           </Link>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

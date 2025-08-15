@@ -85,26 +85,57 @@ export default function Hand({
                 
                 {/* Habilidades */}
                 <div className="space-y-2 text-xs">
-                  {card.abilities?.basic && (
-                    <div className="bg-blue-900/30 rounded p-2">
-                      <div className="font-bold text-blue-300">✨ {card.abilities.basic.name}</div>
-                      <div className="text-gray-300">{card.abilities.basic.description}</div>
-                      {card.abilities.basic.damage && (
-                        <div className="text-red-300 text-xs">Dano: {card.abilities.basic.damage}</div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {card.abilities?.ultimate && (
-                    <div className="bg-yellow-900/30 rounded p-2">
-                      <div className="font-bold text-yellow-300">💥 {card.abilities.ultimate.name}</div>
-                      <div className="text-gray-300">{card.abilities.ultimate.description}</div>
-                      {card.abilities.ultimate.damage && (
-                        <div className="text-red-300 text-xs">Dano: {card.abilities.ultimate.damage}</div>
-                      )}
-                    </div>
-                  )}
-                  
+                  {(() => {
+                    const ab = card.abilities || {};
+                    const usesNew = ab.skill1 || ab.skill2 || ab.skill3 || ab.skill4 || ab.skill5;
+                    if (usesNew) {
+                      const blocks = [ab.skill1, ab.skill2, ab.skill3, ab.skill4, ab.skill5].filter(Boolean);
+                      const palettes = [
+                        { box: 'bg-blue-900/30', title: 'text-blue-300' },
+                        { box: 'bg-cyan-900/30', title: 'text-cyan-300' },
+                        { box: 'bg-purple-900/30', title: 'text-purple-300' },
+                        { box: 'bg-amber-900/30', title: 'text-amber-300' },
+                        { box: 'bg-red-900/30', title: 'text-red-300' },
+                      ];
+                      return (
+                        <>
+                          {blocks.map((s, idx) => {
+                            const pal = palettes[idx] || palettes[0];
+                            return (
+                              <div key={`s-${idx}`} className={`${pal.box} rounded p-2`}>
+                                <div className={`font-bold ${pal.title}`}>✨ {s.name}</div>
+                                <div className="text-gray-300">{s.description}</div>
+                                {typeof s.base === 'number' && s.base > 0 && (
+                                  <div className="text-red-300 text-xs">Dano base: {s.base}</div>
+                                )}
+                                {typeof s.stun === 'number' && s.stun > 0 && (
+                                  <div className="text-purple-300 text-xs">Atordoamento: {s.stun} turno(s)</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        {ab.basic && (
+                          <div className="bg-blue-900/30 rounded p-2">
+                            <div className="font-bold text-blue-300">✨ {ab.basic.name}</div>
+                            <div className="text-gray-300">{ab.basic.description}</div>
+                            {ab.basic.damage && (<div className="text-red-300 text-xs">Dano: {ab.basic.damage}</div>)}
+                          </div>
+                        )}
+                        {ab.ultimate && (
+                          <div className="bg-yellow-900/30 rounded p-2">
+                            <div className="font-bold text-yellow-300">💥 {ab.ultimate.name}</div>
+                            <div className="text-gray-300">{ab.ultimate.description}</div>
+                            {ab.ultimate.damage && (<div className="text-red-300 text-xs">Dano: {ab.ultimate.damage}</div>)}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   {card.abilities?.passive && (
                     <div className="bg-purple-900/30 rounded p-2">
                       <div className="font-bold text-purple-300">🔮 {card.abilities.passive.name}</div>

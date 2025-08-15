@@ -30,7 +30,7 @@ const cards = [
     cost: 4,
     ability: 'Canto Hipnótico',
     abilityDescription: '30% de chance de fazer o oponente perder um turno',
-    rarity: 'Raro',
+  rarity: 'Épico',
     history: 'Sereia dos rios brasileiros que atrai homens com seu canto mágico, levando-os para o fundo das águas.',
     element: 'Água',
     image: '/images/cards/iara.jpg'
@@ -46,7 +46,7 @@ const cards = [
     cost: 3,
     ability: 'Travessura',
     abilityDescription: 'Pode roubar um item do oponente',
-    rarity: 'Comum',
+  rarity: 'Épico',
     history: 'Menino negro de uma perna só que usa gorro vermelho. Conhecido por suas travessuras e por causar pequenos transtornos.',
     element: 'Ar',
     image: '/images/cards/saci.jpg'
@@ -94,7 +94,7 @@ const cards = [
     cost: 5,
     ability: 'Transformação Lunar',
     abilityDescription: 'Dobra o ataque durante a noite',
-    rarity: 'Raro',
+  rarity: 'Épico',
     history: 'Homem que se transforma em lobo nas noites de lua cheia, aterrorizando quem encontra pelo caminho.',
     element: 'Sombra',
     image: '/images/cards/lobisomem.jpg'
@@ -110,7 +110,7 @@ const cards = [
     cost: 4,
     ability: 'Galope Fantasmagórico',
     abilityDescription: 'Pode atacar diretamente o jogador oponente',
-    rarity: 'Raro',
+  rarity: 'Épico',
     history: 'Mulher amaldiçoada que se transforma em mula sem cabeça, galopando pelas noites com fogo saindo do pescoço.',
     element: 'Fogo',
     image: '/images/cards/mula-sem-cabeca.jpg'
@@ -126,7 +126,7 @@ const cards = [
     cost: 4,
     ability: 'Encantamento',
     abilityDescription: 'Toma controle de uma criatura inimiga por 1 turno',
-    rarity: 'Raro',
+  rarity: 'Épico',
     history: 'Boto que se transforma em homem elegante para seduzir mulheres nas festas ribeirinhas.',
     element: 'Água',
     image: '/images/cards/boto.jpg'

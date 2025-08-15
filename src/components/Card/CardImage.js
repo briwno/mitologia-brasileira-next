@@ -80,14 +80,12 @@ export default function CardImage({
       )}
 
       {/* Overlay de raridade */}
-      {card.discovered && (
+  {card.discovered && (
         <div className="absolute top-1 right-1">
           <div className={`text-xs px-1 rounded ${
-            card.rarity === 'Mítico' ? 'bg-red-600' :
-            card.rarity === 'Lendário' ? 'bg-yellow-600' :
-            card.rarity === 'Épico' ? 'bg-purple-600' :
-            card.rarity === 'Raro' ? 'bg-blue-600' :
-            'bg-gray-600'
+    card.rarity === 'Mítico' ? 'bg-red-600' :
+    card.rarity === 'Lendário' ? 'bg-yellow-600' :
+    'bg-purple-600'
           }`}>
             {card.rarity?.charAt(0)}
           </div>

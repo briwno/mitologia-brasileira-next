@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
+import PageLayout from '../../components/UI/PageLayout';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,8 +28,9 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
-      <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 w-full max-w-md border border-green-500/30">
+    <PageLayout>
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 w-full max-w-md border border-green-500/30">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
             {isLogin ? 'Entrar' : 'Cadastrar'}
@@ -116,14 +119,15 @@ export default function Login() {
         </div>
 
         <div className="mt-4 text-center">
-          <link
+          <Link
             href="/"
             className="text-gray-400 hover:text-gray-300 text-sm"
           >
             ← Voltar ao início
-          </link>
+          </Link>
+        </div>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

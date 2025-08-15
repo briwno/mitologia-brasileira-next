@@ -91,11 +91,11 @@ export function useCards() {
     }
 
     if (filters.minCost !== undefined) {
-      filteredCards = filteredCards.filter(card => card.cost >= filters.minCost);
+  // Sem custo por carta: ignorar filtro de custo mínimo
     }
 
     if (filters.maxCost !== undefined) {
-      filteredCards = filteredCards.filter(card => card.cost <= filters.maxCost);
+  // Sem custo por carta: ignorar filtro de custo máximo
     }
 
     return filteredCards;
@@ -120,7 +120,8 @@ export function useCards() {
         acc[rarity] = getCardsByRarity(rarity).length;
         return acc;
       }, {}),
-      averageCost: cards.reduce((sum, card) => sum + card.cost, 0) / cards.length,
+  // Sem custo por carta; manter campo se usado em UI (0 como default)
+  averageCost: 0,
       averageAttack: cards.reduce((sum, card) => sum + card.attack, 0) / cards.length,
       averageDefense: cards.reduce((sum, card) => sum + card.defense, 0) / cards.length
     };

@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { cardsDatabase } from '../../../../data/cardsDatabase';
+// Mana removed; using PP per habilidade
 import { FieldIndicator, ActiveZone, Playmat, PlayerHUD, EndTurnButton, BenchZone } from '../../../../components/Game';
 import CardDetail from '../../../../components/Card/CardDetail';
 
@@ -15,7 +16,9 @@ export default function GameRoom({ params }) {
     playerUltimate: 0,
     opponentUltimate: 0,
     turnNumber: 1,
-    actionUsed: false
+  actionUsed: false,
+  playerStun: 0,
+  opponentStun: 0
   });
 
   // Função para buscar carta por id e garantir todos os campos necessários
@@ -23,19 +26,45 @@ export default function GameRoom({ params }) {
     if (!cardID) return null;
     const card = cardsDatabase.find(c => c.id === cardID);
     if (!card) return null;
-    return {
-      ...card,
-      abilities: {
-        basic: card.abilities?.basic || null,
-        ultimate: card.abilities?.ultimate || null,
-        passive: card.abilities?.passive || null
-      }
-    };
+  // Mantém o objeto de habilidades como está (para suportar skill1..skill4 + passive)
+  return { ...card, abilities: card.abilities ? { ...card.abilities } : {} };
   }
+
+  // PP defaults por slot (inspirado em Pokémon)
+  const getDefaultMaxPP = (slotIdx) => {
+    switch (slotIdx) {
+      case 0: return 10; // skill1
+      case 1: return 10; // skill2
+      case 2: return 5;  // skill3
+      case 3: return 3;  // skill4
+      case 4: return 1;  // skill5 (ultimate)
+      default: return 1;
+    }
+  };
+
+  const buildAbilityPP = (card) => {
+    const ab = card?.abilities || {};
+    const pp = {};
+    const arr = [ab.skill1, ab.skill2, ab.skill3, ab.skill4, ab.skill5];
+    arr.forEach((s, idx) => {
+      if (s || idx === 4) { // garante slot para a 5ª (genérica pode existir)
+        const key = `skill${idx + 1}`;
+        const max = getDefaultMaxPP(idx);
+        pp[key] = { current: max, max };
+      }
+    });
+    return pp;
+  };
 
   // Party model: 1 ativo + 5 banco; sem compra de deck
   function withState(card, revealed = false) {
-    return card ? { ...card, foiRevelada: !!revealed, ultimateUsesRemaining: 1 } : null;
+    if (!card) return null;
+    return {
+      ...card,
+      foiRevelada: !!revealed,
+      onFieldTurns: 0,
+      abilityPP: buildAbilityPP(card)
+    };
   }
 
   const [activeCards, setActiveCards] = useState({
@@ -109,6 +138,23 @@ export default function GameRoom({ params }) {
   const [benchFlipOpponent, setBenchFlipOpponent] = useState(new Set());
   const [detailCard, setDetailCard] = useState(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  
+  // Contador de turnos em campo para liberar a 5ª habilidade (Ultimate) após 3 turnos
+  const incrementOnFieldTurns = useCallback((side) => {
+    setActiveCards(prev => {
+      const next = { ...prev };
+      if (next[side]) {
+        const curr = next[side].onFieldTurns || 0;
+        next[side] = { ...next[side], onFieldTurns: curr + 1 };
+      }
+      return next;
+    });
+  }, []);
+
+  // Inicia contando o primeiro turno do jogador
+  useEffect(() => {
+    incrementOnFieldTurns('player');
+  }, [incrementOnFieldTurns]);
   
   // Fechar menu de ações com ESC
   useEffect(() => {
@@ -184,9 +230,9 @@ export default function GameRoom({ params }) {
         if (!incoming) return prev;
         const outgoing = activeCards.player;
         // revelar se necessário
-        const revealedIncoming = { ...incoming, foiRevelada: true };
+  const revealedIncoming = { ...incoming, foiRevelada: true, onFieldTurns: 0 };
         setActiveCards(a => ({ ...a, player: revealedIncoming }));
-        next[benchIndex] = outgoing ? { ...outgoing } : null;
+  next[benchIndex] = outgoing ? { ...outgoing, onFieldTurns: 0 } : null;
         // anima flip
         setBenchFlipPlayer(s => new Set([...Array.from(s), benchIndex]));
         setTimeout(() => setBenchFlipPlayer(new Set()), 550);
@@ -198,9 +244,9 @@ export default function GameRoom({ params }) {
         const incoming = next[benchIndex];
         if (!incoming) return prev;
         const outgoing = activeCards.opponent;
-        const revealedIncoming = { ...incoming, foiRevelada: true };
+  const revealedIncoming = { ...incoming, foiRevelada: true, onFieldTurns: 0 };
         setActiveCards(a => ({ ...a, opponent: revealedIncoming }));
-        next[benchIndex] = outgoing ? { ...outgoing } : null;
+  next[benchIndex] = outgoing ? { ...outgoing, onFieldTurns: 0 } : null;
         setBenchFlipOpponent(s => new Set([...Array.from(s), benchIndex]));
         setTimeout(() => setBenchFlipOpponent(new Set()), 550);
         return next;
@@ -215,6 +261,106 @@ export default function GameRoom({ params }) {
     const raw = atk + base - def;
     return Math.max(1, raw);
   }, [getAttackWithField]);
+
+  // Normaliza habilidades: usa skill1..skill4 e adiciona uma 5ª (Ultimate) que desbloqueia após 3 turnos em campo
+  const getSkills = useCallback((card) => {
+    if (!card) return [];
+    const ab = card.abilities || {};
+    const turns = card.onFieldTurns || 0;
+    const ultimateUnlocked = turns >= 3;
+    const hasNewSchema = ab.skill1 || ab.skill2 || ab.skill3 || ab.skill4;
+    if (hasNewSchema) {
+      const mapped = [ab.skill1, ab.skill2, ab.skill3, ab.skill4]
+        .filter(Boolean)
+        .map((s, idx) => ({
+          key: s.key || `s${idx + 1}`,
+          idxKey: `skill${idx + 1}`,
+          name: s.name,
+          description: s.description,
+          kind: s.kind || 'damage',
+          base: s.base ?? 0,
+          stun: s.stun ?? 0,
+          chance: s.chance,
+          pp: card.abilityPP?.[`skill${idx + 1}`]?.current ?? getDefaultMaxPP(idx),
+          ppMax: card.abilityPP?.[`skill${idx + 1}`]?.max ?? getDefaultMaxPP(idx)
+        }));
+      // Garante 4 entradas (preenche com genéricos se faltar)
+      while (mapped.length < 4) {
+        const i = mapped.length;
+        const gens = [
+          { key: 'basic', name: 'Golpe', description: 'Ataque básico.', cost: 1, kind: 'damage', base: 0 },
+          { key: 'power', name: 'Golpe Potente', description: 'Ataque reforçado.', cost: 2, kind: 'damage', base: 2 },
+          { key: 'stun', name: 'Atordoar', description: 'Atordoa o alvo por 1 turno.', cost: 3, kind: 'stun', stun: 1 },
+          { key: 'ultimate', name: 'Golpe Supremo', description: 'Ataque devastador.', cost: 4, kind: 'damage', base: 5 }
+        ];
+        mapped.push(gens[i] || gens[0]);
+      }
+      // 5ª habilidade: usa ab.skill5 se existir, senão cria uma genérica
+      const ult = ab.skill5 ? {
+        key: 'skill5',
+        idxKey: 'skill5',
+        name: ab.skill5.name,
+        description: ab.skill5.description,
+        kind: ab.skill5.kind || 'damage',
+        base: ab.skill5.base ?? 8,
+        stun: ab.skill5.stun ?? 1,
+      } : {
+        key: 'skill5',
+        idxKey: 'skill5',
+        name: 'Despertar Mítico',
+        description: 'Libera o poder total após 3 turnos em campo.',
+        kind: 'damage',
+        base: 8,
+        stun: 1,
+      };
+      const idx = 4;
+      const ppInfo = card.abilityPP?.skill5 || { current: getDefaultMaxPP(idx), max: getDefaultMaxPP(idx) };
+      mapped.push({ ...ult, locked: !ultimateUnlocked, unlockIn: Math.max(0, 3 - turns), pp: ppInfo.current, ppMax: ppInfo.max });
+      return mapped.slice(0, 5);
+    }
+    // Fallback antigo (basic, power, stun, ultimate)
+    const legacy = [];
+    if (ab.basic) {
+      legacy.push({ key: 'basic', idxKey: 'skill1', name: ab.basic.name, description: ab.basic.description, kind: 'damage', base: 0, pp: card.abilityPP?.skill1?.current ?? getDefaultMaxPP(0), ppMax: card.abilityPP?.skill1?.max ?? getDefaultMaxPP(0) });
+    } else {
+      legacy.push({ key: 'basic', idxKey: 'skill1', name: 'Golpe', description: 'Ataque básico.', kind: 'damage', base: 0, pp: card.abilityPP?.skill1?.current ?? getDefaultMaxPP(0), ppMax: card.abilityPP?.skill1?.max ?? getDefaultMaxPP(0) });
+    }
+    legacy.push({ key: 'power', idxKey: 'skill2', name: 'Golpe Potente', description: 'Ataque reforçado.', kind: 'damage', base: 2, pp: card.abilityPP?.skill2?.current ?? getDefaultMaxPP(1), ppMax: card.abilityPP?.skill2?.max ?? getDefaultMaxPP(1) });
+    legacy.push({ key: 'stun', idxKey: 'skill3', name: 'Atordoar', description: 'Atordoa o alvo por 1 turno.', kind: 'stun', stun: 1, pp: card.abilityPP?.skill3?.current ?? getDefaultMaxPP(2), ppMax: card.abilityPP?.skill3?.max ?? getDefaultMaxPP(2) });
+    if (ab.ultimate) {
+      legacy.push({ key: 'ultimate', idxKey: 'skill4', name: ab.ultimate.name, description: ab.ultimate.description, kind: 'damage', base: 5, pp: card.abilityPP?.skill4?.current ?? getDefaultMaxPP(3), ppMax: card.abilityPP?.skill4?.max ?? getDefaultMaxPP(3) });
+    } else {
+      legacy.push({ key: 'ultimate', idxKey: 'skill4', name: 'Golpe Supremo', description: 'Ataque devastador.', kind: 'damage', base: 5, pp: card.abilityPP?.skill4?.current ?? getDefaultMaxPP(3), ppMax: card.abilityPP?.skill4?.max ?? getDefaultMaxPP(3) });
+    }
+    const pp5 = card.abilityPP?.skill5 || { current: getDefaultMaxPP(4), max: getDefaultMaxPP(4) };
+    legacy.push({ key: 'skill5', idxKey: 'skill5', name: 'Despertar Mítico', description: 'Libera após 3 turnos em campo.', kind: 'damage', base: 8, stun: 1, locked: turns < 3, unlockIn: Math.max(0, 3 - turns), pp: pp5.current, ppMax: pp5.max });
+    return legacy.slice(0, 5);
+  }, []);
+
+  const canUseSkill = useCallback((side, skill) => {
+    if (!skill) return false;
+    if (skill.locked) return false;
+    const card = side === 'player' ? activeCards.player : activeCards.opponent;
+    if (!card) return false;
+    const key = skill.idxKey || 'skill1';
+    const slot = card.abilityPP?.[key];
+    const current = slot?.current ?? getDefaultMaxPP(key === 'skill5' ? 4 : (parseInt(key.replace('skill',''),10)-1));
+    return current > 0;
+  }, [activeCards.player, activeCards.opponent]);
+
+  // Consome 1 PP da habilidade usada
+  const spendPP = useCallback((side, idxKey) => {
+    setActiveCards(prev => {
+      const next = { ...prev };
+      const card = next[side];
+      if (!card) return prev;
+      const abilityPP = { ...(card.abilityPP || {}) };
+      const slot = abilityPP[idxKey] || { current: getDefaultMaxPP(idxKey === 'skill5' ? 4 : (parseInt(idxKey.replace('skill',''),10)-1)), max: getDefaultMaxPP(idxKey === 'skill5' ? 4 : (parseInt(idxKey.replace('skill',''),10)-1)) };
+      abilityPP[idxKey] = { ...slot, current: Math.max(0, (slot.current ?? slot.max) - 1) };
+      next[side] = { ...card, abilityPP };
+      return next;
+    });
+  }, []);
 
   const applyDamage = useCallback((source, targetSide, amount) => {
     setActiveCards(prev => {
@@ -257,16 +403,19 @@ export default function GameRoom({ params }) {
     }
 
     // Próximo turno (incrementa contador global)
-    setGameState(prev => ({
+  setGameState(prev => ({
       ...prev,
       turn: 'opponent',
       turnNumber: prev.turnNumber + 1,
       actionUsed: false,
       playerUltimate: prev.playerUltimate
     }));
+  // Início do turno do oponente: incrementa contador de turnos em campo
+  setTimeout(() => incrementOnFieldTurns('opponent'), 0);
+  // PP não regenera por turno
 
     // Simular turno do oponente
-    setTimeout(() => {
+  setTimeout(() => {
       // Início do turno do oponente: checa mudança de campo em turnos pares
       setFieldTransitioning(false);
       const isEven = ((gameState.turnNumber) % 2 === 0); // já incrementado acima
@@ -282,27 +431,58 @@ export default function GameRoom({ params }) {
         }, 500);
       }
 
-      // Opponent simple AI: if has active, attack back
-      setActiveCards(prev => {
-        if (prev.opponent && prev.player) {
-          const dmg = calculateDamage(prev.opponent, prev.player, 0);
-          const newHealth = (prev.player.health || 0) - mitigateIncomingDamage(prev.player, dmg);
-          if (newHealth <= 0) {
-            setDiscardPile(dp => [...dp, prev.player]);
-            setLastKOSide('player');
-            return { ...prev, player: null };
+  // Opponent simple AI: usa habilidade disponível com PP; respeita atordoamento e lock
+      setTimeout(() => {
+        setGameState(prev => {
+          // Se o oponente está atordoado, consome o stun e passa o turno
+          if (prev.opponentStun > 0) {
+            return { ...prev, opponentStun: prev.opponentStun - 1 };
           }
-          return { ...prev, player: { ...prev.player, health: newHealth } };
-        }
-        return prev;
-      });
+          return prev;
+        });
+
+        setActiveCards(prev => {
+          const ac = { ...prev };
+          if (ac.opponent && ac.player) {
+            const skills = getSkills(ac.opponent);
+            // escolhe skill que pode pagar (prioriza 5ª se disponível, depois stun, depois dano)
+            const usable = skills.filter(s => canUseSkill('opponent', s));
+            let chosen = usable.find(s => s.key === 'skill5') || usable.find(s => s.kind === 'stun') || usable[usable.length - 1] || usable[0];
+            if (chosen) {
+              // consome PP
+              spendPP('opponent', chosen.idxKey || 'skill1');
+              if (chosen.kind === 'stun') {
+                // aplica stun no jogador
+                setGameState(g => ({ ...g, playerStun: (g.playerStun ?? 0) + (chosen.stun ?? 1) }));
+              } else {
+                // dano
+                const dmg = calculateDamage(ac.opponent, ac.player, chosen.base ?? 0);
+                const newHealth = (ac.player.health || 0) - mitigateIncomingDamage(ac.player, dmg);
+                if (newHealth <= 0) {
+                  setDiscardPile(dp => [...dp, ac.player]);
+                  setLastKOSide('player');
+                  ac.player = null;
+                } else {
+                  ac.player = { ...ac.player, health: newHealth };
+                }
+              }
+            }
+          }
+          return ac;
+        });
+      }, 300);
       // Transição de volta para o jogador: incrementa turno e verifica campo par
-      setGameState(prev => ({
+  setGameState(prev => ({
         ...prev,
         turn: 'player',
         turnNumber: prev.turnNumber + 1,
-        opponentUltimate: prev.opponentUltimate
+        opponentUltimate: prev.opponentUltimate,
+        // reduz atordoamento do jogador no início do turno dele
+        playerStun: Math.max(0, (prev.playerStun ?? 0) - 1)
       }));
+  // Início do turno do jogador: incrementa contador de turnos em campo
+  setTimeout(() => incrementOnFieldTurns('player'), 0);
+  // PP não regenera por turno
 
       const willBeEven = ((gameState.turnNumber + 1) % 2 === 0);
       if (willBeEven) {
@@ -316,34 +496,29 @@ export default function GameRoom({ params }) {
         }, 500);
       }
     }, 1500);
-  }, [gameState.turn, gameState.turnNumber, skillCooldown, fields, currentField, calculateDamage, mitigateIncomingDamage, applyPassivesOnFieldChange]);
+  }, [gameState.turn, gameState.turnNumber, skillCooldown, fields, currentField, calculateDamage, mitigateIncomingDamage, applyPassivesOnFieldChange, getSkills, canUseSkill, incrementOnFieldTurns, spendPP]);
 
-  const triggerBasic = useCallback(() => {
+  const castSkill = useCallback((index) => {
     if (gameState.turn !== 'player' || gameState.actionUsed || !activeCards.player) return;
-    const base = 0; // dano base da habilidade 1
-    const damage = calculateDamage(activeCards.player, activeCards.opponent, base);
-    applyDamage('player', 'opponent', damage);
-  setGameState(prev => ({ ...prev, actionUsed: true }));
-    setShowSkillMenu(false);
-    // fim do turno imediatamente após usar habilidade
-    setTimeout(() => endTurn(), 400);
-  }, [gameState.turn, gameState.actionUsed, activeCards.player, activeCards.opponent, applyDamage, calculateDamage, endTurn]);
-
-  const triggerUltimate = useCallback(() => {
-    if (gameState.turn !== 'player' || gameState.actionUsed || !activeCards.player) return;
-    if ((activeCards.player.ultimateUsesRemaining || 0) <= 0) return;
-    const base = 5; // dano base adicional da ultimate
-    const damage = calculateDamage(activeCards.player, activeCards.opponent, base);
-    applyDamage('player', 'opponent', damage);
-    // Consome um uso da ultimate do ativo
-    setActiveCards(prev => ({
-      ...prev,
-      player: prev.player ? { ...prev.player, ultimateUsesRemaining: Math.max(0, (prev.player.ultimateUsesRemaining || 0) - 1) } : prev.player
-    }));
-    setGameState(prev => ({ ...prev, actionUsed: true }));
+    // Se jogador está atordoado, não pode agir
+    if ((gameState.playerStun ?? 0) > 0) return;
+    const skills = getSkills(activeCards.player);
+    const skill = skills[index];
+    if (!skill) return;
+    if (!canUseSkill('player', skill)) return;
+  // Consome PP
+  spendPP('player', skill.idxKey || 'skill1');
+    if (skill.kind === 'stun') {
+      // Aplica stun no oponente
+      setGameState(prev => ({ ...prev, opponentStun: (prev.opponentStun ?? 0) + (skill.stun ?? 1), actionUsed: true }));
+    } else {
+      const damage = calculateDamage(activeCards.player, activeCards.opponent, skill.base ?? 0);
+      applyDamage('player', 'opponent', damage);
+      setGameState(prev => ({ ...prev, actionUsed: true }));
+    }
     setShowSkillMenu(false);
     setTimeout(() => endTurn(), 400);
-  }, [gameState.turn, gameState.actionUsed, activeCards.player, activeCards.opponent, applyDamage, calculateDamage, endTurn]);
+  }, [gameState.turn, gameState.actionUsed, gameState.playerStun, activeCards.player, activeCards.opponent, getSkills, canUseSkill, spendPP, calculateDamage, applyDamage, endTurn]);
 
   // Ação: Trocar (inicia seleção do banco)
   const startSwitch = useCallback(() => {
@@ -483,26 +658,31 @@ export default function GameRoom({ params }) {
                         <div className="text-[10px] font-bold tracking-wide text-neutral-300">AÇÕES</div>
                         <button onClick={() => setShowSkillMenu(false)} className="text-neutral-400 hover:text-neutral-200 text-xs">✖</button>
                       </div>
-                      <button
-                        onClick={triggerBasic}
-                        disabled={gameState.actionUsed}
-                        className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${gameState.actionUsed ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : 'bg-blue-700/40 hover:bg-blue-600/50 border-blue-600'}`}
-                      >
-                        Habilidade 1
-                        <span className="block text-[9px] font-normal text-neutral-300">Ataque básico</span>
-                      </button>
                       {(() => {
-                        const uses = activeCards.player?.ultimateUsesRemaining ?? 0;
-                        const isDisabled = gameState.actionUsed || uses <= 0;
+                        const skills = getSkills(activeCards.player);
                         return (
-                          <button
-                            onClick={triggerUltimate}
-                            disabled={isDisabled}
-                            className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${isDisabled ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : 'bg-amber-600/40 hover:bg-amber-500/50 border-amber-500'}`}
-                          >
-                            Ultimate ({uses}/1)
-                            <span className="block text-[9px] font-normal text-neutral-200">Poder especial (uso limitado)</span>
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            {skills.map((s, i) => {
+                              const disabled = gameState.actionUsed || !canUseSkill('player', s) || (gameState.playerStun ?? 0) > 0;
+                              const palette = i === 0 ? 'bg-blue-700/40 hover:bg-blue-600/50 border-blue-600' : i === 1 ? 'bg-cyan-700/40 hover:bg-cyan-600/50 border-cyan-600' : i === 2 ? 'bg-purple-700/40 hover:bg-purple-600/50 border-purple-600' : 'bg-amber-600/40 hover:bg-amber-500/50 border-amber-500';
+                              const glow = s.key === 'skill5' && !s.locked && !disabled ? 'animate-pulse ring-2 ring-amber-400/70 ring-offset-1 ring-offset-black/30' : '';
+                              return (
+                                <button
+                                  key={s.key}
+                                  onClick={() => castSkill(i)}
+                                  disabled={disabled}
+                                  className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${disabled ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : palette} ${glow}`}
+                                >
+                                  {s.name} <span className="text-[10px] text-yellow-200">(PP {s.pp}/{s.ppMax})</span>
+                                  <span className="block text-[9px] font-normal text-neutral-300">{s.description}</span>
+                                  {s.locked && (
+                                    <span className="block text-[9px] font-normal text-amber-300">🔒 Desbloqueia em {s.unlockIn} turno(s)</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+            {/* PP não tem barra global */}
+                          </div>
                         );
                       })()}
                       <button

@@ -8,8 +8,6 @@ export const CARD_CATEGORIES = {
 };
 
 export const CARD_RARITIES = {
-  COMMON: 'Comum',
-  RARE: 'Raro',
   EPIC: 'Épico',
   LEGENDARY: 'Lendário',
   MYTHIC: 'Mítico'
@@ -60,22 +58,12 @@ export const cardsDatabase = [
     rarity: CARD_RARITIES.EPIC,
     element: ELEMENTS.EARTH,
     abilities: {
-      basic: {
-        name: 'Confusão da Floresta',
-        description: 'Reduz o ataque do oponente em 2 pontos por 2 turnos',
-        cost: 2,
-        cooldown: 0
-      },
-      ultimate: {
-        name: 'Fúria da Mata',
-        description: 'Invoca espíritos da floresta que causam 5 pontos de dano e atordoam o inimigo por 1 turno',
-        cost: 4,
-        cooldown: 3
-      },
-      passive: {
-        name: 'Protetor da Natureza',
-        description: 'Ganha +1 de defesa para cada aliado da floresta em campo'
-      }
+      skill1: { name: 'Confusão da Floresta', description: 'Reduz o ataque do oponente em 2 por 2 turnos', cost: 2, kind: 'debuff' },
+      skill2: { name: 'Golpe de Vinha', description: 'Ataque reforçado pelas raízes', cost: 2, kind: 'damage', base: 2 },
+      skill3: { name: 'Enredar', description: 'Atordoa o alvo por 1 turno', cost: 3, kind: 'stun', stun: 1 },
+      skill4: { name: 'Fúria da Mata', description: 'Espíritos causam dano massivo e atordoam', cost: 4, kind: 'damage', base: 5, stun: 1 },
+  skill5: { name: 'Despertar da Mata', description: 'Poder ancestral da floresta, golpe devastador após resistência em campo.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Protetor da Natureza', description: 'Ganha +1 de defesa para cada aliado da floresta em campo' }
     },
     lore: 'Protetor da floresta com cabelos vermelhos e pés virados para trás. Confunde caçadores e pune os que destroem a natureza.',
     discovered: true,
@@ -88,6 +76,49 @@ export const cardsDatabase = [
     seasonalBonus: null
   },
   {
+    id: 'cai001',
+    name: 'Caiçara',
+    discovered: true
+  },
+  {
+    id: 'tupa001',
+    name: 'Tupã',
+    region: REGIONS.AMAZONIA,
+    category: CARD_CATEGORIES.GUARDIANS,
+    type: CARD_TYPES.CREATURE,
+    cost: 6,
+    attack: 8,
+    defense: 7,
+    health: 14,
+    rarity: CARD_RARITIES.MYTHIC,
+    element: ELEMENTS.EARTH,
+    abilities: {
+      skill1: { name: 'Raio Divino', description: 'Golpe de raio com chance de atordoar', cost: 3, kind: 'stun', base: 3, stun: 1, chance: 0.5 },
+      skill2: { name: 'Trovão Ecoante', description: 'Dano elétrico em alvo único', cost: 3, kind: 'damage', base: 4 },
+      skill3: { name: 'Calmaria Antes da Tempestade', description: 'Enfraquece o inimigo reduzindo ataque', cost: 2, kind: 'debuff' },
+      skill4: { name: 'Fúria da Tempestade', description: 'Tempestade devastadora', cost: 8, kind: 'damage', base: 8, stun: 1 },
+  skill5: { name: 'Julgamento Celeste', description: 'O trovão final de Tupã que rasga os céus.', cost: 7, kind: 'damage', base: 9 },
+  passive: { name: 'O Criador', description: 'Ao entrar, torna o campo sagrado; +1 defesa para aliados' }
+    },
+    lore: 'Deus das tempestades e protetor da floresta, Tupã é temido por todos os seres que habitam a Amazônia.',
+    discovered: true
+  },
+  {
+    id: 'boiu001',
+    name: 'Boiuna',
+    discovered: true
+  },
+  {
+    id: 'cabo001',
+    name: 'Caboclo D’Água',
+    discovered: true
+  },
+  {
+    id:'corpo001',
+    name: 'Corpo Seco',
+    discovered: true
+  },
+  {
     id: 'iar001',
     name: 'Iara',
     region: REGIONS.AMAZONIA,
@@ -97,25 +128,15 @@ export const cardsDatabase = [
     attack: 6,
     defense: 5,
     health: 12,
-    rarity: CARD_RARITIES.RARE,
+  rarity: CARD_RARITIES.EPIC,
     element: ELEMENTS.WATER,
     abilities: {
-      basic: {
-        name: 'Canto Hipnótico',
-        description: '30% de chance de fazer o oponente perder um turno',
-        cost: 2,
-        cooldown: 1
-      },
-      ultimate: {
-        name: 'Abraço das Profundezas',
-        description: 'Arrasta o inimigo para as águas, causando 7 pontos de dano e bloqueando suas habilidades por 2 turnos',
-        cost: 5,
-        cooldown: 4
-      },
-      passive: {
-        name: 'Domínio Aquático',
-        description: 'Recupera 1 ponto de vida por turno em ambientes aquáticos'
-      }
+      skill1: { name: 'Canto Hipnótico', description: '30% de chance de atordoar por 1 turno', cost: 2, kind: 'stun', stun: 1, chance: 0.3 },
+      skill2: { name: 'Jato d’Água', description: 'Ataque aquático veloz', cost: 2, kind: 'damage', base: 2 },
+      skill3: { name: 'Redemoinho', description: 'Reduz a mobilidade do alvo', cost: 3, kind: 'debuff' },
+      skill4: { name: 'Abraço das Profundezas', description: 'Arrasta e causa grande dano', cost: 5, kind: 'damage', base: 5 },
+  skill5: { name: 'Canto do Abismo', description: 'Um chamado profundo que concentra a fúria das águas.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Domínio Aquático', description: 'Recupera 1 ponto de vida por turno em ambientes aquáticos' }
     },
     lore: 'Sereia dos rios brasileiros que atrai homens com seu canto mágico, levando-os para o fundo das águas.',
     discovered: true,
@@ -144,22 +165,12 @@ export const cardsDatabase = [
     rarity: CARD_RARITIES.LEGENDARY,
     element: ELEMENTS.WATER,
     abilities: {
-      basic: {
-        name: 'Transformação Noturna',
-        description: 'Durante turnos pares, ganha +3/+3 e sedução',
-        cost: 3,
-        cooldown: 0
-      },
-      ultimate: {
-        name: 'Encanto do Sedutor',
-        description: 'Controla uma criatura inimiga por 2 turnos',
-        cost: 6,
-        cooldown: 5
-      },
-      passive: {
-        name: 'Dualidade',
-        description: 'Alterna entre forma humana e golfinho a cada turno'
-      }
+      skill1: { name: 'Transformação Noturna', description: 'Ganha poder adicional em turnos pares', cost: 2, kind: 'buff' },
+      skill2: { name: 'Investida Aquática', description: 'Ataque potente aquático', cost: 2, kind: 'damage', base: 3 },
+      skill3: { name: 'Encanto', description: 'Reduz a defesa do alvo', cost: 3, kind: 'debuff' },
+      skill4: { name: 'Encanto do Sedutor', description: 'Dobra o impacto e controla brevemente', cost: 5, kind: 'damage', base: 5 },
+  skill5: { name: 'Maré Rubra', description: 'Uma onda avassaladora que varre o campo.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Dualidade', description: 'Alterna entre forma humana e golfinho a cada turno' }
     },
     lore: 'Golfinho encantado que se transforma em homem sedutor nas noites de festa.',
     discovered: true,
@@ -175,9 +186,6 @@ export const cardsDatabase = [
       description: 'Durante Festa Junina, Boto fica irresistível'
     }
   },
-
-
-//REGIAO NORDESTE
 {
     id: 'enc001',
     name: 'O Encourado',
@@ -190,24 +198,14 @@ export const cardsDatabase = [
     health: 10,
     rarity: CARD_RARITIES.MYTHIC,
     element: ELEMENTS.AIR,
-    abilities: {
-        basic: {
-            name: 'Hemorragia',
-            description: 'Causa 2 pontos de dano deixando o oponente sangrando por 2 turnos (1 de dano por turno)',
-            cost: 1,
-            cooldown: 1
-        },
-        ultimate: {
-            name: 'Quando as Galinhas Param de Botar',
-            description: 'Recupera 5 pontos de vida e causa 3 pontos de dano ao oponente',
-            cost: 4,
-            cooldown: 3
-        },
-        passive: {
-            name: 'Sede de Sangue',
-            description: 'A cada 2 turnos, recupera 1 ponto de vida'
-        }
-    },
+  abilities: {
+    skill1: { name: 'Hemorragia', description: 'Causa dano e sangramento', cost: 1, kind: 'damage', base: 2 },
+    skill2: { name: 'Lâmina Seca', description: 'Ataque cortante', cost: 2, kind: 'damage', base: 2 },
+    skill3: { name: 'Medo Noturno', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
+    skill4: { name: 'Quando as Galinhas Param de Botar', description: 'Recupera vida e causa dano', cost: 4, kind: 'damage', base: 3, heal: 5 },
+  skill5: { name: 'Banho de Sangue', description: 'Ataque final brutal que aterroriza a noite.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Sede de Sangue', description: 'A cada 2 turnos, recupera 1 ponto de vida' }
+  },
     lore: 'Um vampiro que se alimenta do sangue dos animais da caatinga. Persegue especialmente aqueles que não vão à igreja.',
     discovered: true,
     images: {
@@ -215,11 +213,9 @@ export const cardsDatabase = [
         full: '/images/cards/full/encourado.jpg'
     },
     tags: ['travessura', 'mobilidade', 'esquiva', 'vento'],
-    unlockCondition: 'Starter card - sempre disponível',
+    unlockCondition: 'Banner Semanal',
     seasonalBonus: null
 },
-
-  // REGIÃO NACIONAL
   {
     id: 'sac001',
     name: 'Saci-Pererê',
@@ -230,26 +226,16 @@ export const cardsDatabase = [
     attack: 5,
     defense: 6,
     health: 10,
-    rarity: CARD_RARITIES.COMMON,
+  rarity: CARD_RARITIES.EPIC,
     element: ELEMENTS.AIR,
     abilities: {
-      basic: {
-        name: 'Travessura',
-        description: 'Pode roubar um item do oponente',
-        cost: 1,
-        cooldown: 1
+        skill1: { name: 'Travessura', description: 'Rouba um item do oponente', cost: 1, kind: 'debuff' },
+        skill2: { name: 'Chute do Redemoinho', description: 'Ataque rápido', cost: 2, kind: 'damage', base: 2 },
+        skill3: { name: 'Poeira nos Olhos', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
+        skill4: { name: 'Redemoinho Caótico', description: 'Dano em área com chance de desarmar', cost: 4, kind: 'damage', base: 4 },
+  skill5: { name: 'Tempestade de Redemoinhos', description: 'Um turbilhão incontrolável que leva tudo.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Astúcia', description: '15% de chance de esquivar completamente de qualquer ataque' }
       },
-      ultimate: {
-        name: 'Redemoinho Caótico',
-        description: 'Cria um tornado que causa 4 pontos de dano a todos os inimigos e tem 40% de chance de desarmar suas cartas de equipamento',
-        cost: 4,
-        cooldown: 3
-      },
-      passive: {
-        name: 'Astúcia',
-        description: '15% de chance de esquivar completamente de qualquer ataque'
-      }
-    },
     lore: 'Menino negro de uma perna só que usa gorro vermelho. Conhecido por suas travessuras e por causar pequenos transtornos.',
     discovered: true,
     images: {
@@ -260,11 +246,9 @@ export const cardsDatabase = [
     unlockCondition: 'Starter card - sempre disponível',
     seasonalBonus: null
   },
-
-  // REGIÃO SUL/SUDESTE
   {
     id: 'boi001',
-    name: 'Boitatá - A Serpente de Fogo',
+    name: 'Boitatá',
     region: REGIONS.SOUTHEAST,
     category: CARD_CATEGORIES.GUARDIANS,
     type: CARD_TYPES.CREATURE,
@@ -275,22 +259,12 @@ export const cardsDatabase = [
     rarity: CARD_RARITIES.LEGENDARY,
     element: ELEMENTS.FIRE,
     abilities: {
-      basic: {
-        name: 'Fogo Protetor',
-        description: 'Causa 3 pontos de dano ao oponente a cada turno',
-        cost: 3,
-        cooldown: 0
-      },
-      ultimate: {
-        name: 'Incêndio Purificador',
-        description: 'Lança uma onda de chamas que causa 8 pontos de dano e queima o inimigo por 3 turnos (2 de dano por turno)',
-        cost: 6,
-        cooldown: 4
-      },
-      passive: {
-        name: 'Corpo Flamejante',
-        description: 'Reflete 25% do dano físico recebido de volta ao atacante'
-      }
+      skill1: { name: 'Fogo Protetor', description: 'Causa dano contínuo', cost: 2, kind: 'damage', base: 3 },
+      skill2: { name: 'Chama Ancestral', description: 'Explosão de fogo', cost: 3, kind: 'damage', base: 3 },
+      skill3: { name: 'Muralha de Fogo', description: 'Reduz o ataque do alvo', cost: 3, kind: 'debuff' },
+      skill4: { name: 'Incêndio Purificador', description: 'Onda de chamas devastadora', cost: 5, kind: 'damage', base: 6 },
+  skill5: { name: 'Inferno da Selva', description: 'Chamas ancestrais que consomem tudo.', cost: 7, kind: 'damage', base: 9 },
+  passive: { name: 'Corpo Flamejante', description: 'Reflete parte do dano recebido' }
     },
     lore: 'Serpente de fogo gigante que protege os campos e florestas contra incêndios e destruição.',
     discovered: true,
@@ -315,22 +289,12 @@ export const cardsDatabase = [
     rarity: CARD_RARITIES.EPIC,
     element: ELEMENTS.SPIRIT,
     abilities: {
-      basic: {
-        name: 'Pesadelo',
-        description: 'Reduz a defesa do oponente em 3 pontos',
-        cost: 2,
-        cooldown: 1
-      },
-      ultimate: {
-        name: 'Maldição da Transformação',
-        description: 'Transforma temporariamente uma carta inimiga em uma criatura fraca com apenas 3 de ataque e defesa por 2 turnos',
-        cost: 5,
-        cooldown: 4
-      },
-      passive: {
-        name: 'Resistência Arcana',
-        description: '30% de resistência contra habilidades mágicas inimigas'
-      }
+      skill1: { name: 'Pesadelo', description: 'Reduz a defesa do oponente', cost: 2, kind: 'debuff' },
+      skill2: { name: 'Garra Arcana', description: 'Ataque mágico', cost: 2, kind: 'damage', base: 2 },
+      skill3: { name: 'Assombro', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
+      skill4: { name: 'Maldição da Transformação', description: 'Enfraquece muito o alvo temporariamente', cost: 5, kind: 'debuff' },
+  skill5: { name: 'Pavor Arcano', description: 'Canaliza terrores antigos em um ataque esmagador.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Resistência Arcana', description: '30% de resistência contra habilidades mágicas inimigas' }
     },
     lore: 'Bruxa com cabeça de jacaré que rapta crianças desobedientes. Personagem importante do Sítio do Picapau Amarelo.',
     discovered: true,
@@ -355,22 +319,12 @@ export const cardsDatabase = [
     rarity: CARD_RARITIES.EPIC,
     element: ELEMENTS.SPIRIT,
     abilities: {
-      basic: {
-        name: 'Galope Fantasma',
-        description: 'Pode atacar diretamente ignorando criaturas bloqueadoras',
-        cost: 2,
-        cooldown: 1
-      },
-      ultimate: {
-        name: 'Uivo do Terror',
-        description: 'Aterroriza todos os inimigos, reduzindo ataque e defesa em 2 por 3 turnos',
-        cost: 4,
-        cooldown: 3
-      },
-      passive: {
-        name: 'Forma Etérea',
-        description: '20% de chance de ignorar ataques físicos'
-      }
+      skill1: { name: 'Galope Fantasma', description: 'Ataque que ignora bloqueio', cost: 2, kind: 'damage', base: 2 },
+      skill2: { name: 'Chamas Assombradas', description: 'Ataque flamejante', cost: 2, kind: 'damage', base: 2 },
+      skill3: { name: 'Assombro Estridente', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
+      skill4: { name: 'Uivo do Terror', description: 'Aterroriza e reduz atributos', cost: 4, kind: 'debuff' },
+  skill5: { name: 'Ruína Fantasmal', description: 'Um clarão sobrenatural que devasta o alvo.', cost: 6, kind: 'damage', base: 8 },
+  passive: { name: 'Forma Etérea', description: '20% de chance de ignorar ataques físicos' }
     },
     lore: 'Alma penada que galopa pelas noites assombrando os pecadores.',
     discovered: true,
@@ -388,7 +342,7 @@ export const cardsDatabase = [
 export const CARD_COMBOS = {
   FOREST_GUARDIANS: {
     name: 'Guardiões da Mata',
-    cards: ['cur001', 'cai001'], // Curupira + Caipora
+  cards: ['cur001', 'cai001'], // Curupira + Caiçara (TODO: adicionar Caipora quando existir)
     effect: {
       type: 'defense_multiplier',
       value: 2.0,
@@ -406,7 +360,7 @@ export const CARD_COMBOS = {
   },
   NIGHT_TERROR: {
     name: 'Terror Noturno',
-    cards: ['mul001', 'cor001'], // Mula sem Cabeça + Corpo-Seco
+  cards: ['mul001', 'corpo001'], // Mula sem Cabeça + Corpo-Seco
     effect: {
       type: 'attack_multiplier',
       value: 1.75,
@@ -415,7 +369,7 @@ export const CARD_COMBOS = {
   },
   DIVINE_PROTECTION: {
     name: 'Proteção Divina',
-    cards: ['tup001', 'gua001'], // Tupã + Guaraci
+  cards: ['tupa001', 'gua001'], // Tupã + Guaraci (TODO: adicionar Guaraci quando existir)
     effect: {
       type: 'damage_reduction',
       value: 0.5,

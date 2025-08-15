@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import PageLayout from '../../../components/UI/PageLayout';
 import { cardsDatabase, CARD_CATEGORIES, REGIONS, getCardStats } from '../../../data/cardsDatabase';
 import CardImage from '../../../components/Card/CardImage';
 import CardDetail from '../../../components/Card/CardDetail';
@@ -27,8 +28,6 @@ export default function CardCatalog() {
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
-      case 'Comum': return 'border-gray-500 text-gray-400';
-      case 'Raro': return 'border-blue-500 text-blue-400';
       case 'Épico': return 'border-purple-500 text-purple-400';
       case 'Lendário': return 'border-yellow-500 text-yellow-400';
       case 'Mítico': return 'border-red-500 text-red-400';
@@ -41,7 +40,7 @@ export default function CardCatalog() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout>
       {/* Banner de eventos */}
       <EventBanner />
       
@@ -133,9 +132,11 @@ export default function CardCatalog() {
                         </div>
                       </div>
                     )}
-                    <div className="text-xs text-yellow-400 line-clamp-2">
-                      {card.ability}
-                    </div>
+                    {card.element && (
+                      <div className="text-xs text-yellow-400 line-clamp-2">
+                        {card.element}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-xs sm:text-sm text-gray-500">
@@ -194,6 +195,6 @@ export default function CardCatalog() {
           </Link>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

@@ -14,7 +14,7 @@ export default function CardList({ cards, onCardClick, showFilters = true }) {
 
   const categories = ['all', 'Guardiões da Floresta', 'Espíritos das Águas', 'Assombrações', 'Criaturas Noturnas'];
   const regions = ['all', 'Amazônia', 'Nacional', 'Sul/Sudeste', 'Nordeste', 'Centro-Oeste'];
-  const rarities = ['all', 'Comum', 'Raro', 'Épico', 'Lendário'];
+  const rarities = ['all', 'Épico', 'Lendário', 'Mítico'];
 
   const filteredCards = cards.filter(card => {
     const matchesCategory = filters.category === 'all' || card.category === filters.category;

@@ -74,8 +74,8 @@ export class GameEngine {
       return { success: false, error: 'Não é possível jogar esta carta' };
     }
 
-    // Gastar mana
-    player.mana -= card.cost;
+  // Gastar mana (cartas não têm mais custo; custos estão nas habilidades)
+  player.mana -= (card.cost || 0);
 
     // Remover carta da mão
     player.hand.splice(cardIndex, 1);
@@ -98,7 +98,8 @@ export class GameEngine {
     }
 
     // Verificar mana
-    if (player.mana < card.cost) {
+  // Cartas não têm mais custo; manter compat por segurança
+  if (player.mana < (card.cost || 0)) {
       return false;
     }
 
@@ -356,12 +357,14 @@ export const DeckUtils = {
 
   // Calcular estatísticas do deck
   calculateDeckStats(cards) {
-    const totalCost = cards.reduce((sum, card) => sum + card.cost, 0);
-    const averageCost = totalCost / cards.length;
+  // Compat: sem custo por carta, agregados baseados em ataque
+  const totalCost = cards.reduce((sum, card) => sum + (card.cost || 0), 0);
+  const averageCost = cards.length ? (totalCost / cards.length) : 0;
 
     const costDistribution = {};
     cards.forEach(card => {
-      costDistribution[card.cost] = (costDistribution[card.cost] || 0) + 1;
+  const c = card.cost || 0;
+  costDistribution[c] = (costDistribution[c] || 0) + 1;
     });
 
     const categoryDistribution = {};

@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import PageLayout from '../../../components/UI/PageLayout';
 
 export default function DeckBuilder() {
   const [selectedDeck, setSelectedDeck] = useState('deck1');
@@ -12,14 +13,14 @@ export default function DeckBuilder() {
 
   // Dados mock das cartas da coleção
   const playerCollection = [
-    { id: 1, name: 'Curupira', category: 'Guardiões', attack: 7, defense: 8, life: 15, cost: 5, owned: 3, inDeck: 2 },
-    { id: 2, name: 'Iara', category: 'Águas', attack: 6, defense: 5, life: 12, cost: 4, owned: 2, inDeck: 1 },
-    { id: 3, name: 'Saci-Pererê', category: 'Assombrações', attack: 5, defense: 6, life: 10, cost: 3, owned: 4, inDeck: 2 },
-    { id: 4, name: 'Boitatá', category: 'Guardiões', attack: 9, defense: 7, life: 18, cost: 7, owned: 1, inDeck: 1 },
-    { id: 5, name: 'Cuca', category: 'Assombrações', attack: 8, defense: 9, life: 16, cost: 6, owned: 2, inDeck: 0 },
-    { id: 6, name: 'Lobisomem', category: 'Criaturas', attack: 7, defense: 5, life: 14, cost: 5, owned: 3, inDeck: 1 },
-    { id: 7, name: 'Mula sem Cabeça', category: 'Assombrações', attack: 6, defense: 7, life: 13, cost: 4, owned: 2, inDeck: 0 },
-    { id: 8, name: 'Boto Cor-de-Rosa', category: 'Águas', attack: 5, defense: 6, life: 11, cost: 4, owned: 1, inDeck: 1 }
+    { id: 1, name: 'Curupira', category: 'Guardiões', attack: 7, defense: 8, life: 15, owned: 3, inDeck: 2 },
+    { id: 2, name: 'Iara', category: 'Águas', attack: 6, defense: 5, life: 12, owned: 2, inDeck: 1 },
+    { id: 3, name: 'Saci-Pererê', category: 'Assombrações', attack: 5, defense: 6, life: 10, owned: 4, inDeck: 2 },
+    { id: 4, name: 'Boitatá', category: 'Guardiões', attack: 9, defense: 7, life: 18, owned: 1, inDeck: 1 },
+    { id: 5, name: 'Cuca', category: 'Assombrações', attack: 8, defense: 9, life: 16, owned: 2, inDeck: 0 },
+    { id: 6, name: 'Lobisomem', category: 'Criaturas', attack: 7, defense: 5, life: 14, owned: 3, inDeck: 1 },
+    { id: 7, name: 'Mula sem Cabeça', category: 'Assombrações', attack: 6, defense: 7, life: 13, owned: 2, inDeck: 0 },
+    { id: 8, name: 'Boto Cor-de-Rosa', category: 'Águas', attack: 5, defense: 6, life: 11, owned: 1, inDeck: 1 }
   ];
 
   // Decks salvos
@@ -99,16 +100,16 @@ export default function DeckBuilder() {
   };
 
   const getTotalCards = () => getCurrentDeck().cards.reduce((sum, card) => sum + card.quantity, 0);
-  const getAverageCost = () => {
+  const getAverageAttack = () => {
     const deckCards = getCurrentDeckCards();
     if (deckCards.length === 0) return 0;
-    const totalCost = deckCards.reduce((sum, card) => sum + (card.cost * card.quantity), 0);
+    const totalAttack = deckCards.reduce((sum, card) => sum + (card.attack * card.quantity), 0);
     const totalCards = deckCards.reduce((sum, card) => sum + card.quantity, 0);
-    return (totalCost / totalCards).toFixed(1);
+    return (totalAttack / totalCards).toFixed(1);
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -191,8 +192,7 @@ export default function DeckBuilder() {
                               <div className="bg-blue-900/50 p-1 rounded">{card.defense}</div>
                               <div className="bg-green-900/50 p-1 rounded">{card.life}</div>
                             </div>
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-yellow-400">💎{card.cost}</span>
+                            <div className="flex justify-end items-center text-xs">
                               <span className="text-gray-400">{card.owned - card.inDeck} restantes</span>
                             </div>
                           </div>
@@ -223,7 +223,7 @@ export default function DeckBuilder() {
                               </div>
                               <div>
                                 <div className="font-semibold">{card.name}</div>
-                                <div className="text-sm text-gray-400">{card.category} • 💎{card.cost}</div>
+                                <div className="text-sm text-gray-400">{card.category}</div>
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -279,8 +279,8 @@ export default function DeckBuilder() {
                   <span className="font-bold">{getTotalCards()}/30</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Custo Médio:</span>
-                  <span className="font-bold text-yellow-400">💎{getAverageCost()}</span>
+                  <span className="text-gray-400">Ataque Médio:</span>
+                  <span className="font-bold text-yellow-400">⚔️{getAverageAttack()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Cartas Únicas:</span>
@@ -336,6 +336,6 @@ export default function DeckBuilder() {
           </Link>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

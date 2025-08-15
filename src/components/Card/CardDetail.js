@@ -8,12 +8,22 @@ export default function CardDetail({ card, onClose = null }) {
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
-      case 'Comum': return 'border-gray-500 text-gray-400 bg-gray-900/20';
-      case 'Raro': return 'border-blue-500 text-blue-400 bg-blue-900/20';
       case 'Épico': return 'border-purple-500 text-purple-400 bg-purple-900/20';
       case 'Lendário': return 'border-yellow-500 text-yellow-400 bg-yellow-900/20';
       case 'Mítico': return 'border-red-500 text-red-400 bg-red-900/20';
       default: return 'border-gray-500 text-gray-400 bg-gray-900/20';
+    }
+  };
+
+  const getDefaultMaxPP = (idx) => {
+    // idx is 0-based for skill1..skill5
+    switch (idx) {
+      case 0: return 10;
+      case 1: return 10;
+      case 2: return 5;
+      case 3: return 3;
+      case 4: return 1;
+      default: return 1;
     }
   };
 
@@ -78,66 +88,96 @@ export default function CardDetail({ card, onClose = null }) {
             </div>
           </div>
 
-          {/* Custo e Estatísticas */}
-          <div className="bg-black/40 p-2 sm:p-3 rounded">
-            <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center">
-              <div>
-                <div className="text-xs text-yellow-400">Custo</div>
-                <div className="text-sm sm:text-lg lg:text-xl font-bold">💎{card.cost}</div>
+          {/* Estatísticas */}
+          {card.type === 'creature' && (
+            <div className="bg-black/40 p-2 sm:p-3 rounded">
+              <div className="grid grid-cols-3 gap-1 sm:gap-2 text-center">
+                <div>
+                  <div className="text-xs text-red-400">Ataque</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">⚔️{card.attack}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-blue-400">Defesa</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">🛡️{card.defense}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-green-400">Vida</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">❤️{card.health}</div>
+                </div>
               </div>
-              {card.type === 'creature' && (
-                <>
-                  <div>
-                    <div className="text-xs text-red-400">Ataque</div>
-                    <div className="text-sm sm:text-lg lg:text-xl font-bold">⚔️{card.attack}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-blue-400">Defesa</div>
-                    <div className="text-sm sm:text-lg lg:text-xl font-bold">🛡️{card.defense}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-green-400">Vida</div>
-                    <div className="text-sm sm:text-lg lg:text-xl font-bold">❤️{card.health}</div>
-                  </div>
-                </>
-              )}
             </div>
-          </div>
+          )}
 
           {/* Habilidades */}
           {card.abilities && (
             <div className="space-y-2 sm:space-y-3">
-              {/* Habilidade Básica */}
-              {card.abilities.basic && (
-                <div className="bg-blue-900/30 p-2 sm:p-3 rounded border border-blue-500/30">
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="text-xs sm:text-sm text-blue-400 font-semibold">⚡ Habilidade Básica</div>
-                    <div className="text-xs text-yellow-400">💎{card.abilities.basic.cost}</div>
-                  </div>
-                  <div className="font-semibold mb-1 text-sm sm:text-base">{card.abilities.basic.name}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">{card.abilities.basic.description}</div>
-                  {card.abilities.basic.cooldown > 0 && (
-                    <div className="text-xs text-orange-400 mt-1">
-                      ⏱️ Recarga: {card.abilities.basic.cooldown} turno(s)
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Habilidade Ultimate */}
-              {card.abilities.ultimate && (
-                <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-purple-500/30">
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="text-xs sm:text-sm text-purple-400 font-semibold">🌟 Ultimate</div>
-                    <div className="text-xs text-yellow-400">💎{card.abilities.ultimate.cost}</div>
-                  </div>
-                  <div className="font-semibold mb-1 text-sm sm:text-base">{card.abilities.ultimate.name}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">{card.abilities.ultimate.description}</div>
-                  <div className="text-xs text-orange-400 mt-1">
-                    ⏱️ Recarga: {card.abilities.ultimate.cooldown} turno(s)
-                  </div>
-                </div>
-              )}
+              {(() => {
+                const { abilities } = card;
+                const usesNew = abilities.skill1 || abilities.skill2 || abilities.skill3 || abilities.skill4 || abilities.skill5;
+                if (usesNew) {
+                  const skillBlocks = [abilities.skill1, abilities.skill2, abilities.skill3, abilities.skill4, abilities.skill5].filter(Boolean);
+                  const palettes = [
+                    { box: 'bg-blue-900/30 border-blue-500/30', label: 'text-blue-400' },
+                    { box: 'bg-cyan-900/30 border-cyan-500/30', label: 'text-cyan-400' },
+                    { box: 'bg-purple-900/30 border-purple-500/30', label: 'text-purple-400' },
+                    { box: 'bg-amber-900/30 border-amber-500/30', label: 'text-amber-400' },
+                    { box: 'bg-red-900/30 border-red-500/30', label: 'text-red-400' },
+                  ];
+                  return (
+                    <>
+                      {skillBlocks.map((s, idx) => {
+                        const pal = palettes[idx] || palettes[0];
+                        return (
+                          <div key={`skill-${idx}`} className={`${pal.box} p-2 sm:p-3 rounded border`}>
+                            <div className="flex justify-between items-center mb-1">
+                              <div className={`text-xs sm:text-sm font-semibold ${pal.label}`}>
+                                {idx === 4 ? '🌟 Ultimate' : `Habilidade ${idx + 1}`}
+                              </div>
+                              {/* PP: if current/max not provided, show default max */}
+                              {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
+                                <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
+                              ) : (
+                                <div className="text-xs text-yellow-400">PP {getDefaultMaxPP(idx)}/{getDefaultMaxPP(idx)}</div>
+                              )}
+                            </div>
+                            <div className="font-semibold mb-1 text-sm sm:text-base">{s.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-300">{s.description}</div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
+                }
+                // Fallback antigo: básica e ultimate
+                return (
+                  <>
+                    {abilities.basic && (
+                      <div className="bg-blue-900/30 p-2 sm:p-3 rounded border border-blue-500/30">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-xs sm:text-sm text-blue-400 font-semibold">⚡ Habilidade Básica</div>
+                          <div className="text-xs text-yellow-400">💎{abilities.basic.cost}</div>
+                        </div>
+                        <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.basic.name}</div>
+                        <div className="text-xs sm:text-sm text-gray-300">{abilities.basic.description}</div>
+                        {abilities.basic.cooldown > 0 && (
+                          <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.basic.cooldown} turno(s)</div>
+                        )}
+                      </div>
+                    )}
+                    {abilities.ultimate && (
+                      <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-purple-500/30">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-xs sm:text-sm text-purple-400 font-semibold">🌟 Ultimate</div>
+                          <div className="text-xs text-yellow-400">💎{abilities.ultimate.cost}</div>
+                        </div>
+                        <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.ultimate.name}</div>
+                        <div className="text-xs sm:text-sm text-gray-300">{abilities.ultimate.description}</div>
+                        <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.ultimate.cooldown} turno(s)</div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Habilidade Passiva */}
               {card.abilities.passive && (

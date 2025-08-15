@@ -62,6 +62,22 @@ export default function ActiveZone({
             </div>
           </>
         )}
+        {/* Badge de Ultimate (desbloqueio após 3 turnos em campo) */}
+        {card && (
+          (() => {
+            const turns = card.onFieldTurns || 0;
+            const remaining = Math.max(0, 3 - turns);
+            const show = true; // sempre mostrar estado da ultimate do ativo
+            if (!show) return null;
+            return (
+              <div className="absolute top-1 left-1">
+                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-sm ${remaining > 0 ? 'bg-amber-900/40 border-amber-500/40 text-amber-200' : 'bg-emerald-900/40 border-emerald-500/40 text-emerald-200'}`}>
+                  {remaining > 0 ? `🌟 Ultimate em ${remaining}` : '🌟 Ultimate pronta'}
+                </div>
+              </div>
+            );
+          })()
+        )}
         <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-bold tracking-wide text-neutral-300">ATIVO</div>
       </div>
     </div>

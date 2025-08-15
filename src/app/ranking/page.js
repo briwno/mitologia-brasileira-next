@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import PageLayout from '../../components/UI/PageLayout';
 
 export default function Ranking() {
   const [activeTab, setActiveTab] = useState('global');
@@ -58,7 +59,7 @@ export default function Ranking() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -389,6 +390,6 @@ export default function Ranking() {
           </Link>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

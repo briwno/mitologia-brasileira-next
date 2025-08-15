@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import PageLayout from '../../../components/UI/PageLayout';
 
 export default function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -81,8 +82,9 @@ export default function Quiz() {
 
   if (quizComplete) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white flex items-center justify-center p-4">
-        <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 max-w-md w-full border border-green-500/30 text-center">
+      <PageLayout>
+  <div className="min-h-[70vh] flex items-center justify-center p-4">
+          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 max-w-md w-full border border-green-500/30 text-center">
           <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
             Quiz Concluído!
           </h1>
@@ -128,12 +130,15 @@ export default function Quiz() {
             </div>
           </div>
         </div>
-      </main>
+        
+        {/* Close wrapper */}
+        </div>
+      </PageLayout>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -238,6 +243,6 @@ export default function Quiz() {
           </Link>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

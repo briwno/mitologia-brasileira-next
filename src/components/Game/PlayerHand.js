@@ -91,10 +91,7 @@ export default function PlayerHand({
                       <span className="px-1 rounded bg-blue-900/70 text-blue-200">❤️ {card.health}</span>
                     </div>
                   </div>
-                  {/* Custo */}
-                  <div className="absolute top-0 right-0 bg-neutral-900/80 rounded-bl px-1 py-0.5 text-[10px] font-bold text-blue-300 tracking-wide shadow-lg">
-                    {card.manaCost || card.cost || 0}
-                  </div>
+                  {/* Sem custo por carta: custos estão nas habilidades */}
                 </div>
               </div>
             );
