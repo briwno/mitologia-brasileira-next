@@ -2,44 +2,68 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import PageLayout from '../../../components/UI/PageLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { useCollection } from '@/hooks/useCollection';
+import { cardsDatabase } from '@/data/cardsDatabase';
 
 export default function DeckBuilder() {
+  const { user, isAuthenticated } = useAuth();
+  const { cards: ownedIds, loading: loadingCollection } = useCollection();
   const [selectedDeck, setSelectedDeck] = useState('deck1');
   const [activeTab, setActiveTab] = useState('collection');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
 
-  // Dados mock das cartas da coleção
-  const playerCollection = [
-    { id: 1, name: 'Curupira', category: 'Guardiões', attack: 7, defense: 8, life: 15, owned: 3, inDeck: 2 },
-    { id: 2, name: 'Iara', category: 'Águas', attack: 6, defense: 5, life: 12, owned: 2, inDeck: 1 },
-    { id: 3, name: 'Saci-Pererê', category: 'Assombrações', attack: 5, defense: 6, life: 10, owned: 4, inDeck: 2 },
-    { id: 4, name: 'Boitatá', category: 'Guardiões', attack: 9, defense: 7, life: 18, owned: 1, inDeck: 1 },
-    { id: 5, name: 'Cuca', category: 'Assombrações', attack: 8, defense: 9, life: 16, owned: 2, inDeck: 0 },
-    { id: 6, name: 'Lobisomem', category: 'Criaturas', attack: 7, defense: 5, life: 14, owned: 3, inDeck: 1 },
-    { id: 7, name: 'Mula sem Cabeça', category: 'Assombrações', attack: 6, defense: 7, life: 13, owned: 2, inDeck: 0 },
-    { id: 8, name: 'Boto Cor-de-Rosa', category: 'Águas', attack: 5, defense: 6, life: 11, owned: 1, inDeck: 1 }
+  // Derivar coleção real do usuário quando autenticado
+  const realCollection = useMemo(() => {
+    if (!isAuthenticated() || !ownedIds?.length) return [];
+    const byId = new Map(cardsDatabase.map(c => [c.id, c]));
+    return ownedIds
+      .map(id => byId.get(id))
+      .filter(Boolean)
+      .map(card => ({
+        id: card.id,
+        name: card.name,
+        category: card.category,
+        attack: card.attack,
+        defense: card.defense,
+        life: card.health,
+        owned: 1, // coleção atual não controla duplicatas
+        inDeck: 0,
+      }));
+  }, [ownedIds, isAuthenticated]);
+
+  // Fallback mock para quando não autenticado
+  const mockCollection = [
+    { id: 'cur001', name: 'Curupira', category: 'Guardiões da Floresta', attack: 7, defense: 8, life: 15, owned: 1, inDeck: 0 },
+    { id: 'iar001', name: 'Iara', category: 'Espíritos das Águas', attack: 6, defense: 5, life: 12, owned: 1, inDeck: 0 },
+    { id: 'sac001', name: 'Saci-Pererê', category: 'Assombrações', attack: 5, defense: 6, life: 10, owned: 1, inDeck: 0 },
+    { id: 'boi001', name: 'Boitatá', category: 'Guardiões da Floresta', attack: 9, defense: 7, life: 18, owned: 1, inDeck: 0 },
   ];
+
+  const playerCollection = isAuthenticated() ? realCollection : mockCollection;
 
   // Decks salvos
   const [decks, setDecks] = useState({
     deck1: {
       name: 'Deck Amazônico',
       cards: [
-        { id: 1, quantity: 2 }, { id: 2, quantity: 1 }, { id: 4, quantity: 1 }, { id: 8, quantity: 1 }
+        // vazio por padrão (vamos montar a partir da coleção)
       ]
     },
     deck2: {
       name: 'Deck Assombrado',
-      cards: [
-        { id: 3, quantity: 2 }, { id: 6, quantity: 1 }
-      ]
+      cards: []
     }
   });
 
-  const categories = ['all', 'Guardiões', 'Águas', 'Assombrações', 'Criaturas'];
+  const categories = useMemo(() => {
+    const set = new Set(['all']);
+    playerCollection.forEach(c => set.add(c.category));
+    return Array.from(set);
+  }, [playerCollection]);
 
   const getCurrentDeck = () => decks[selectedDeck];
   const getCurrentDeckCards = () => {
@@ -67,19 +91,12 @@ export default function DeckBuilder() {
       return;
     }
 
-    if (currentCard) {
-      if (currentCard.quantity >= 3) {
-        alert('Máximo de 3 cópias por carta!');
-        return;
-      }
-      if (currentCard.quantity >= card.owned) {
-        alert('Você não possui mais cópias desta carta!');
-        return;
-      }
-      currentCard.quantity++;
-    } else {
-      currentDeck.cards.push({ id: cardId, quantity: 1 });
+    // Se for coleção real: limitar a 1 cópia; mock mantém limite simples de 1 também
+    if (currentCard || (card?.owned ?? 1) <= 0) {
+      alert('Você já adicionou a quantidade máxima desta carta.');
+      return;
     }
+    currentDeck.cards.push({ id: cardId, quantity: 1 });
 
     setDecks({ ...decks });
   };
@@ -103,7 +120,7 @@ export default function DeckBuilder() {
   const getAverageAttack = () => {
     const deckCards = getCurrentDeckCards();
     if (deckCards.length === 0) return 0;
-    const totalAttack = deckCards.reduce((sum, card) => sum + (card.attack * card.quantity), 0);
+    const totalAttack = deckCards.reduce((sum, card) => sum + ((card?.attack || 0) * card.quantity), 0);
     const totalCards = deckCards.reduce((sum, card) => sum + card.quantity, 0);
     return (totalAttack / totalCards).toFixed(1);
   };
@@ -192,9 +209,11 @@ export default function DeckBuilder() {
                               <div className="bg-blue-900/50 p-1 rounded">{card.defense}</div>
                               <div className="bg-green-900/50 p-1 rounded">{card.life}</div>
                             </div>
-                            <div className="flex justify-end items-center text-xs">
-                              <span className="text-gray-400">{card.owned - card.inDeck} restantes</span>
-                            </div>
+                            {isAuthenticated() && (
+                              <div className="flex justify-end items-center text-xs">
+                                <span className="text-gray-400">{Math.max(0, (card.owned || 1) - (card.inDeck || 0))} restantes</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

@@ -14,10 +14,21 @@ export default function Login() {
     username: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implementar lógica de autenticação
-    console.log('Form submitted:', formData);
+    try {
+      const payload = isLogin
+        ? { action: 'login', username: formData.username, password: formData.password }
+        : { action: 'register', username: formData.username, email: formData.email, password: formData.password };
+      const res = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha na autenticação');
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/';
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleChange = (e) => {
@@ -41,35 +52,36 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Username em ambos os modos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Nome de usuário
+            </label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
+              required
+            />
+          </div>
+
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Nome de usuário
+                Email
               </label>
               <input
-                type="text"
-                name="username"
-                value={formData.username}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
                 required={!isLogin}
               />
             </div>
           )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
-              required
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">

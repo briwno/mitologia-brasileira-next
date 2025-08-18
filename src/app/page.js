@@ -148,7 +148,7 @@ export default function Home() {
         {/* Bottom compact actions */}
         <div className="mx-auto mt-6 max-w-5xl px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/museum" className="group">
+            <Link href="/card_inventory" className="group">
               <div className="relative rounded-xl border border-emerald-500/30 bg-black/40 p-4 backdrop-blur-sm hover:border-emerald-400/60 transition">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center text-2xl">🎴</div>

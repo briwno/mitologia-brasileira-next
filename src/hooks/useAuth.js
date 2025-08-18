@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     try {
       const response = await fetch('/api/auth', {
         method: 'POST',
@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
         },
         body: JSON.stringify({
           action: 'login',
-          email,
+          username,
           password
         })
       });

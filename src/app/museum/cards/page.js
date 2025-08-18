@@ -98,50 +98,28 @@ export default function CardCatalog() {
             <div
               key={card.id}
               onClick={() => handleCardClick(card)}
-              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 border-2 transition-all hover:scale-105 cursor-pointer ${
-                card.discovered ? getRarityColor(card.rarity) : 'border-gray-700 opacity-50'
-              }`}
+              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 border-2 transition-all hover:scale-105 cursor-pointer ${getRarityColor(card.rarity)}`}
             >
               <div className="text-center">
                 <div className="mb-3 sm:mb-4">
-                  <CardImage card={card} size="medium" className="mx-auto" />
+                  <CardImage card={{ ...card, discovered: true }} size="medium" className="mx-auto" />
                 </div>
-                
-                <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-2">
-                  {card.discovered ? card.name : '???'}
-                </h3>
-                
-                {card.discovered ? (
-                  <>
-                    <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                      {card.region} • {card.category}
-                    </div>
-                    <div className={`text-xs font-semibold mb-2 sm:mb-3 ${getRarityColor(card.rarity).split(' ')[1]}`}>
-                      {card.rarity}
-                    </div>
-                    {card.type === 'creature' && (
-                      <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs mb-2 sm:mb-3">
-                        <div className="bg-red-900/50 p-1 rounded text-xs">
-                          ATQ: {card.attack}
-                        </div>
-                        <div className="bg-blue-900/50 p-1 rounded text-xs">
-                          DEF: {card.defense}
-                        </div>
-                        <div className="bg-green-900/50 p-1 rounded text-xs">
-                          VIDA: {card.health}
-                        </div>
-                      </div>
-                    )}
-                    {card.element && (
-                      <div className="text-xs text-yellow-400 line-clamp-2">
-                        {card.element}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-xs sm:text-sm text-gray-500">
-                    Complete desafios para desbloquear
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-2">{card.name}</h3>
+                <div className="text-xs sm:text-sm text-gray-400 mb-2">
+                  {card.region} • {card.category}
+                </div>
+                <div className={`text-xs font-semibold mb-2 sm:mb-3 ${getRarityColor(card.rarity).split(' ')[1]}`}>
+                  {card.rarity}
+                </div>
+                {card.type === 'creature' && (
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs mb-2 sm:mb-3">
+                    <div className="bg-red-900/50 p-1 rounded text-xs">ATQ: {card.attack}</div>
+                    <div className="bg-blue-900/50 p-1 rounded text-xs">DEF: {card.defense}</div>
+                    <div className="bg-green-900/50 p-1 rounded text-xs">VIDA: {card.health}</div>
                   </div>
+                )}
+                {card.element && (
+                  <div className="text-xs text-yellow-400 line-clamp-2">{card.element}</div>
                 )}
               </div>
             </div>
