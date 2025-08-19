@@ -54,6 +54,8 @@ function ModeCard({ href, title, emoji, available = true, subtitle, highlight = 
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   useEffect(() => setIsLoaded(true), []);
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -94,8 +96,20 @@ export default function Home() {
           </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center">⚙️</button>
-            <button className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center">📜</button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
+              onClick={() => setShowConfigModal(true)}
+            >
+              ⚙️
+            </button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
+              onClick={() => setShowInfoModal(true)}
+            >
+              📜
+            </button>
             {/* Minimal login/logout */}
             {isAuthenticated() ? (
               <button
@@ -172,6 +186,7 @@ export default function Home() {
                 </div>
               </div>
             </Link>
+            v0.1
           </div>
         </div>
 
@@ -196,6 +211,73 @@ export default function Home() {
             </Link>
           </div>
         </div>
+        {/* Configuração Modal (Home) */}
+        {showConfigModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowConfigModal(false)}>
+            <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
+                onClick={() => setShowConfigModal(false)}
+                title="Fechar"
+              >
+                ×
+              </button>
+              <h2 className="text-lg font-bold mb-4">Configurações</h2>
+              <div className="text-sm text-white/80">Aqui vão as opções de configuração...</div>
+            </div>
+          </div>
+        )}
+        {/* Termos & Informações Modal (Home) */}
+        {showInfoModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowInfoModal(false)}>
+            <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[340px] max-w-[720px] max-h-[80vh] w-[90vw] relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
+                onClick={() => setShowInfoModal(false)}
+                title="Fechar"
+              >
+                ×
+              </button>
+              <h2 className="text-lg font-bold mb-4">Termos de Uso & Informações</h2>
+              <div className="text-sm text-white/80 space-y-4 overflow-y-auto pr-2" style={{ maxHeight: '60vh' }}>
+                <section>
+                  <h3 className="font-semibold text-white mb-1">Resumo dos Termos</h3>
+                  <p>
+                    Este é um protótipo educacional de jogo de cartas. Ao usar, você concorda em não abusar do serviço,
+                    respeitar outros jogadores e reconhecer que o progresso pode ser apagado durante o desenvolvimento.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="font-semibold text-white mb-1">Privacidade</h3>
+                  <p>
+                    Mantemos dados mínimos de perfil e coleção de cartas para funcionamento do jogo. Não vendemos dados.
+                    Em produção, políticas de RLS e autenticação forte serão aplicadas.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="font-semibold text-white mb-1">Contato</h3>
+                  <p>
+                    Encontrou um problema ou tem sugestão? Abra um issue ou envie feedback pelo canal do projeto.
+                  </p>
+                </section>
+                <section className="text-xs text-gray-400 pt-2 border-t border-white/10">
+                  Versão: 0.1.0 • Build preview
+                </section>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-black/40 border border-white/20 hover:border-white/40"
+                  onClick={() => setShowInfoModal(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

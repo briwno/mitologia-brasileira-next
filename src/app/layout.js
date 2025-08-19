@@ -18,12 +18,17 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0';
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
   <Providers>{children}</Providers>
+  {/* Global version watermark */}
+  <div className="fixed bottom-2 left-1/2 -translate-x-1/2 text-[11px] text-white/30 pointer-events-none select-none z-30">
+    Versão: {appVersion}
+  </div>
       </body>
     </html>
   );
