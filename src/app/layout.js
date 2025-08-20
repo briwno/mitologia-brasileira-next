@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import GlobalNav from "@/components/UI/GlobalNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +25,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-  <Providers>{children}</Providers>
+  <Providers>
+    {children}
+    <GlobalNav />
+  </Providers>
   {/* Global version watermark */}
   <div className="fixed bottom-2 left-1/2 -translate-x-1/2 text-[11px] text-white/30 pointer-events-none select-none z-30">
     Versão: {appVersion}

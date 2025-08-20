@@ -5,6 +5,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
+import dynamic from 'next/dynamic';
+
+const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false });
+const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false });
 
 function ModeCard({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
   const [imgError, setImgError] = useState(false);
@@ -56,6 +60,8 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showPvPModal, setShowPvPModal] = useState(false);
+  const [showMuseumModal, setShowMuseumModal] = useState(false);
   useEffect(() => setIsLoaded(true), []);
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -152,8 +158,12 @@ export default function Home() {
         {/* Tall cards row */}
         <div className="mx-auto mt-6 max-w-7xl px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ModeCard href="/pvp" title="BATALHA" emoji="⚔️" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
-            <ModeCard href="/museum" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
+            <div onClick={() => setShowPvPModal(true)}>
+              <ModeCard href="#" title="BATALHA" emoji="⚔️" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
+            </div>
+            <div onClick={() => setShowMuseumModal(true)}>
+              <ModeCard href="#" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
+            </div>
             <ModeCard href="/ranking" title="RANKING" emoji="🏆" subtitle="Top jogadores" />
             <ModeCard href="/profile" title="PERFIL" emoji="👤" subtitle="Suas conquistas" />
           </div>
@@ -186,31 +196,10 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-            v0.1
           </div>
         </div>
 
-        {/* Mobile tab bar */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-white/10 px-4 py-2">
-          <div className="flex justify-around items-center">
-            <button className="flex flex-col items-center gap-1 p-2 text-cyan-300">
-              <span className="text-xl">🏠</span>
-              <span className="text-xs font-medium">Início</span>
-            </button>
-            <Link href="/pvp" className="flex flex-col items-center gap-1 p-2 text-gray-300">
-              <span className="text-xl">⚔️</span>
-              <span className="text-xs font-medium">Batalha</span>
-            </Link>
-            <Link href="/museum" className="flex flex-col items-center gap-1 p-2 text-gray-300">
-              <span className="text-xl">🏛️</span>
-              <span className="text-xs font-medium">Museu</span>
-            </Link>
-            <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-gray-300">
-              <span className="text-xl">👤</span>
-              <span className="text-xs font-medium">Perfil</span>
-            </Link>
-          </div>
-        </div>
+  {/* Mobile tab bar moved to GlobalNav */}
         {/* Configuração Modal (Home) */}
         {showConfigModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowConfigModal(false)}>
@@ -277,6 +266,14 @@ export default function Home() {
               </div>
             </div>
           </div>
+        )}
+  {/* PvP Modal from home */}
+        {showPvPModal && (
+          <PvPModal onClose={() => setShowPvPModal(false)} />
+        )}
+        {/* Museum Modal from home */}
+        {showMuseumModal && (
+          <MuseumModal onClose={() => setShowMuseumModal(false)} />
         )}
       </div>
     </main>
