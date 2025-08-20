@@ -3,11 +3,20 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false });
-const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false });
+const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false, loading: () => (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+    <LoadingSpinner text="Abrindo Batalha..." />
+  </div>
+) });
+const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false, loading: () => (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+    <LoadingSpinner text="Abrindo Museu..." />
+  </div>
+) });
 
 export default function GlobalNav() {
   const pathname = usePathname();

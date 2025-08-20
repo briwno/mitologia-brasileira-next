@@ -6,9 +6,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
 import dynamic from 'next/dynamic';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
-const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false });
-const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false });
+const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false, loading: () => (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Batalha..." /></div>
+) });
+const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false, loading: () => (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Museu..." /></div>
+) });
 
 function ModeCard({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
   const [imgError, setImgError] = useState(false);
