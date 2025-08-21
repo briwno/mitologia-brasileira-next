@@ -1,6 +1,32 @@
 # Batalha dos Encantados — Next.js App
 
-Projeto web de um card game temático de mitologia brasileira, com PvP, Museu (enciclopédia/quiz/mapa), perfis e ranking. Construído com Next.js (App Router), Tailwind CSS e integrações simples via API routes e Supabase.
+Embarque no folclore brasileiro em um card game moderno: PvP dinâmico, exploração cultural e uma interface elegante.
+
+![last commit](https://img.shields.io/github/last-commit/briwno/mitologia-brasileira-next?style=for-the-badge)
+![top language](https://img.shields.io/github/languages/top/briwno/mitologia-brasileira-next?style=for-the-badge)
+![languages count](https://img.shields.io/github/languages/count/briwno/mitologia-brasileira-next?style=for-the-badge)
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-20232a?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge)
+
+---
+
+## Sumário
+
+- [Visão geral](#visão-geral)
+- [Principais funcionalidades](#principais-funcionalidades)
+- [Tech stack](#tech-stack)
+- [Arquitetura e organização](#arquitetura-e-organização)
+	- [Módulos-chave](#módulos-chave)
+	- [Decisões de arquitetura](#decisões-de-arquitetura)
+- [Autenticação e coleção](#autenticação-e-coleção)
+- [Estilo e UI](#estilo-e-ui)
+- [Licença / Créditos](#licença--créditos)
+
+---
 
 ## Visão geral
 
@@ -23,7 +49,7 @@ Experiência focada em dois eixos: combate PvP rápido e exploração cultural. 
 - React 19
 - Tailwind CSS 4
 - Supabase JS SDK (@supabase/supabase-js)
-  
+
 ## Arquitetura e organização
 
 - App Router (src/app): páginas e API routes no mesmo espaço, favorecendo DX e prototipagem.
@@ -58,5 +84,5 @@ Experiência focada em dois eixos: combate PvP rápido e exploração cultural. 
 
 ## Licença / Créditos
 
-Projeto educacional para prototipação. As imagens usadas são placeholders/demonstrativas, incluindo imagens geradas por IA;
+Projeto educacional para prototipação. As imagens usadas são placeholders/demonstrativas; substitua por assets licenciados para produção.
 
