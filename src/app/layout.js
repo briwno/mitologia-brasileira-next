@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Batalha dos Encantados",
+  title: "Ka'aguy",
   description: "Adentre a Ka'aguy. Se for capaz.",
 };
 
