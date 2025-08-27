@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
+// Carregamento dinâmico dos modais com fallback de carregamento
 const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false, loading: () => (
   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Batalha..." /></div>
 ) });
@@ -15,25 +16,26 @@ const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { s
   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Museu..." /></div>
 ) });
 
-function ModeCard({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
-  const [imgError, setImgError] = useState(false);
-  const content = (
+// Cartão clicável para cada modo da página inicial
+function CartaoDeModo({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
+  const [erroImagem, setErroImagem] = useState(false);
+  const conteudo = (
     <div
       className={`relative h-80 md:h-[26rem] rounded-2xl border-2 overflow-hidden transition-all select-none
         ${available ? (highlight ? 'border-cyan-300 shadow-[0_20px_60px_-20px_rgba(0,255,255,0.35)]' : 'border-neutral-600 hover:border-cyan-400') : 'border-neutral-700 opacity-70 grayscale'}
         bg-gradient-to-b from-black/60 to-black/30 backdrop-blur-sm`}
     >
-      {/* Background image (placeholder by default) */}
+      {/* Imagem de fundo (placeholder por padrão) */}
       <Image
-        src={!imageSrc || imgError ? '/images/placeholder.svg' : imageSrc}
+        src={!imageSrc || erroImagem ? '/images/placeholder.svg' : imageSrc}
         alt={`${title} banner`}
         fill
   className="object-cover transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-150 group-hover:contrast-110"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
         priority={highlight}
-        onError={() => setImgError(true)}
+        onError={() => setErroImagem(true)}
       />
-      {/* Overlay & decorative frame */}
+      {/* Overlay e moldura decorativa */}
       <div className="absolute inset-0 pointer-events-none">
   <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/20" />
   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.35),transparent_60%)] mix-blend-screen" />
@@ -55,24 +57,25 @@ function ModeCard({ href, title, emoji, available = true, subtitle, highlight = 
   );
 
   return available ? (
-    <Link href={href} className="block group transform transition will-change-transform hover:scale-[1.01]">{content}</Link>
+    <Link href={href} className="block group transform transition will-change-transform hover:scale-[1.01]">{conteudo}</Link>
   ) : (
-    <div className="cursor-not-allowed">{content}</div>
+    <div className="cursor-not-allowed">{conteudo}</div>
   );
 }
 
-export default function Home() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [showPvPModal, setShowPvPModal] = useState(false);
-  const [showMuseumModal, setShowMuseumModal] = useState(false);
-  useEffect(() => setIsLoaded(true), []);
+// Página inicial
+export default function Inicio() {
+  const [carregado, setCarregado] = useState(false);
+  const [mostrarConfigModal, setMostrarConfigModal] = useState(false);
+  const [mostrarInfoModal, setMostrarInfoModal] = useState(false);
+  const [mostrarPvPModal, setMostrarPvPModal] = useState(false);
+  const [mostrarMuseuModal, setMostrarMuseuModal] = useState(false);
+  useEffect(() => setCarregado(true), []);
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] text-white">
-      {/* Ambient backdrop */}
+      {/* Fundo ambiente com gradientes e efeitos */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-cyan-900/20 via-transparent to-transparent blur-2xl" />
         <div className="absolute inset-y-0 right-0 w-64 bg-gradient-to-l from-emerald-900/20 via-transparent to-transparent blur-2xl" />
@@ -82,11 +85,11 @@ export default function Home() {
         </div>
       </div>
 
-      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-        {/* Top bar */}
+      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${carregado ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Barra superior */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex items-center gap-3">
-            {/* Brand badge with logo */}
+            {/* Selo de marca com logotipo */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm" title="Adentre a Ka&#39;aguy. Se for capaz.">
               <span className="text-lg">🌿</span>
               <Image
@@ -110,18 +113,18 @@ export default function Home() {
             <button
               type="button"
               className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
-              onClick={() => setShowConfigModal(true)}
+              onClick={() => setMostrarConfigModal(true)}
             >
               ⚙️
             </button>
             <button
               type="button"
               className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
-              onClick={() => setShowInfoModal(true)}
+              onClick={() => setMostrarInfoModal(true)}
             >
               📜
             </button>
-            {/* Minimal login/logout */}
+            {/* Login/logout minimalista */}
             {isAuthenticated() ? (
               <button
                 onClick={logout}
@@ -142,7 +145,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Center title banner */}
+        {/* Faixa central com título */}
         <div className="mt-6 flex items-center justify-center">
           <div className="px-6 py-2 rounded-xl border border-white/15 bg-gradient-to-b from-black/50 to-black/30 backdrop-blur-sm shadow-[0_12px_40px_-18px_rgba(0,0,0,0.9)]">
             <div className="text-xs md:text-sm tracking-widest text-cyan-200 text-center">JOGAR</div>
@@ -160,21 +163,21 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tall cards row */}
+        {/* Linha de cartões altos */}
         <div className="mx-auto mt-6 max-w-7xl px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div onClick={() => setShowPvPModal(true)}>
-              <ModeCard href="#" title="BATALHA" emoji="⚔️" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
+            <div onClick={() => setMostrarPvPModal(true)}>
+              <CartaoDeModo href="#" title="BATALHA" emoji="⚔️" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
             </div>
-            <div onClick={() => setShowMuseumModal(true)}>
-              <ModeCard href="#" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
+            <div onClick={() => setMostrarMuseuModal(true)}>
+              <CartaoDeModo href="#" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
             </div>
-            <ModeCard href="/ranking" title="RANKING" emoji="🏆" subtitle="Top jogadores" />
-            <ModeCard href="/profile" title="PERFIL" emoji="👤" subtitle="Suas conquistas" />
+            <CartaoDeModo href="/ranking" title="RANKING" emoji="🏆" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
+            <CartaoDeModo href="/profile" title="PERFIL" emoji="👤" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
           </div>
         </div>
 
-        {/* Bottom compact actions */}
+        {/* Ações compactas inferiores */}
         <div className="mx-auto mt-6 max-w-5xl px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/card_inventory" className="group">
@@ -205,14 +208,14 @@ export default function Home() {
         </div>
 
   {/* Mobile tab bar moved to GlobalNav */}
-        {/* Configuração Modal (Home) */}
-        {showConfigModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowConfigModal(false)}>
+        {/* Modal de Configuração (Home) */}
+        {mostrarConfigModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarConfigModal(false)}>
             <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
-                onClick={() => setShowConfigModal(false)}
+                onClick={() => setMostrarConfigModal(false)}
                 title="Fechar"
               >
                 ×
@@ -222,14 +225,14 @@ export default function Home() {
             </div>
           </div>
         )}
-        {/* Termos & Informações Modal (Home) */}
-        {showInfoModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowInfoModal(false)}>
+        {/* Modal de Termos & Informações (Home) */}
+        {mostrarInfoModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarInfoModal(false)}>
             <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[340px] max-w-[720px] max-h-[80vh] w-[90vw] relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
-                onClick={() => setShowInfoModal(false)}
+                onClick={() => setMostrarInfoModal(false)}
                 title="Fechar"
               >
                 ×
@@ -264,7 +267,7 @@ export default function Home() {
                 <button
                   type="button"
                   className="px-4 py-2 rounded-lg bg-black/40 border border-white/20 hover:border-white/40"
-                  onClick={() => setShowInfoModal(false)}
+                  onClick={() => setMostrarInfoModal(false)}
                 >
                   Fechar
                 </button>
@@ -272,13 +275,13 @@ export default function Home() {
             </div>
           </div>
         )}
-  {/* PvP Modal from home */}
-        {showPvPModal && (
-          <PvPModal onClose={() => setShowPvPModal(false)} />
+  {/* Modal de PvP a partir da Home */}
+        {mostrarPvPModal && (
+          <PvPModal onClose={() => setMostrarPvPModal(false)} />
         )}
-        {/* Museum Modal from home */}
-        {showMuseumModal && (
-          <MuseumModal onClose={() => setShowMuseumModal(false)} />
+        {/* Modal de Museu a partir da Home */}
+        {mostrarMuseuModal && (
+          <MuseumModal onClose={() => setMostrarMuseuModal(false)} />
         )}
       </div>
     </main>

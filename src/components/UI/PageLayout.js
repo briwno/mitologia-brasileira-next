@@ -5,16 +5,17 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
-export default function PageLayout({ children }) {
+// Layout de página compartilhado
+export default function LayoutDePagina({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [mostrarModalConfiguracoes, definirMostrarModalConfiguracoes] = useState(false);
+  const [mostrarModalInformacoes, definirMostrarModalInformacoes] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   useEffect(() => setIsLoaded(true), []);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] text-white">
-      {/* Ambient backdrop */}
+      {/* Fundo ambiente com gradientes e efeitos */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-cyan-900/20 via-transparent to-transparent blur-2xl" />
         <div className="absolute inset-y-0 right-0 w-64 bg-gradient-to-l from-emerald-900/20 via-transparent to-transparent blur-2xl" />
@@ -25,10 +26,10 @@ export default function PageLayout({ children }) {
       </div>
 
       <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-        {/* Top bar (shared) */}
+        {/* Barra superior (compartilhada) */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex items-center gap-3">
-            {/* Brand badge with logo */}
+            {/* Selo de marca com logotipo */}
                   <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm" title="Adentre a Ka&#39;aguy. Se for capaz.">
                     <span className="text-lg">🌿</span>
                     <Image
@@ -53,14 +54,14 @@ export default function PageLayout({ children }) {
                   <button
                     type="button"
                     className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
-                    onClick={() => setShowConfigModal(true)}
+                    onClick={() => definirMostrarModalConfiguracoes(true)}
                   >
                     ⚙️
                   </button>
                   <button
                     type="button"
                     className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
-                    onClick={() => setShowInfoModal(true)}
+                    onClick={() => definirMostrarModalInformacoes(true)}
                   >
                     📜
                   </button>
@@ -84,33 +85,33 @@ export default function PageLayout({ children }) {
                   </div>
                 </div>
 
-                {/* Page content */}
+    {/* Conteúdo da página */}
         {children}
-        {/* Configuração Modal (renderizado fora do topo para evitar issues de stacking/overflow) */}
-        {showConfigModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowConfigModal(false)}>
+  {/* Modal de Configurações (renderizado fora do topo para evitar problemas de sobreposição/overflow) */}
+        {mostrarModalConfiguracoes && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => definirMostrarModalConfiguracoes(false)}>
             <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
-                onClick={() => setShowConfigModal(false)}
+                onClick={() => definirMostrarModalConfiguracoes(false)}
                 title="Fechar"
               >
                 ×
               </button>
               <h2 className="text-lg font-bold mb-4">Configurações</h2>
-              <div className="text-sm text-white/80">Aqui vão as opções de configuração...</div>
+      <div className="text-sm text-white/80">Aqui vão as opções de configuração…</div>
             </div>
           </div>
         )}
-        {/* Termos & Informações Modal */}
-        {showInfoModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowInfoModal(false)}>
+    {/* Modal de Termos & Informações */}
+        {mostrarModalInformacoes && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => definirMostrarModalInformacoes(false)}>
             <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[340px] max-w-[720px] max-h-[80vh] w-[90vw] relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
-                onClick={() => setShowInfoModal(false)}
+                onClick={() => definirMostrarModalInformacoes(false)}
                 title="Fechar"
               >
                 ×
@@ -118,7 +119,7 @@ export default function PageLayout({ children }) {
               <h2 className="text-lg font-bold mb-4">Termos de Uso & Informações</h2>
               <div className="text-sm text-white/80 space-y-4 overflow-y-auto pr-2" style={{ maxHeight: '60vh' }}>
                 <section>
-                  <h3 className="font-semibold text-white mb-1">Resumo dos Termos</h3>
+                  <h3 className="font-semibold text-white mb-1">Resumo dos termos</h3>
                   <p>
                     Este é um protótipo educacional de jogo de cartas. Ao usar, você concorda em não abusar do serviço,
                     respeitar outros jogadores e reconhecer que o progresso pode ser apagado durante o desenvolvimento.
@@ -145,7 +146,7 @@ export default function PageLayout({ children }) {
                 <button
                   type="button"
                   className="px-4 py-2 rounded-lg bg-black/40 border border-white/20 hover:border-white/40"
-                  onClick={() => setShowInfoModal(false)}
+                  onClick={() => definirMostrarModalInformacoes(false)}
                 >
                   Fechar
                 </button>

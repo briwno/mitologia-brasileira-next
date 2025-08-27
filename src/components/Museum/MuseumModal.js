@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-function ModeCard({ title, emoji, subtitle, imageSrc, href }) {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
   const [hover, setHover] = useState(false);
   return (
     <Link
@@ -21,7 +21,7 @@ function ModeCard({ title, emoji, subtitle, imageSrc, href }) {
             : 'hover:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.3)]'
         }`}
       >
-        {/* background image */}
+  {/* imagem de fundo */}
         <div className="absolute inset-0 rounded-xl overflow-hidden">
           <Image
             src={imageSrc || '/images/placeholder.svg'}
@@ -34,11 +34,11 @@ function ModeCard({ title, emoji, subtitle, imageSrc, href }) {
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/80 z-10" />
         </div>
 
-        {/* green frame */}
+  {/* moldura verde */}
         <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${hover ? 'ring-2 ring-green-400' : 'ring-1 ring-green-600/60 group-hover:ring-green-400'}`} />
         <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-green-300/10 via-transparent to-green-300/0 z-10" />
 
-        {/* content */}
+  {/* conteúdo */}
         <div className="relative z-20 h-full flex flex-col justify-end p-5">
           <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{emoji}</div>
           <div className="pb-3">
@@ -47,7 +47,7 @@ function ModeCard({ title, emoji, subtitle, imageSrc, href }) {
           </div>
         </div>
 
-        {/* green diamond emblem (above frame) */}
+  {/* emblema verde em losango (acima da moldura) */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
           <div className="w-10 h-10 rotate-45 bg-green-500/90 border-2 border-green-300 shadow-lg flex items-center justify-center">
             <div className="-rotate-45">{emoji}</div>
@@ -65,7 +65,7 @@ export default function MuseumModal({ onClose }) {
         className="relative bg-[#0e1a28] rounded-2xl border border-white/10 shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+  {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div>
             <h2 className="text-xl font-bold tracking-wide">🏛️ Museu</h2>
@@ -82,24 +82,24 @@ export default function MuseumModal({ onClose }) {
           </button>
         </div>
 
-        {/* Content */}
+    {/* Conteúdo */}
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <ModeCard
+      <CartaoDeModo
               title="Catálogo"
               emoji="🃏"
               subtitle="Todas as cartas e suas histórias"
               href="/museum/cards"
               imageSrc="/images/banners/menumuseu.png"
             />
-            <ModeCard
+      <CartaoDeModo
               title="Quiz Cultural"
               emoji="🧠"
               subtitle="Teste seus conhecimentos"
               href="/museum/quiz"
               imageSrc="/images/banners/museu.jpg"
             />
-            <ModeCard
+      <CartaoDeModo
               title="Mapa das Lendas"
               emoji="🗺️"
               subtitle="Origem geográfica dos mitos"

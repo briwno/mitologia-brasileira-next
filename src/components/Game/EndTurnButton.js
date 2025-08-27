@@ -1,8 +1,9 @@
 // src/components/Game/EndTurnButton.js
 "use client";
 
-export default function EndTurnButton({ onEndTurn, disabled = false, isPlayerTurn = true }) {
-  const label = isPlayerTurn ? (disabled ? 'Aguardando...' : 'Finalizar Turno') : 'Aguardando...';
+// Botão para finalizar o turno
+export default function BotaoFinalizarTurno({ onEndTurn, disabled = false, isPlayerTurn = true }) {
+  const rotulo = isPlayerTurn ? (disabled ? 'Aguardando...' : 'Finalizar Turno') : 'Aguardando...';
   return (
     <button
       type="button"
@@ -13,7 +14,7 @@ export default function EndTurnButton({ onEndTurn, disabled = false, isPlayerTur
       onClick={onEndTurn}
       disabled={!isPlayerTurn || disabled}
     >
-      {label}
+      {rotulo}
     </button>
   );
 }

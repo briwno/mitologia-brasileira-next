@@ -1,5 +1,5 @@
 // src/utils/combatSystem.js
-import { MULTIPLIERS, CARD_COMBOS, ELEMENTS } from '../data/cardsDatabase';
+import { MULTIPLICADORES, COMBOS_CARTAS, ELEMENTOS } from '../data/cardsDatabase';
 
 export class CombatSystem {
   constructor() {
@@ -20,27 +20,28 @@ export class CombatSystem {
   calculateDamage(attacker, defender, gameState = null) {
     if (gameState) this.gameState = gameState;
 
-    let baseDamage = attacker.attack;
-    let defense = defender.defense;
+    // Valores base
+    let danoBase = attacker.attack;
+    let defesa = defender.defense;
     
     // Aplicar multiplicadores de ataque
-    baseDamage *= this.getAttackMultipliers(attacker);
+    danoBase *= this.getAttackMultipliers(attacker);
     
     // Aplicar multiplicadores de defesa
-    defense *= this.getDefenseMultipliers(defender);
+    defesa *= this.getDefenseMultipliers(defender);
     
     // Calcular dano final
-    let finalDamage = Math.max(1, baseDamage - defense);
+    let danoFinal = Math.max(1, danoBase - defesa);
     
     // Aplicar resistências especiais
-    finalDamage = this.applyResistances(finalDamage, attacker, defender);
+    danoFinal = this.applyResistances(danoFinal, attacker, defender);
     
     // Aplicar reflexão de dano
-    const reflectedDamage = this.calculateReflection(finalDamage, defender);
+    const danoRefletido = this.calculateReflection(danoFinal, defender);
     
     return {
-      damage: Math.round(finalDamage),
-      reflected: Math.round(reflectedDamage),
+      damage: Math.round(danoFinal),
+      reflected: Math.round(danoRefletido),
       criticalHit: this.checkCriticalHit(attacker),
       dodged: this.checkDodge(defender),
       multipliers: this.getAppliedMultipliers(attacker, defender)
@@ -53,35 +54,35 @@ export class CombatSystem {
     
     // Multiplicador regional
     if (this.hasRegionalBonus(attacker)) {
-      multiplier *= MULTIPLIERS.REGIONAL.value;
+  multiplier *= MULTIPLICADORES.REGIONAL.value;
     }
     
     // Multiplicador elemental
-    const elementalBonus = this.getElementalAdvantage(attacker);
-    if (elementalBonus > 1) {
-      multiplier *= elementalBonus;
+    const bonusElemental = this.getElementalAdvantage(attacker);
+    if (bonusElemental > 1) {
+      multiplier *= bonusElemental;
     }
     
     // Multiplicador de lua cheia
     if (this.gameState.isFullMoon && this.isNightCreature(attacker)) {
-      multiplier *= MULTIPLIERS.FULL_MOON.value;
+  multiplier *= MULTIPLICADORES.FULL_MOON.value;
     }
     
     // Multiplicador sazonal
-    const seasonalBonus = this.getSeasonalBonus(attacker);
-    if (seasonalBonus > 1) {
-      multiplier *= seasonalBonus;
+    const bonusSazonal = this.getSeasonalBonus(attacker);
+    if (bonusSazonal > 1) {
+      multiplier *= bonusSazonal;
     }
     
     // Multiplicador de combo
-    const comboBonus = this.getComboMultiplier(attacker, 'attack');
-    if (comboBonus > 1) {
-      multiplier *= comboBonus;
+    const bonusDeCombo = this.getComboMultiplier(attacker, 'attack');
+    if (bonusDeCombo > 1) {
+      multiplier *= bonusDeCombo;
     }
     
     // Multiplicador de contra-ataque
     if (attacker.hasCounterattack) {
-      multiplier *= MULTIPLIERS.COUNTERATTACK.value;
+  multiplier *= MULTIPLICADORES.COUNTERATTACK.value;
     }
     
     return multiplier;
@@ -92,15 +93,15 @@ export class CombatSystem {
     let multiplier = 1.0;
     
     // Multiplicador de combo defensivo
-    const comboBonus = this.getComboMultiplier(defender, 'defense');
-    if (comboBonus > 1) {
-      multiplier *= comboBonus;
+    const bonusDeCombo = this.getComboMultiplier(defender, 'defense');
+    if (bonusDeCombo > 1) {
+      multiplier *= bonusDeCombo;
     }
     
     // Bônus passivos de defesa
     if (defender.abilities?.passive?.name === 'Protetor da Natureza') {
-      const forestAllies = this.countForestAllies(defender);
-      multiplier *= (1 + (forestAllies * 0.1)); // +10% por aliado da floresta
+      const aliadosDaFloresta = this.countForestAllies(defender);
+      multiplier *= (1 + aliadosDaFloresta * 0.1); // +10% por aliado da floresta
     }
     
     return multiplier;
@@ -108,14 +109,14 @@ export class CombatSystem {
 
   // Verificar vantagem elemental
   getElementalAdvantage(attacker) {
-    const attackerElement = attacker.element;
-    const defenderElement = this.getCurrentTarget()?.element;
+  const elementoDoAtacante = attacker.element;
+  const elementoDoDefensor = this.getCurrentTarget()?.element;
     
-    if (!attackerElement || !defenderElement) return 1.0;
+  if (!elementoDoAtacante || !elementoDoDefensor) return 1.0;
     
-    const advantages = MULTIPLIERS.ELEMENTAL.advantages[attackerElement];
-    if (advantages && advantages.includes(defenderElement)) {
-      return MULTIPLIERS.ELEMENTAL.value;
+  const vantagens = MULTIPLICADORES.ELEMENTAL.advantages[elementoDoAtacante];
+  if (vantagens && vantagens.includes(elementoDoDefensor)) {
+  return MULTIPLICADORES.ELEMENTAL.value;
     }
     
     return 1.0;
@@ -151,7 +152,7 @@ export class CombatSystem {
 
   // Obter multiplicador de combo
   getComboMultiplier(card, type) {
-    for (const [comboId, combo] of Object.entries(CARD_COMBOS)) {
+  for (const [comboId, combo] of Object.entries(COMBOS_CARTAS)) {
       if (combo.cards.includes(card.id)) {
         // Verificar se todas as cartas do combo estão em campo
         const comboActive = combo.cards.every(cardId =>
@@ -168,20 +169,20 @@ export class CombatSystem {
 
   // Aplicar resistências especiais
   applyResistances(damage, attacker, defender) {
-    let finalDamage = damage;
+    let danoFinal = damage;
     
     // Resistência arcana da Cuca
     if (defender.abilities?.passive?.name === 'Resistência Arcana' && 
         this.isMagicalAttack(attacker)) {
-      finalDamage *= 0.7; // 30% de resistência
+      danoFinal *= 0.7; // 30% de resistência
     }
     
     // Proteção divina (combo)
     if (this.hasActiveCombo('DIVINE_PROTECTION')) {
-      finalDamage *= 0.5;
+      danoFinal *= 0.5;
     }
     
-    return finalDamage;
+    return danoFinal;
   }
 
   // Calcular reflexão de dano
@@ -282,7 +283,7 @@ export class CombatSystem {
 
   isMagicalAttack(attacker) {
     return attacker.type === 'spell' || 
-           attacker.element === ELEMENTS.SPIRIT ||
+           attacker.element === ELEMENTOS.SPIRIT ||
            attacker.tags?.includes('magia');
   }
 
@@ -324,7 +325,7 @@ export const checkComboActivation = (battlefield) => {
   const activeCards = battlefield.player.map(card => card.id);
   const activeCombos = [];
   
-  for (const [comboId, combo] of Object.entries(CARD_COMBOS)) {
+  for (const [comboId, combo] of Object.entries(COMBOS_CARTAS)) {
     const comboActive = combo.cards.every(cardId => activeCards.includes(cardId));
     if (comboActive) {
       activeCombos.push({ id: comboId, ...combo });

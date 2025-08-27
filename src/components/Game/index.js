@@ -1,4 +1,5 @@
 // src/components/Game/index.js
+// Exports públicos estáveis (mantidos em inglês p/ compatibilidade)
 export { default as PlayerInfo } from './PlayerInfo';
 export { default as FieldIndicator } from './FieldIndicator';
 export { default as CardInField } from './CardInField';
@@ -6,7 +7,7 @@ export { default as Hand } from './Hand';
 export { default as DeckPile } from './DeckPile';
 export { default as SkillButtons } from './SkillButtons';
 
-// New TCG-style components
+// Novos componentes no estilo TCG
 export { default as ActiveZone } from './ActiveZone';
 export { default as BenchZone } from './BenchZone';
 export { default as Playmat } from './Playmat';

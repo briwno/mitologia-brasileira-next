@@ -3,8 +3,8 @@
 
 import Image from 'next/image';
 
-// Playmat using SVG asset for immersive board area.
-export default function Playmat({ transitioning = false }) {
+// Playmat usando SVG para a área do tabuleiro
+export default function TapeteDeJogo({ transitioning = false }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10 px-4 select-none">
       <div className="relative w-full max-w-[1500px] aspect-[16/9]">

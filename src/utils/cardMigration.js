@@ -2,7 +2,7 @@
 // Script para migrar dados antigos para nova estrutura
 
 import { cards as oldCards } from '../data/cards';
-import { cardsDatabase } from '../data/cardsDatabase';
+import { bancoDeCartas } from '../data/cardsDatabase';
 
 // Mapeamento de cartas antigas para novas
 export const migrateOldCardFormat = (oldCard) => {
@@ -31,8 +31,8 @@ export const migrateOldCardFormat = (oldCard) => {
 
 // Função para usar dados migrados se não houver novos
 export const getCompatibleCards = () => {
-  if (cardsDatabase && cardsDatabase.length > 0) {
-    return cardsDatabase;
+  if (bancoDeCartas && bancoDeCartas.length > 0) {
+    return bancoDeCartas;
   }
   
   // Fallback para dados antigos migrados

@@ -4,34 +4,39 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-export default function CardImage({ 
-  card, 
-  size = 'medium', 
+// Componente de imagem de carta com estados de carregamento e placeholder
+export default function ImagemDaCarta({
+  card,
+  size = 'medium',
   showPlaceholder = true,
   className = '',
-  onClick = null 
+  onClick = null,
 }) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+  // Estados locais: erro na imagem e carregamento
+  const [erroNaImagem, definirErroNaImagem] = useState(false);
+  const [carregandoImagem, definirCarregandoImagem] = useState(true);
 
-  const sizeClasses = {
+  // Classes utilitárias por tamanho (mantemos as chaves para não quebrar a API)
+  const classesDeTamanho = {
     small: 'w-16 h-20',
     medium: 'w-32 h-40',
     large: 'w-48 h-60',
-    xl: 'w-64 h-80'
+    xl: 'w-64 h-80',
   };
 
-  const handleImageError = () => {
-    setImageError(true);
-    setImageLoading(false);
+  // Handlers de imagem
+  const lidarComErroDaImagem = () => {
+    definirErroNaImagem(true);
+    definirCarregandoImagem(false);
   };
 
-  const handleImageLoad = () => {
-    setImageLoading(false);
+  const lidarComCarregamentoDaImagem = () => {
+    definirCarregandoImagem(false);
   };
 
-  const getPlaceholderContent = () => {
-    // For undiscovered cards, keep the mystery tile
+  // Conteúdo de placeholder quando não há imagem disponível
+  const obterConteudoDoPlaceholder = () => {
+    // Para cartas não descobertas, mantém o bloco de mistério
     if (!card.discovered) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -40,53 +45,57 @@ export default function CardImage({
         </div>
       );
     }
-    // Generic branded placeholder
+    // Placeholder genérico
     return (
       <Image
         src="/images/placeholder.svg"
         alt={`Placeholder de ${card.name}`}
         fill
         className="object-cover"
-        onLoad={handleImageLoad}
+        onLoad={lidarComCarregamentoDaImagem}
       />
     );
   };
 
   return (
-    <div 
-      className={`${sizeClasses[size]} ${className} relative overflow-hidden rounded-lg bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
+    <div
+      className={`${classesDeTamanho[size]} ${className} relative overflow-hidden rounded-lg bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
       onClick={onClick}
     >
-      {/* Loading Spinner */}
-      {imageLoading && !imageError && (
+      {/* Spinner de carregamento */}
+      {carregandoImagem && !erroNaImagem && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
       )}
 
       {/* Imagem da carta ou placeholder */}
-  {card.discovered && card.images?.portrait && !imageError ? (
+      {card.discovered && card.images?.portrait && !erroNaImagem ? (
         <Image
           src={card.images.portrait}
           alt={card.name}
           fill
           className="object-cover"
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-          style={{ opacity: imageLoading ? 0 : 1 }}
+          onError={lidarComErroDaImagem}
+          onLoad={lidarComCarregamentoDaImagem}
+          style={{ opacity: carregandoImagem ? 0 : 1 }}
         />
       ) : (
-        showPlaceholder && getPlaceholderContent()
+        showPlaceholder && obterConteudoDoPlaceholder()
       )}
 
       {/* Overlay de raridade */}
-  {card.discovered && (
+      {card.discovered && (
         <div className="absolute top-1 right-1">
-          <div className={`text-xs px-1 rounded ${
-    card.rarity === 'Mítico' ? 'bg-red-600' :
-    card.rarity === 'Lendário' ? 'bg-yellow-600' :
-    'bg-purple-600'
-          }`}>
+          <div
+            className={`text-xs px-1 rounded ${
+              card.rarity === 'Mítico'
+                ? 'bg-red-600'
+                : card.rarity === 'Lendário'
+                ? 'bg-yellow-600'
+                : 'bg-purple-600'
+            }`}
+          >
             {card.rarity?.charAt(0)}
           </div>
         </div>

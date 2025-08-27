@@ -1,47 +1,47 @@
 // src/utils/seasonalEvents.js
-import { SEASONS } from '../data/cardsDatabase';
+import { ESTACOES } from '../data/cardsDatabase';
 
 export class SeasonalEventSystem {
   constructor() {
-    this.currentEvents = [];
-    this.eventHistory = [];
-    this.eventMultipliers = new Map();
+  this.currentEvents = [];
+  this.eventHistory = [];
+  this.eventMultipliers = new Map();
   }
 
   // Verificar eventos ativos baseados na data
   getCurrentActiveEvents() {
-    const now = new Date();
-    const activeEvents = [];
+    const agora = new Date();
+    const eventosAtivos = [];
 
     // Carnaval (Fevereiro/Março)
-    if (this.isCarnavalSeason(now)) {
-      activeEvents.push({
+    if (this.isCarnavalSeason(agora)) {
+      eventosAtivos.push({
         id: 'carnival_2025',
-        name: SEASONS.CARNIVAL,
+  name: ESTACOES.CARNIVAL,
         description: 'Celebre o Carnaval! Cartas folclóricas ganham bônus especiais',
         multiplier: 1.75,
-        duration: this.getCarnavalDuration(now),
+        duration: this.getCarnavalDuration(agora),
         bonusCards: ['sac001', 'mul001'], // Saci e Mula sem Cabeça
         specialEffects: ['increased_drop_rate', 'exclusive_carnival_cards']
       });
     }
 
     // São João (Junho)
-    if (this.isSaoJoaoSeason(now)) {
-      activeEvents.push({
+    if (this.isSaoJoaoSeason(agora)) {
+      eventosAtivos.push({
         id: 'sao_joao_2025',
-        name: SEASONS.SAO_JOAO,
+  name: ESTACOES.SAO_JOAO,
         description: 'Festa Junina! Criaturas aquáticas e do folclore nordestino brilham',
         multiplier: 1.5,
-        duration: this.getSaoJoaoDuration(now),
+        duration: this.getSaoJoaoDuration(agora),
         bonusCards: ['iar001', 'bot001', 'cab001'], // Iara, Boto, Caboclo d'Água
         specialEffects: ['double_xp_northeast', 'festa_junina_decorations']
       });
     }
 
     // Dia do Folclore (22 de Agosto)
-    if (this.isFolkloreDaySeason(now)) {
-      activeEvents.push({
+    if (this.isFolkloreDaySeason(agora)) {
+      eventosAtivos.push({
         id: 'folklore_day_2025',
         name: 'Dia do Folclore',
         description: 'Celebração de todas as lendas brasileiras!',
@@ -53,9 +53,9 @@ export class SeasonalEventSystem {
     }
 
     // Lua Cheia (eventos especiais noturnos)
-    if (this.isFullMoonNight(now)) {
-      activeEvents.push({
-        id: `full_moon_${now.getFullYear()}_${now.getMonth()}`,
+    if (this.isFullMoonNight(agora)) {
+      eventosAtivos.push({
+        id: `full_moon_${agora.getFullYear()}_${agora.getMonth()}`,
         name: 'Lua Cheia',
         description: 'As criaturas noturnas despertam com poder total!',
         multiplier: 2.0,
@@ -66,8 +66,8 @@ export class SeasonalEventSystem {
     }
 
     // Dia da Amazônia (5 de Setembro)
-    if (this.isAmazonDay(now)) {
-      activeEvents.push({
+    if (this.isAmazonDay(agora)) {
+      eventosAtivos.push({
         id: 'amazon_day_2025',
         name: 'Dia da Amazônia',
         description: 'Proteja a floresta! Cartas amazônicas ganham força especial',
@@ -78,8 +78,8 @@ export class SeasonalEventSystem {
       });
     }
 
-    this.currentEvents = activeEvents;
-    return activeEvents;
+    this.currentEvents = eventosAtivos;
+    return eventosAtivos;
   }
 
   // Verificar se é temporada de Carnaval
@@ -122,13 +122,13 @@ export class SeasonalEventSystem {
   isFullMoonNight(date) {
     // Simplificação: consideramos lua cheia a cada 29.5 dias
     // Em um jogo real, usaríamos uma API astronômica
-    const lunarCycle = 29.53059; // dias
-    const knownFullMoon = new Date('2025-01-13'); // Data conhecida de lua cheia
-    const daysSinceKnownFullMoon = (date - knownFullMoon) / (1000 * 60 * 60 * 24);
-    const cyclePosition = daysSinceKnownFullMoon % lunarCycle;
+  const cicloLunar = 29.53059; // dias
+  const luaCheiaConhecida = new Date('2025-01-13'); // Data conhecida de lua cheia
+  const diasDesdeLuaCheia = (date - luaCheiaConhecida) / (1000 * 60 * 60 * 24);
+  const posicaoNoCiclo = diasDesdeLuaCheia % cicloLunar;
     
     // Consideramos ±1 dia como lua cheia
-    return Math.abs(cyclePosition) <= 1 || Math.abs(cyclePosition - lunarCycle) <= 1;
+  return Math.abs(posicaoNoCiclo) <= 1 || Math.abs(posicaoNoCiclo - cicloLunar) <= 1;
   }
 
   // Calcular data do Carnaval (47 dias antes da Páscoa)
@@ -161,41 +161,41 @@ export class SeasonalEventSystem {
 
   // Obter duração do Carnaval
   getCarnavalDuration(date) {
-    const carnavalDate = this.getCarnavalDate(date.getFullYear());
-    const endDate = new Date(carnavalDate);
-    endDate.setDate(endDate.getDate() + 2);
+    const dataDoCarnaval = this.getCarnavalDate(date.getFullYear());
+    const dataFinal = new Date(dataDoCarnaval);
+    dataFinal.setDate(dataFinal.getDate() + 2);
     
     return {
-      end: endDate,
-      daysRemaining: Math.ceil((endDate - date) / (1000 * 60 * 60 * 24))
+      end: dataFinal,
+      daysRemaining: Math.ceil((dataFinal - date) / (1000 * 60 * 60 * 24))
     };
   }
 
   // Obter duração do São João
   getSaoJoaoDuration(date) {
-    const endDate = new Date(date.getFullYear(), 5, 30); // 30 de junho
+    const dataFinal = new Date(date.getFullYear(), 5, 30); // 30 de junho
     return {
-      end: endDate,
-      daysRemaining: Math.ceil((endDate - date) / (1000 * 60 * 60 * 24))
+      end: dataFinal,
+      daysRemaining: Math.ceil((dataFinal - date) / (1000 * 60 * 60 * 24))
     };
   }
 
   // Aplicar bônus de evento a uma carta
   applyEventBonus(card, eventId = null) {
-    const activeEvents = eventId ? 
-      this.currentEvents.filter(e => e.id === eventId) : 
+    const eventosAtivos = eventId ? 
+      this.currentEvents.filter((e) => e.id === eventId) : 
       this.currentEvents;
 
-    let totalMultiplier = 1.0;
-    const appliedBonuses = [];
+    let multiplicadorTotal = 1.0;
+    const bonusAplicados = [];
 
-    for (const event of activeEvents) {
+    for (const event of eventosAtivos) {
       if (event.bonusCards.includes('all') || 
           event.bonusCards.includes(card.id) ||
           this.cardMatchesEventCriteria(card, event)) {
         
-        totalMultiplier *= event.multiplier;
-        appliedBonuses.push({
+        multiplicadorTotal *= event.multiplier;
+        bonusAplicados.push({
           event: event.name,
           multiplier: event.multiplier,
           description: event.description
@@ -204,9 +204,9 @@ export class SeasonalEventSystem {
     }
 
     return {
-      multiplier: totalMultiplier,
-      bonuses: appliedBonuses,
-      hasBonus: totalMultiplier > 1.0
+      multiplier: multiplicadorTotal,
+      bonuses: bonusAplicados,
+      hasBonus: multiplicadorTotal > 1.0
     };
   }
 
@@ -214,11 +214,11 @@ export class SeasonalEventSystem {
   cardMatchesEventCriteria(card, event) {
     // Verificações específicas por evento
     switch (event.name) {
-      case SEASONS.CARNIVAL:
+  case ESTACOES.CARNIVAL:
         return card.tags?.includes('travessura') || 
                card.category === 'Assombrações';
       
-      case SEASONS.SAO_JOAO:
+  case ESTACOES.SAO_JOAO:
         return card.region === 'Nordeste' || 
                card.category === 'Espíritos das Águas';
       
@@ -236,31 +236,31 @@ export class SeasonalEventSystem {
 
   // Obter recompensas de evento
   getEventRewards(eventId) {
-    const event = this.currentEvents.find(e => e.id === eventId);
+    const event = this.currentEvents.find((e) => e.id === eventId);
     if (!event) return null;
 
-    const baseRewards = {
+    const recompensasBase = {
       experience: 100,
       coins: 50,
       cardPacks: 1
     };
 
     // Multiplicar recompensas base pelo multiplicador do evento
-    const multipliedRewards = {};
-    for (const [key, value] of Object.entries(baseRewards)) {
-      multipliedRewards[key] = Math.floor(value * event.multiplier);
+    const recompensasMultiplicadas = {};
+    for (const [chave, valor] of Object.entries(recompensasBase)) {
+      recompensasMultiplicadas[chave] = Math.floor(valor * event.multiplier);
     }
 
     // Adicionar recompensas especiais
     if (event.specialEffects?.includes('free_card_packs')) {
-      multipliedRewards.specialCardPacks = 3;
+      recompensasMultiplicadas.specialCardPacks = 3;
     }
 
     if (event.specialEffects?.includes('exclusive_carnival_cards')) {
-      multipliedRewards.exclusiveCards = ['carnival_saci', 'carnival_curupira'];
+      recompensasMultiplicadas.exclusiveCards = ['carnival_saci', 'carnival_curupira'];
     }
 
-    return multipliedRewards;
+    return recompensasMultiplicadas;
   }
 
   // Inicializar sistema de eventos

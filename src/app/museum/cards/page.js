@@ -3,22 +3,23 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import PageLayout from '../../../components/UI/PageLayout';
-import { cardsDatabase, CARD_CATEGORIES, REGIONS, getCardStats } from '../../../data/cardsDatabase';
+import LayoutDePagina from '../../../components/UI/PageLayout';
+import { bancoDeCartas, CATEGORIAS_CARTAS, REGIOES, getCardStats } from '../../../data/cardsDatabase';
 import CardImage from '../../../components/Card/CardImage';
 import CardDetail from '../../../components/Card/CardDetail';
 import EventBanner from '../../../components/UI/EventBanner';
 
-export default function CardCatalog() {
+// Catálogo de cartas do Museu
+export default function CatalogoDeCartas() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedCard, setSelectedCard] = useState(null);
 
-  const cards = cardsDatabase;
+  const cards = bancoDeCartas;
   const stats = getCardStats();
 
-  const categories = ['all', ...Object.values(CARD_CATEGORIES)];
-  const regions = ['all', ...Object.values(REGIONS)];
+  const categories = ['all', ...Object.values(CATEGORIAS_CARTAS)];
+  const regions = ['all', ...Object.values(REGIOES)];
 
   const filteredCards = cards.filter(card => {
     const categoryMatch = selectedCategory === 'all' || card.category === selectedCategory;
@@ -40,7 +41,7 @@ export default function CardCatalog() {
   };
 
   return (
-    <PageLayout>
+    <LayoutDePagina>
       {/* Banner de eventos */}
       <EventBanner />
       
@@ -173,6 +174,6 @@ export default function CardCatalog() {
           </Link>
         </div>
       </div>
-    </PageLayout>
+    </LayoutDePagina>
   );
 }

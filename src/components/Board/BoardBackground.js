@@ -1,6 +1,7 @@
 import React from 'react';
 
-export default function BoardBackground({ bgImage, children }) {
+// Fundo do tabuleiro com imagem dinâmica
+export default function FundoDoTabuleiro({ bgImage, children }) {
   return (
     <div
       style={{
@@ -9,7 +10,7 @@ export default function BoardBackground({ bgImage, children }) {
         backgroundImage: `url(${bgImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        transition: 'background-image 0.8s cubic-bezier(0.4,0,0.2,1)'
+        transition: 'background-image 0.8s cubic-bezier(0.4,0,0.2,1)',
       }}
     >
       {children}

@@ -3,46 +3,47 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import PageLayout from '../../components/UI/PageLayout';
-import { cardsDatabase, CARD_RARITIES } from '../../data/cardsDatabase';
+import LayoutDePagina from '../../components/UI/PageLayout';
+import { bancoDeCartas, RARIDADES_CARTAS } from '../../data/cardsDatabase';
 
-const rarityTheme = {
-	[CARD_RARITIES.MYTHIC]: 'border-red-500 text-red-300',
-	[CARD_RARITIES.LEGENDARY]: 'border-yellow-500 text-yellow-300',
-	[CARD_RARITIES.EPIC]: 'border-purple-500 text-purple-300',
+// Tema visual por raridade
+const temaDeRaridade = {
+	[RARIDADES_CARTAS.MYTHIC]: 'border-red-500 text-red-300',
+	[RARIDADES_CARTAS.LEGENDARY]: 'border-yellow-500 text-yellow-300',
+	[RARIDADES_CARTAS.EPIC]: 'border-purple-500 text-purple-300',
 };
 
-// Helper to pick a card by rarity, with optional featured override
-function pickFromPool(pool, featured) {
-	if (featured) return featured;
-	return pool[Math.floor(Math.random() * pool.length)] || null;
+// Auxiliar para escolher uma carta do conjunto, com opção de priorizar destaque
+function escolherDoConjunto(conjunto, destaque) {
+	if (destaque) return destaque;
+	return conjunto[Math.floor(Math.random() * conjunto.length)] || null;
 }
 
-// Roll with probability table like [{rarity, p}]
-function rollRarity(probTable) {
+// Rola a raridade com base em uma tabela de probabilidades [{rarity, p}]
+function rolarRaridade(tabela) {
 	const r = Math.random() * 100;
-	let acc = 0;
-	for (const item of probTable) {
-		acc += item.p;
-		if (r < acc) return item.rarity;
+	let acumulado = 0;
+	for (const item of tabela) {
+		acumulado += item.p;
+		if (r < acumulado) return item.rarity;
 	}
-	// Fallback to last rarity
-	return probTable[probTable.length - 1].rarity;
+	// Fallback: retorna a última raridade
+	return tabela[tabela.length - 1].rarity;
 }
 
-export default function Shop() {
-	const [gems, setGems] = useState(75);
-	const [results, setResults] = useState([]);
-	const [showResults, setShowResults] = useState(false);
-	const [busy, setBusy] = useState(false);
-	// Pity states per banner
-	const [weeklyPity5, setWeeklyPity5] = useState(0);
-	const [weeklyPity4, setWeeklyPity4] = useState(0);
-	const [weeklyFiftyLost, setWeeklyFiftyLost] = useState(false);
-	const [standardPity5, setStandardPity5] = useState(0);
-	const [standardPity4, setStandardPity4] = useState(0);
+export default function Loja() {
+	const [gemas, setGemas] = useState(75);
+	const [resultados, setResultados] = useState([]);
+	const [mostrarResultados, setMostrarResultados] = useState(false);
+	const [ocupado, setOcupado] = useState(false);
+	// Estados de pity por banner
+	const [pitySemanal5, setPitySemanal5] = useState(0);
+	const [pitySemanal4, setPitySemanal4] = useState(0);
+	const [cinquentaPorCentoPerdidoSemanal, setCinquentaPorCentoPerdidoSemanal] = useState(false);
+	const [pityPadrao5, setPityPadrao5] = useState(0);
+	const [pityPadrao4, setPityPadrao4] = useState(0);
 
-	// Load pity from localStorage
+	// Carrega pity do localStorage
 	useEffect(() => {
 		try {
 			const w5 = Number(localStorage.getItem('gacha.weekly.p5') || '0');
@@ -50,200 +51,200 @@ export default function Shop() {
 			const wf = localStorage.getItem('gacha.weekly.fifty') === '1';
 			const s5 = Number(localStorage.getItem('gacha.standard.p5') || '0');
 			const s4 = Number(localStorage.getItem('gacha.standard.p4') || '0');
-			setWeeklyPity5(isNaN(w5) ? 0 : w5);
-			setWeeklyPity4(isNaN(w4) ? 0 : w4);
-			setWeeklyFiftyLost(wf);
-			setStandardPity5(isNaN(s5) ? 0 : s5);
-			setStandardPity4(isNaN(s4) ? 0 : s4);
+			setPitySemanal5(isNaN(w5) ? 0 : w5);
+			setPitySemanal4(isNaN(w4) ? 0 : w4);
+			setCinquentaPorCentoPerdidoSemanal(wf);
+			setPityPadrao5(isNaN(s5) ? 0 : s5);
+			setPityPadrao4(isNaN(s4) ? 0 : s4);
 		} catch {}
 	}, []);
 
-	// Persist pity
+	// Persiste pity
 	useEffect(() => {
 		try {
-			localStorage.setItem('gacha.weekly.p5', String(weeklyPity5));
-			localStorage.setItem('gacha.weekly.p4', String(weeklyPity4));
-			localStorage.setItem('gacha.weekly.fifty', weeklyFiftyLost ? '1' : '0');
-			localStorage.setItem('gacha.standard.p5', String(standardPity5));
-			localStorage.setItem('gacha.standard.p4', String(standardPity4));
+			localStorage.setItem('gacha.weekly.p5', String(pitySemanal5));
+			localStorage.setItem('gacha.weekly.p4', String(pitySemanal4));
+			localStorage.setItem('gacha.weekly.fifty', cinquentaPorCentoPerdidoSemanal ? '1' : '0');
+			localStorage.setItem('gacha.standard.p5', String(pityPadrao5));
+			localStorage.setItem('gacha.standard.p4', String(pityPadrao4));
 		} catch {}
-	}, [weeklyPity5, weeklyPity4, weeklyFiftyLost, standardPity5, standardPity4]);
+	}, [pitySemanal5, pitySemanal4, cinquentaPorCentoPerdidoSemanal, pityPadrao5, pityPadrao4]);
 
-	// Pools by rarity
-	const pools = useMemo(() => {
-	    const byRarity = {
-				[CARD_RARITIES.MYTHIC]: [],
-				[CARD_RARITIES.LEGENDARY]: [],
-				[CARD_RARITIES.EPIC]: [],
+	// Conjuntos por raridade
+	const conjuntos = useMemo(() => {
+		const porRaridade = {
+				[RARIDADES_CARTAS.MYTHIC]: [],
+				[RARIDADES_CARTAS.LEGENDARY]: [],
+				[RARIDADES_CARTAS.EPIC]: [],
 			};
-		for (const c of cardsDatabase) {
-			if (byRarity[c.rarity]) byRarity[c.rarity].push(c);
+		for (const c of bancoDeCartas) {
+			if (porRaridade[c.rarity]) porRaridade[c.rarity].push(c);
 		}
-		return byRarity;
+		return porRaridade;
 	}, []);
 
-	// Weekly banner: Mythic rate-up
-	const weeklyFeatured = useMemo(() => {
-		// Pick first mythic as featured (rotate in future)
-		return pools[CARD_RARITIES.MYTHIC][0] || null;
-	}, [pools]);
+	// Banner semanal: destaque Mítico
+	const destaqueSemanal = useMemo(() => {
+		// Seleciona o primeiro Mítico como destaque (rotacionar no futuro)
+		return conjuntos[RARIDADES_CARTAS.MYTHIC][0] || null;
+	}, [conjuntos]);
 
-	  const weeklyProb = [
-			{ rarity: CARD_RARITIES.MYTHIC, p: 0.8 },
-			{ rarity: CARD_RARITIES.LEGENDARY, p: 9.2 },
-			{ rarity: CARD_RARITIES.EPIC, p: 90 },
+	  const probSemanal = [
+			{ rarity: RARIDADES_CARTAS.MYTHIC, p: 0.8 },
+			{ rarity: RARIDADES_CARTAS.LEGENDARY, p: 9.2 },
+			{ rarity: RARIDADES_CARTAS.EPIC, p: 90 },
 		];
 
-	// Standard banner: slightly higher Legendary
-	  const standardProb = [
-			{ rarity: CARD_RARITIES.MYTHIC, p: 0.5 },
-			{ rarity: CARD_RARITIES.LEGENDARY, p: 9.5 },
-			{ rarity: CARD_RARITIES.EPIC, p: 90 },
+    // Banner padrão: chance um pouco maior de Lendárias
+	  const probPadrao = [
+			{ rarity: RARIDADES_CARTAS.MYTHIC, p: 0.5 },
+			{ rarity: RARIDADES_CARTAS.LEGENDARY, p: 9.5 },
+			{ rarity: RARIDADES_CARTAS.EPIC, p: 90 },
 		];
 
-	// Costs
-	const costSingle = 8; // gems
-	const costTen = 75; // gems
+    // Custos
+    const custoUnico = 8; // gemas
+    const custoDez = 75; // gemas
 
-			function doPulls(which, count) {
-		const prob = which === 'weekly' ? weeklyProb : standardProb;
-			const pulls = [];
+			function realizarInvocacoes(qual, quantidade) {
+		const prob = qual === 'weekly' ? probSemanal : probPadrao;
+			const invocacoes = [];
 
-			// Current pity refs
-			let p5 = which === 'weekly' ? weeklyPity5 : standardPity5;
-			let p4 = which === 'weekly' ? weeklyPity4 : standardPity4;
-			let fiftyLost = which === 'weekly' ? weeklyFiftyLost : false;
+			// Referências atuais de pity
+			let p5 = qual === 'weekly' ? pitySemanal5 : pityPadrao5;
+			let p4 = qual === 'weekly' ? pitySemanal4 : pityPadrao4;
+			let cinquentaPerdido = qual === 'weekly' ? cinquentaPorCentoPerdidoSemanal : false;
 
-			for (let i = 0; i < count; i++) {
-				// Determine rarity with pity (MYTHIC ~ 5*, EPIC ~ 4*)
+			for (let i = 0; i < quantidade; i++) {
+				// Determina a raridade considerando pity (MYTHIC ~ 5*, EPIC ~ 4*)
 				let rarity;
 				if (p5 >= 29) {
 					// Pity 30 garante Mítico
-					rarity = CARD_RARITIES.MYTHIC;
+					rarity = RARIDADES_CARTAS.MYTHIC;
 				} else if (p4 >= 9) {
 					// Pity 10 garante ao menos Lendário (ou Mítico se a rolagem atingir)
-					const r = rollRarity(prob);
-					rarity = r === CARD_RARITIES.MYTHIC ? CARD_RARITIES.MYTHIC : CARD_RARITIES.LEGENDARY;
+					const r = rolarRaridade(prob);
+					rarity = r === RARIDADES_CARTAS.MYTHIC ? RARIDADES_CARTAS.MYTHIC : RARIDADES_CARTAS.LEGENDARY;
 				} else {
-					rarity = rollRarity(prob);
+					rarity = rolarRaridade(prob);
 				}
 
-				// Pick card from rarity pool with banner rules
-				const pool = pools[rarity] || [];
+				// Escolhe carta do conjunto da raridade seguindo as regras do banner
+				const conjunto = conjuntos[rarity] || [];
 				let card = null;
-				if (rarity === CARD_RARITIES.MYTHIC) {
-					if (which === 'weekly') {
-						// Genshin-like 50/50: if lost last time, guarantee featured
-						if (weeklyFeatured) {
-							if (fiftyLost) {
-								card = weeklyFeatured;
-								fiftyLost = false; // consume guarantee
+				if (rarity === RARIDADES_CARTAS.MYTHIC) {
+					if (qual === 'weekly') {
+						// 50/50: se perdeu o último, garante a carta em destaque
+						if (destaqueSemanal) {
+							if (cinquentaPerdido) {
+								card = destaqueSemanal;
+								cinquentaPerdido = false; // consome a garantia
 							} else {
 								const roll = Math.random() < 0.5; // 50/50
 								if (roll) {
-									card = weeklyFeatured;
+									card = destaqueSemanal;
 								} else {
-									// off-banner mythic (exclude featured)
-									const off = pool.filter(c => !weeklyFeatured || c.id !== weeklyFeatured.id);
-									card = off[Math.floor(Math.random() * off.length)] || weeklyFeatured;
-									// Mark that next 5* is guaranteed featured
-									fiftyLost = card && weeklyFeatured && card.id !== weeklyFeatured.id ? true : fiftyLost;
+									// Mítico fora do banner (exclui destaque)
+									const fora = conjunto.filter(c => !destaqueSemanal || c.id !== destaqueSemanal.id);
+									card = fora[Math.floor(Math.random() * fora.length)] || destaqueSemanal;
+									// Marca que o próximo 5* é garantido em destaque
+									cinquentaPerdido = card && destaqueSemanal && card.id !== destaqueSemanal.id ? true : cinquentaPerdido;
 								}
 							}
 						} else {
-							// no featured available, pick from pool
-							card = pool[Math.floor(Math.random() * pool.length)] || null;
+							// sem destaque disponível, escolhe do conjunto
+							card = conjunto[Math.floor(Math.random() * conjunto.length)] || null;
 						}
 					} else {
-						// standard: cannot drop weekly featured mythic
-						const std = pool.filter(c => !weeklyFeatured || c.id !== weeklyFeatured.id);
+						// padrão: não pode sair o Mítico em destaque do semanal
+						const std = conjunto.filter(c => !destaqueSemanal || c.id !== destaqueSemanal.id);
 						card = std[Math.floor(Math.random() * std.length)] || null;
 					}
 				} else {
-					// Non-mythic: standard pool
-					card = pool[Math.floor(Math.random() * pool.length)] || null;
+					// Não-mítico: conjunto padrão
+					card = conjunto[Math.floor(Math.random() * conjunto.length)] || null;
 				}
 
-				// Update pity counters based on result
-				if (rarity === CARD_RARITIES.MYTHIC) {
+				// Atualiza contadores de pity com base no resultado
+				if (rarity === RARIDADES_CARTAS.MYTHIC) {
 					p5 = 0;
 					p4 = 0;
-				} else if (rarity === CARD_RARITIES.LEGENDARY) {
+				} else if (rarity === RARIDADES_CARTAS.LEGENDARY) {
 					// Lendário reseta pity de 10; mantém de 30
 					p5 += 1;
 					p4 = 0;
-				} else if (rarity === CARD_RARITIES.EPIC) {
+				} else if (rarity === RARIDADES_CARTAS.EPIC) {
 					// Épico incrementa ambos
 					p5 += 1;
 					p4 += 1;
 				}
 
-				if (card) pulls.push(card);
+				if (card) invocacoes.push(card);
 			}
 
-			// Save pity back to state
-			if (which === 'weekly') {
-				setWeeklyPity5(p5);
-				setWeeklyPity4(p4);
-				setWeeklyFiftyLost(fiftyLost);
+			// Salva pity de volta no estado
+			if (qual === 'weekly') {
+				setPitySemanal5(p5);
+				setPitySemanal4(p4);
+				setCinquentaPorCentoPerdidoSemanal(cinquentaPerdido);
 			} else {
-				setStandardPity5(p5);
-				setStandardPity4(p4);
+				setPityPadrao5(p5);
+				setPityPadrao4(p4);
 			}
 
-			return pulls;
+			return invocacoes;
 	}
 
-	async function pull(which, count) {
-		if (busy) return;
-		const cost = count === 10 ? costTen : costSingle;
-		if (gems < cost) return;
-		setBusy(true);
+	async function invocar(qual, quantidade) {
+		if (ocupado) return;
+		const custo = quantidade === 10 ? custoDez : custoUnico;
+		if (gemas < custo) return;
+		setOcupado(true);
 		try {
-			setGems((g) => g - cost);
-			const cards = doPulls(which, count);
-			setResults(cards);
-			setShowResults(true);
+			setGemas((g) => g - custo);
+			const cartas = realizarInvocacoes(qual, quantidade);
+			setResultados(cartas);
+			setMostrarResultados(true);
 		} finally {
-			setBusy(false);
+			setOcupado(false);
 		}
 	}
 
-		const BannerCard = ({ id, title, subtitle, accent, featured, prob, pity5, pity4 }) => {
-		const accentMap = {
+		const CartaoDeBanner = ({ id, titulo, subtitulo, realce, destaque, probabilidades, pity5, pity4 }) => {
+		const mapaDeRealce = {
 			emerald: { ring: 'ring-emerald-400/40', btn: 'bg-emerald-600 hover:bg-emerald-700', chip: 'bg-emerald-600/30 text-emerald-200 border-emerald-500/40' },
 			amber: { ring: 'ring-amber-400/40', btn: 'bg-amber-600 hover:bg-amber-700', chip: 'bg-amber-600/30 text-amber-200 border-amber-500/40' },
 		};
-		const A = accentMap[accent];
+		const A = mapaDeRealce[realce];
 			return (
 				<div className={`relative rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-0 ring-1 ${A.ring} overflow-hidden`}> 
-					{/* Vertical card layout */}
+					{/* Layout vertical do card */}
 				<div className="relative w-full h-[420px] md:h-[480px]">
-								<Image src={(id === 'weekly' ? (featured?.images?.full || featured?.images?.portrait) : (featured?.images?.portrait || featured?.images?.full)) || '/images/placeholder.svg'} alt={featured?.name || 'Banner'} fill className="object-cover" />
+								<Image src={(id === 'weekly' ? (destaque?.images?.full || destaque?.images?.portrait) : (destaque?.images?.portrait || destaque?.images?.full)) || '/images/placeholder.svg'} alt={destaque?.name || 'Banner'} fill className="object-cover" />
 						<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 						<div className="absolute top-3 left-3">
 							<span className={`px-2 py-1 rounded text-[10px] border ${A.chip}`}>{id === 'weekly' ? 'ROTAÇÃO DA SEMANA' : 'INVOC. PADRÃO'}</span>
 						</div>
 						<div className="absolute bottom-3 left-3 right-3">
-							<h3 className="text-xl font-extrabold leading-tight">{title}</h3>
-							<p className="text-gray-300 text-xs">{subtitle}</p>
-							{id === 'weekly' && featured && (
-								<div className="text-xs text-yellow-300 mt-1">Em destaque: <span className="font-semibold">{featured.name}</span></div>
+							<h3 className="text-xl font-extrabold leading-tight">{titulo}</h3>
+							<p className="text-gray-300 text-xs">{subtitulo}</p>
+							{id === 'weekly' && destaque && (
+								<div className="text-xs text-yellow-300 mt-1">Em destaque: <span className="font-semibold">{destaque.name}</span></div>
 							)}
 						</div>
 					</div>
 					<div className="p-4 border-t border-white/10">
-									<div className="text-[11px] text-gray-400 mb-2">Taxas: {prob.map(p => `${p.rarity}: ${p.p}%`).join(' • ')}</div>
+									<div className="text-[11px] text-gray-400 mb-2">Taxas: {probabilidades.map(p => `${p.rarity}: ${p.p}%`).join(' • ')}</div>
 									<div className="flex items-center justify-between text-[11px] text-gray-400 mb-2">
 										<div>Pity Mítico: <span className="text-yellow-300 font-semibold">{pity5}/30</span></div>
 											<div>Pity Lendário: <span className="text-yellow-300 font-semibold">{pity4}/10</span></div>
 						</div>
 						<div className="flex gap-3">
-							<button disabled={busy || gems < 8} onClick={() => pull(id, 1)} className={`flex-1 py-2 rounded-lg font-semibold ${A.btn} disabled:bg-gray-600 disabled:cursor-not-allowed`}>
-								Invocar x1 (💎{costSingle})
+							<button disabled={ocupado || gemas < 8} onClick={() => invocar(id, 1)} className={`flex-1 py-2 rounded-lg font-semibold ${A.btn} disabled:bg-gray-600 disabled:cursor-not-allowed`}>
+								Invocar x1 (💎{custoUnico})
 							</button>
-							<button disabled={busy || gems < 75} onClick={() => pull(id, 10)} className={`flex-1 py-2 rounded-lg font-semibold ${A.btn} disabled:bg-gray-600 disabled:cursor-not-allowed`}>
-								Invocar x10 (💎{costTen})
+							<button disabled={ocupado || gemas < 75} onClick={() => invocar(id, 10)} className={`flex-1 py-2 rounded-lg font-semibold ${A.btn} disabled:bg-gray-600 disabled:cursor-not-allowed`}>
+								Invocar x10 (💎{custoDez})
 							</button>
 						</div>
 					</div>
@@ -252,7 +253,7 @@ export default function Shop() {
 	};
 
 	return (
-		<PageLayout>
+		<LayoutDePagina>
 			<div className="container mx-auto px-4 py-8">
 				<div className="text-center mb-8">
 					<h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500">
@@ -261,34 +262,34 @@ export default function Shop() {
 					<p className="text-xl text-pink-200">Gire os banners para obter novas lendas</p>
 				</div>
 
-				{/* Wallet */}
+				{/* Carteira */}
 				<div className="flex flex-wrap items-center justify-center gap-4 mb-8">
 					<div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border border-white/10">
-						<span>�</span>
-						<span className="font-semibold">{gems} gemas</span>
+						<span>💎</span>
+						<span className="font-semibold">{gemas} gemas</span>
 					</div>
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-					<BannerCard
+					<CartaoDeBanner
 						id="weekly"
-						title="Rota da Semana • Mítico em destaque"
-						subtitle="Probabilidade aumentada para a carta Mítica da semana"
-						accent="amber"
-						featured={weeklyFeatured}
-						prob={weeklyProb}
-					pity5={weeklyPity5}
-					pity4={weeklyPity4}
+						titulo="Rota da Semana • Mítico em destaque"
+						subtitulo="Probabilidade aumentada para a carta Mítica da semana"
+						realce="amber"
+						destaque={destaqueSemanal}
+						probabilidades={probSemanal}
+					pity5={pitySemanal5}
+					pity4={pitySemanal4}
 					/>
-					<BannerCard
+					<CartaoDeBanner
 						id="standard"
-					title="Invocação Padrão"
-					subtitle="Sempre disponível, inclui Lendárias e Míticas (sem a limitada)"
-						accent="emerald"
-					featured={null}
-						prob={standardProb}
-					pity5={standardPity5}
-					pity4={standardPity4}
+					titulo="Invocação Padrão"
+					subtitulo="Sempre disponível, inclui Lendárias e Míticas (sem a limitada)"
+						realce="emerald"
+					destaque={null}
+						probabilidades={probPadrao}
+					pity5={pityPadrao5}
+					pity4={pityPadrao4}
 					/>
 				</div>
 
@@ -299,17 +300,17 @@ export default function Shop() {
 				</div>
 			</div>
 
-			{/* Results Modal */}
-			{showResults && (
-				<div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowResults(false)}>
+			{/* Modal de Resultados */}
+			{mostrarResultados && (
+				<div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setMostrarResultados(false)}>
 					<div className="bg-black/40 border border-white/10 rounded-2xl p-6 max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-xl font-bold">Resultados</h3>
-							<button onClick={() => setShowResults(false)} className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600">Fechar</button>
+							<button onClick={() => setMostrarResultados(false)} className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600">Fechar</button>
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-									{results.map((card, idx) => (
-										<div key={idx} className={`relative rounded-lg p-2 border ${rarityTheme[card.rarity] || 'border-gray-600 text-gray-300'} bg-black/30`}>
+								{resultados.map((card, idx) => (
+									<div key={idx} className={`relative rounded-lg p-2 border ${temaDeRaridade[card.rarity] || 'border-gray-600 text-gray-300'} bg-black/30`}>
 									<div className="relative w-full h-28 rounded overflow-hidden mb-2 border border-white/10">
 										<Image src={card.images?.portrait || '/images/placeholder.svg'} alt={card.name} fill className="object-cover" />
 									</div>
@@ -324,7 +325,7 @@ export default function Shop() {
 					</div>
 				</div>
 			)}
-		</PageLayout>
+		</LayoutDePagina>
 	);
 }
 

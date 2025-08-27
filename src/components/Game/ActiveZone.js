@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-export default function ActiveZone({
+// Zona ativa do tabuleiro (carta em campo)
+export default function ZonaAtiva({
   card,
   position = 'player',
   onCardClick,
@@ -13,25 +14,25 @@ export default function ActiveZone({
   onDragOver,
   onCardContextMenu
 }) {
-  const isPlayer = position === 'player';
-  const baseShadow = '0 10px 30px -6px rgba(0,0,0,0.85)';
-  const [imgErrored, setImgErrored] = useState(false);
+  const ehJogador = position === 'player';
+  const sombraBase = '0 10px 30px -6px rgba(0,0,0,0.85)';
+  const [imagemComErro, definirImagemComErro] = useState(false);
   return (
     <div className="relative">
       <div
-        className={`relative w-40 h-56 rounded-2xl border-2 flex items-center justify-center transition-all ${card ? (isPlayer ? 'border-blue-500' : 'border-red-500') : 'border-dashed border-neutral-600'} ${!card && isPlayer && isPlayerTurn ? 'hover:border-green-400' : ''}`}
-        style={{ background: card ? (isPlayer ? '#123047' : '#472222') : '#111a22', boxShadow: baseShadow }}
+        className={`relative w-40 h-56 rounded-2xl border-2 flex items-center justify-center transition-all ${card ? (ehJogador ? 'border-blue-500' : 'border-red-500') : 'border-dashed border-neutral-600'} ${!card && ehJogador && isPlayerTurn ? 'hover:border-green-400' : ''}`}
+        style={{ background: card ? (ehJogador ? '#123047' : '#472222') : '#111a22', boxShadow: sombraBase }}
         onDrop={onDrop}
         onDragOver={onDragOver}
         onClick={card ? onCardClick : undefined}
         onContextMenu={card ? (e => { e.preventDefault(); onCardContextMenu && onCardContextMenu(card); }) : undefined}
       >
         {!card && (
-          <span className="text-[12px] text-neutral-400 font-semibold text-center px-2 leading-tight">{isPlayer && isPlayerTurn ? 'SOLTE AQUI' : 'VAZIO'}</span>
+          <span className="text-[12px] text-neutral-400 font-semibold text-center px-2 leading-tight">{ehJogador && isPlayerTurn ? 'SOLTE AQUI' : 'VAZIO'}</span>
         )}
         {card && (
           <>
-            {card.images?.portrait && !imgErrored && (
+            {card.images?.portrait && !imagemComErro && (
               <Image
                 src={card.images.portrait}
                 alt={card.name}
@@ -40,10 +41,10 @@ export default function ActiveZone({
                 quality={100}
                 className="w-full h-full object-cover rounded-2xl pointer-events-none select-none will-change-transform"
                 priority={false}
-                onError={() => setImgErrored(true)}
+                onError={() => definirImagemComErro(true)}
               />
             )}
-            {(!card.images?.portrait || imgErrored) && (
+            {(!card.images?.portrait || imagemComErro) && (
               <Image
                 src="/images/placeholder.svg"
                 alt={`Placeholder de ${card.name}`}
@@ -65,14 +66,14 @@ export default function ActiveZone({
         {/* Badge de Ultimate (desbloqueio após 3 turnos em campo) */}
         {card && (
           (() => {
-            const turns = card.onFieldTurns || 0;
-            const remaining = Math.max(0, 3 - turns);
-            const show = true; // sempre mostrar estado da ultimate do ativo
-            if (!show) return null;
+            const turnos = card.onFieldTurns || 0;
+            const restante = Math.max(0, 3 - turnos);
+            const exibir = true; // sempre mostrar estado da ultimate do ativo
+            if (!exibir) return null;
             return (
               <div className="absolute top-1 left-1">
-                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-sm ${remaining > 0 ? 'bg-amber-900/40 border-amber-500/40 text-amber-200' : 'bg-emerald-900/40 border-emerald-500/40 text-emerald-200'}`}>
-                  {remaining > 0 ? `🌟 Ultimate em ${remaining}` : '🌟 Ultimate pronta'}
+                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-sm ${restante > 0 ? 'bg-amber-900/40 border-amber-500/40 text-amber-200' : 'bg-emerald-900/40 border-emerald-500/40 text-emerald-200'}`}>
+                  {restante > 0 ? `🌟 Ultimate em ${restante}` : '🌟 Ultimate pronta'}
                 </div>
               </div>
             );

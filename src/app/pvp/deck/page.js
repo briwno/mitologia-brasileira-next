@@ -3,25 +3,26 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import PageLayout from '../../../components/UI/PageLayout';
+import LayoutDePagina from '../../../components/UI/PageLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
-import { cardsDatabase } from '@/data/cardsDatabase';
+import { bancoDeCartas } from '@/data/cardsDatabase';
 
-export default function DeckBuilder() {
+// Construtor de Deck para o modo PvP
+export default function ConstrutorDeDeck() {
   const { user, isAuthenticated } = useAuth();
-  const { cards: ownedIds, loading: loadingCollection } = useCollection();
-  const [selectedDeck, setSelectedDeck] = useState('deck1');
-  const [activeTab, setActiveTab] = useState('collection');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const { cards: idsPossuidos, loading: carregandoColecao } = useCollection();
+  const [deckSelecionado, setDeckSelecionado] = useState('deck1');
+  const [abaAtiva, setAbaAtiva] = useState('collection');
+  const [termoBusca, setTermoBusca] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('all');
 
-  // Derivar coleção real do usuário quando autenticado
-  const realCollection = useMemo(() => {
-    if (!isAuthenticated() || !ownedIds?.length) return [];
-    const byId = new Map(cardsDatabase.map(c => [c.id, c]));
-    return ownedIds
-      .map(id => byId.get(id))
+  // Deriva a coleção real do usuário quando autenticado
+  const colecaoReal = useMemo(() => {
+    if (!isAuthenticated() || !idsPossuidos?.length) return [];
+  const porId = new Map(bancoDeCartas.map(c => [c.id, c]));
+    return idsPossuidos
+      .map(id => porId.get(id))
       .filter(Boolean)
       .map(card => ({
         id: card.id,
@@ -33,17 +34,17 @@ export default function DeckBuilder() {
         owned: 1, // coleção atual não controla duplicatas
         inDeck: 0,
       }));
-  }, [ownedIds, isAuthenticated]);
+  }, [idsPossuidos, isAuthenticated]);
 
-  // Fallback mock para quando não autenticado
-  const mockCollection = [
+  // Fallback fictício para quando não autenticado
+  const colecaoFicticia = [
     { id: 'cur001', name: 'Curupira', category: 'Guardiões da Floresta', attack: 7, defense: 8, life: 15, owned: 1, inDeck: 0 },
     { id: 'iar001', name: 'Iara', category: 'Espíritos das Águas', attack: 6, defense: 5, life: 12, owned: 1, inDeck: 0 },
     { id: 'sac001', name: 'Saci-Pererê', category: 'Assombrações', attack: 5, defense: 6, life: 10, owned: 1, inDeck: 0 },
     { id: 'boi001', name: 'Boitatá', category: 'Guardiões da Floresta', attack: 9, defense: 7, life: 18, owned: 1, inDeck: 0 },
   ];
 
-  const playerCollection = isAuthenticated() ? realCollection : mockCollection;
+  const colecaoDoJogador = isAuthenticated() ? colecaoReal : colecaoFicticia;
 
   // Decks salvos
   const [decks, setDecks] = useState({
@@ -59,74 +60,74 @@ export default function DeckBuilder() {
     }
   });
 
-  const categories = useMemo(() => {
+  const categorias = useMemo(() => {
     const set = new Set(['all']);
-    playerCollection.forEach(c => set.add(c.category));
+    colecaoDoJogador.forEach(c => set.add(c.category));
     return Array.from(set);
-  }, [playerCollection]);
+  }, [colecaoDoJogador]);
 
-  const getCurrentDeck = () => decks[selectedDeck];
-  const getCurrentDeckCards = () => {
-    const deck = getCurrentDeck();
+  const obterDeckAtual = () => decks[deckSelecionado];
+  const obterCartasDoDeckAtual = () => {
+    const deck = obterDeckAtual();
     return deck.cards.map(deckCard => {
-      const cardData = playerCollection.find(card => card.id === deckCard.id);
+      const cardData = colecaoDoJogador.find(card => card.id === deckCard.id);
       return { ...cardData, quantity: deckCard.quantity };
     });
   };
 
-  const filteredCollection = playerCollection.filter(card => {
-    const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || card.category === filterCategory;
-    return matchesSearch && matchesCategory;
+  const colecaoFiltrada = colecaoDoJogador.filter(card => {
+    const combinaBusca = card.name.toLowerCase().includes(termoBusca.toLowerCase());
+    const combinaCategoria = filtroCategoria === 'all' || card.category === filtroCategoria;
+    return combinaBusca && combinaCategoria;
   });
 
-  const addCardToDeck = (cardId) => {
-    const card = playerCollection.find(c => c.id === cardId);
-    const currentDeck = getCurrentDeck();
-    const currentCard = currentDeck.cards.find(c => c.id === cardId);
-    const totalCards = currentDeck.cards.reduce((sum, c) => sum + c.quantity, 0);
+  const adicionarCartaAoDeck = (cardId) => {
+    const card = colecaoDoJogador.find(c => c.id === cardId);
+    const deckAtual = obterDeckAtual();
+    const cartaAtual = deckAtual.cards.find(c => c.id === cardId);
+    const totalCartas = deckAtual.cards.reduce((sum, c) => sum + c.quantity, 0);
 
-    if (totalCards >= 30) {
+    if (totalCartas >= 30) {
       alert('Deck não pode ter mais de 30 cartas!');
       return;
     }
 
     // Se for coleção real: limitar a 1 cópia; mock mantém limite simples de 1 também
-    if (currentCard || (card?.owned ?? 1) <= 0) {
+    if (cartaAtual || (card?.owned ?? 1) <= 0) {
       alert('Você já adicionou a quantidade máxima desta carta.');
       return;
     }
-    currentDeck.cards.push({ id: cardId, quantity: 1 });
+    deckAtual.cards.push({ id: cardId, quantity: 1 });
 
     setDecks({ ...decks });
   };
 
-  const removeCardFromDeck = (cardId) => {
-    const currentDeck = getCurrentDeck();
-    const cardIndex = currentDeck.cards.findIndex(c => c.id === cardId);
+  const removerCartaDoDeck = (cardId) => {
+    const deckAtual = obterDeckAtual();
+    const cardIndex = deckAtual.cards.findIndex(c => c.id === cardId);
     
     if (cardIndex !== -1) {
-      const card = currentDeck.cards[cardIndex];
+      const card = deckAtual.cards[cardIndex];
       if (card.quantity > 1) {
         card.quantity--;
       } else {
-        currentDeck.cards.splice(cardIndex, 1);
+        deckAtual.cards.splice(cardIndex, 1);
       }
       setDecks({ ...decks });
     }
   };
 
-  const getTotalCards = () => getCurrentDeck().cards.reduce((sum, card) => sum + card.quantity, 0);
-  const getAverageAttack = () => {
-    const deckCards = getCurrentDeckCards();
-    if (deckCards.length === 0) return 0;
-    const totalAttack = deckCards.reduce((sum, card) => sum + ((card?.attack || 0) * card.quantity), 0);
-    const totalCards = deckCards.reduce((sum, card) => sum + card.quantity, 0);
-    return (totalAttack / totalCards).toFixed(1);
+  const obterTotalDeCartas = () => obterDeckAtual().cards.reduce((sum, card) => sum + card.quantity, 0);
+  const obterAtaqueMedio = () => {
+    const cartasDeck = obterCartasDoDeckAtual();
+    if (cartasDeck.length === 0) return 0;
+    const totalAtaque = cartasDeck.reduce((sum, card) => sum + ((card?.attack || 0) * card.quantity), 0);
+    const totalCartas = cartasDeck.reduce((sum, card) => sum + card.quantity, 0);
+    return (totalAtaque / totalCartas).toFixed(1);
   };
 
   return (
-    <PageLayout>
+    <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -144,9 +145,9 @@ export default function DeckBuilder() {
               {/* Tabs */}
               <div className="flex border-b border-gray-600/30">
                 <button
-                  onClick={() => setActiveTab('collection')}
+                  onClick={() => setAbaAtiva('collection')}
                   className={`flex-1 p-4 font-semibold transition-colors ${
-                    activeTab === 'collection' 
+                    abaAtiva === 'collection' 
                       ? 'text-blue-400 border-b-2 border-blue-400' 
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
@@ -154,35 +155,35 @@ export default function DeckBuilder() {
                   🃏 Coleção
                 </button>
                 <button
-                  onClick={() => setActiveTab('deck')}
+                  onClick={() => setAbaAtiva('deck')}
                   className={`flex-1 p-4 font-semibold transition-colors ${
-                    activeTab === 'deck' 
+                    abaAtiva === 'deck' 
                       ? 'text-green-400 border-b-2 border-green-400' 
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  📋 Deck Atual ({getTotalCards()}/30)
+                  📋 Deck Atual ({obterTotalDeCartas()}/30)
                 </button>
               </div>
 
               <div className="p-6">
-                {activeTab === 'collection' && (
+                {abaAtiva === 'collection' && (
                   <>
                     {/* Filtros */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <input
                         type="text"
                         placeholder="Buscar cartas..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={termoBusca}
+                        onChange={(e) => setTermoBusca(e.target.value)}
                         className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-blue-500 focus:outline-none"
                       />
                       <select
-                        value={filterCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
+                        value={filtroCategoria}
+                        onChange={(e) => setFiltroCategoria(e.target.value)}
                         className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-blue-500 focus:outline-none"
                       >
-                        {categories.map(cat => (
+                        {categorias.map(cat => (
                           <option key={cat} value={cat}>
                             {cat === 'all' ? 'Todas as Categorias' : cat}
                           </option>
@@ -192,11 +193,11 @@ export default function DeckBuilder() {
 
                     {/* Grid de Cartas */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {filteredCollection.map(card => (
+                      {colecaoFiltrada.map(card => (
                         <div
                           key={card.id}
                           className="bg-black/40 rounded-lg p-3 border border-gray-600/30 hover:border-blue-500/50 transition-all cursor-pointer"
-                          onClick={() => addCardToDeck(card.id)}
+                          onClick={() => adicionarCartaAoDeck(card.id)}
                         >
                           <div className="text-center">
                             <div className="w-full h-20 bg-gradient-to-b from-gray-700 to-gray-800 rounded mb-2 flex items-center justify-center">
@@ -221,17 +222,17 @@ export default function DeckBuilder() {
                   </>
                 )}
 
-                {activeTab === 'deck' && (
+                {abaAtiva === 'deck' && (
                   <>
                     <h3 className="text-xl font-bold mb-4">Cartas no Deck</h3>
-                    {getCurrentDeckCards().length === 0 ? (
+                    {obterCartasDoDeckAtual().length === 0 ? (
                       <div className="text-center py-8 text-gray-400">
                         <div className="text-4xl mb-4">📋</div>
                         <p>Seu deck está vazio. Adicione cartas da sua coleção!</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {getCurrentDeckCards().map(card => (
+                        {obterCartasDoDeckAtual().map(card => (
                           <div
                             key={card.id}
                             className="bg-black/40 p-3 rounded-lg border border-gray-600/30 flex items-center justify-between"
@@ -248,7 +249,7 @@ export default function DeckBuilder() {
                             <div className="flex items-center space-x-3">
                               <span className="text-sm">x{card.quantity}</span>
                               <button
-                                onClick={() => removeCardFromDeck(card.id)}
+                                onClick={() => removerCartaDoDeck(card.id)}
                                 className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
                               >
                                 Remover
@@ -273,9 +274,9 @@ export default function DeckBuilder() {
                 {Object.entries(decks).map(([id, deck]) => (
                   <button
                     key={id}
-                    onClick={() => setSelectedDeck(id)}
+                    onClick={() => setDeckSelecionado(id)}
                     className={`w-full p-3 rounded-lg border transition-all text-left ${
-                      selectedDeck === id 
+                      deckSelecionado === id 
                         ? 'border-green-500 bg-green-500/20' 
                         : 'border-gray-600 bg-black/40 hover:border-gray-500'
                     }`}
@@ -295,15 +296,15 @@ export default function DeckBuilder() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total de Cartas:</span>
-                  <span className="font-bold">{getTotalCards()}/30</span>
+                  <span className="font-bold">{obterTotalDeCartas()}/30</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Ataque Médio:</span>
-                  <span className="font-bold text-yellow-400">⚔️{getAverageAttack()}</span>
+                  <span className="font-bold text-yellow-400">⚔️{obterAtaqueMedio()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Cartas Únicas:</span>
-                  <span className="font-bold">{getCurrentDeck().cards.length}</span>
+                  <span className="font-bold">{obterDeckAtual().cards.length}</span>
                 </div>
               </div>
 
@@ -311,12 +312,12 @@ export default function DeckBuilder() {
               <div className="mt-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span>Progresso do Deck</span>
-                  <span>{Math.round((getTotalCards() / 30) * 100)}%</span>
+                  <span>{Math.round((obterTotalDeCartas() / 30) * 100)}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
                     className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${(getTotalCards() / 30) * 100}%` }}
+                    style={{ width: `${(obterTotalDeCartas() / 30) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -327,7 +328,7 @@ export default function DeckBuilder() {
               <h3 className="text-xl font-bold mb-4">⚡ Ações</h3>
               <div className="space-y-3">
                 <button
-                  disabled={getTotalCards() < 20}
+                  disabled={obterTotalDeCartas() < 20}
                   className="w-full py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded transition-colors"
                 >
                   💾 Salvar Deck
@@ -355,6 +356,6 @@ export default function DeckBuilder() {
           </Link>
         </div>
       </div>
-    </PageLayout>
+    </LayoutDePagina>
   );
 }

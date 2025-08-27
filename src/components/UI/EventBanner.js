@@ -5,22 +5,22 @@ import { useState, useEffect } from 'react';
 import { getCurrentEvents, getCardEventBonus } from '../../utils/seasonalEvents';
 
 export default function EventBanner({ card = null, showDetailed = false }) {
-  const [activeEvents, setActiveEvents] = useState([]);
-  const [cardBonus, setCardBonus] = useState(null);
+  const [eventosAtivos, definirEventosAtivos] = useState([]);
+  const [bonusDaCarta, definirBonusDaCarta] = useState(null);
 
   useEffect(() => {
-    const events = getCurrentEvents();
-    setActiveEvents(events);
+  const events = getCurrentEvents();
+  definirEventosAtivos(events);
 
     if (card) {
-      const bonus = getCardEventBonus(card);
-      setCardBonus(bonus);
+    const bonus = getCardEventBonus(card);
+    definirBonusDaCarta(bonus);
     }
   }, [card]);
 
-  if (activeEvents.length === 0) return null;
+  if (eventosAtivos.length === 0) return null;
 
-  const getEventIcon = (eventName) => {
+  const obterIconeDoEvento = (eventName) => {
     switch (eventName) {
       case 'Carnaval': return '🎭';
       case 'São João': return '🔥';
@@ -32,7 +32,7 @@ export default function EventBanner({ card = null, showDetailed = false }) {
     }
   };
 
-  const getEventColor = (eventName) => {
+  const obterCorDoEvento = (eventName) => {
     switch (eventName) {
       case 'Carnaval': return 'from-purple-600 to-yellow-500';
       case 'São João': return 'from-orange-600 to-red-500';
@@ -44,7 +44,7 @@ export default function EventBanner({ card = null, showDetailed = false }) {
     }
   };
 
-  if (card && cardBonus?.hasBonus) {
+  if (card && bonusDaCarta?.hasBonus) {
     // Banner específico para carta com bônus
     return (
       <div className="bg-gradient-to-r from-yellow-600 to-orange-500 text-white p-2 rounded-lg mb-2 border border-yellow-400">
@@ -54,12 +54,12 @@ export default function EventBanner({ card = null, showDetailed = false }) {
             <div>
               <div className="text-sm font-bold">Bônus Ativo!</div>
               <div className="text-xs">
-                {cardBonus.bonuses.map(bonus => bonus.event).join(', ')}
+        {bonusDaCarta.bonuses.map(bonus => bonus.event).join(', ')}
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold">{cardBonus.multiplier.toFixed(1)}x</div>
+      <div className="text-lg font-bold">{bonusDaCarta.multiplier.toFixed(1)}x</div>
             <div className="text-xs">Multiplicador</div>
           </div>
         </div>
@@ -71,13 +71,13 @@ export default function EventBanner({ card = null, showDetailed = false }) {
     // Banner simples - apenas no topo da página, não fixo
     return (
       <div className="mb-6">
-        {activeEvents.slice(0, 1).map((event, index) => (
+    {eventosAtivos.slice(0, 1).map((event, index) => (
           <div
             key={event.id}
-            className={`bg-gradient-to-r ${getEventColor(event.name)} text-white p-3 rounded-lg shadow-lg border-2 border-white/20 backdrop-blur-sm mx-auto max-w-md`}
+      className={`bg-gradient-to-r ${obterCorDoEvento(event.name)} text-white p-3 rounded-lg shadow-lg border-2 border-white/20 backdrop-blur-sm mx-auto max-w-md`}
           >
             <div className="flex items-center space-x-3">
-              <span className="text-xl sm:text-2xl">{getEventIcon(event.name)}</span>
+        <span className="text-xl sm:text-2xl">{obterIconeDoEvento(event.name)}</span>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm sm:text-base">{event.name}</div>
                 <div className="text-xs sm:text-sm opacity-90 truncate">{event.description}</div>
@@ -101,14 +101,14 @@ export default function EventBanner({ card = null, showDetailed = false }) {
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-bold text-center mb-4">🎉 Eventos Ativos</h3>
-      {activeEvents.map((event, index) => (
+    {eventosAtivos.map((event, index) => (
         <div
           key={event.id}
-          className={`bg-gradient-to-r ${getEventColor(event.name)} text-white p-4 rounded-lg border-2 border-white/20`}
+      className={`bg-gradient-to-r ${obterCorDoEvento(event.name)} text-white p-4 rounded-lg border-2 border-white/20`}
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-3">
-              <span className="text-3xl">{getEventIcon(event.name)}</span>
+        <span className="text-3xl">{obterIconeDoEvento(event.name)}</span>
               <div>
                 <h4 className="text-lg font-bold">{event.name}</h4>
                 <p className="text-sm opacity-90">{event.description}</p>
@@ -175,10 +175,10 @@ export default function EventBanner({ card = null, showDetailed = false }) {
 
 // Componente para mostrar multiplicadores ativos no jogo
 export function GameMultipliers({ gameState, cards = [] }) {
-  const [multipliers, setMultipliers] = useState([]);
+  const [multiplicadores, definirMultiplicadores] = useState([]);
 
   useEffect(() => {
-    const activeMultipliers = [];
+  const multiplicadoresAtivos = [];
 
     // Verificar eventos sazonais
     const events = getCurrentEvents();
@@ -188,11 +188,11 @@ export function GameMultipliers({ gameState, cards = [] }) {
       );
       
       if (affectedCards.length > 0) {
-        activeMultipliers.push({
+        multiplicadoresAtivos.push({
           type: 'seasonal',
           name: event.name,
           multiplier: event.multiplier,
-          icon: getEventIcon(event.name),
+          icon: obterIconeDoEvento(event.name),
           cards: affectedCards.length
         });
       }
@@ -205,7 +205,7 @@ export function GameMultipliers({ gameState, cards = [] }) {
       const count = cards.filter(card => card.region === region).length;
       if (count > 1) {
         regionCounts[region] = count;
-        activeMultipliers.push({
+  multiplicadoresAtivos.push({
           type: 'regional',
           name: `Sinergia ${region}`,
           multiplier: 1.25,
@@ -222,7 +222,7 @@ export function GameMultipliers({ gameState, cards = [] }) {
       );
       
       if (nightCreatures.length > 0) {
-        activeMultipliers.push({
+        multiplicadoresAtivos.push({
           type: 'lunar',
           name: 'Lua Cheia',
           multiplier: 2.0,
@@ -232,10 +232,10 @@ export function GameMultipliers({ gameState, cards = [] }) {
       }
     }
 
-    setMultipliers(activeMultipliers);
+    definirMultiplicadores(multiplicadoresAtivos);
   }, [gameState, cards]);
 
-  if (multipliers.length === 0) return null;
+  if (multiplicadores.length === 0) return null;
 
   return (
     <div className="bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-gray-600/30">
@@ -243,7 +243,7 @@ export function GameMultipliers({ gameState, cards = [] }) {
         🎯 Multiplicadores Ativos
       </div>
       <div className="space-y-2">
-        {multipliers.map((mult, index) => (
+    {multiplicadores.map((mult, index) => (
           <div key={index} className="flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">
               <span>{mult.icon}</span>
@@ -259,7 +259,7 @@ export function GameMultipliers({ gameState, cards = [] }) {
     </div>
   );
 
-  function getEventIcon(eventName) {
+  function obterIconeDoEvento(eventName) {
     switch (eventName) {
       case 'Carnaval': return '🎭';
       case 'São João': return '🔥';

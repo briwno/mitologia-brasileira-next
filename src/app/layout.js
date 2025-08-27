@@ -18,10 +18,11 @@ export const metadata = {
   description: "Adentre a Ka'aguy. Se for capaz.",
 };
 
-export default function RootLayout({ children }) {
+// Layout raiz da aplicação
+export default function LayoutRaiz({ children }) {
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0';
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -29,7 +30,7 @@ export default function RootLayout({ children }) {
     {children}
     <GlobalNav />
   </Providers>
-  {/* Global version watermark */}
+  {/* Marca d'água global com a versão */}
   <div className="fixed bottom-2 left-1/2 -translate-x-1/2 text-[11px] text-white/30 pointer-events-none select-none z-30">
     Versão: {appVersion}
   </div>

@@ -5,13 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import PageLayout from '../../components/UI/PageLayout';
-import { cardsDatabase } from '@/data/cardsDatabase';
+import LayoutDePagina from '../../components/UI/PageLayout';
+import { bancoDeCartas } from '@/data/cardsDatabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
 
-// Simple mode card used to pick matchmaking mode
-function ModeCard({ title, emoji, active, onClick, subtitle, imageSrc }) {
+// Cartão simples para escolher o modo de partida
+function CartaoDeModo({ title, emoji, active, onClick, subtitle, imageSrc }) {
   return (
     <button
       type="button"
@@ -19,7 +19,7 @@ function ModeCard({ title, emoji, active, onClick, subtitle, imageSrc }) {
   className={`group relative h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-visible transition-all select-none w-full text-left
         ${active ? 'shadow-[0_20px_60px_-20px_rgba(255,215,0,0.45)]' : 'hover:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.3)]'}`}
     >
-      {/* background image */}
+  {/* imagem de fundo */}
       <div className="absolute inset-0 rounded-xl overflow-hidden">
         <Image
           src={imageSrc || '/images/placeholder.svg'}
@@ -32,18 +32,18 @@ function ModeCard({ title, emoji, active, onClick, subtitle, imageSrc }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/80 z-10" />
       </div>
 
-      {/* golden frame */}
+  {/* moldura dourada */}
       <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${active ? 'ring-2 ring-yellow-400' : 'ring-1 ring-yellow-600/60 group-hover:ring-yellow-400'}`} />
       <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-yellow-300/10 via-transparent to-yellow-300/0 z-10" />
 
-      {/* selected badge */}
+  {/* selo de seleção */}
       {active && (
         <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-yellow-400 text-black flex items-center justify-center text-xs font-extrabold shadow z-40">
           ✓
         </div>
       )}
 
-      {/* content */}
+  {/* conteúdo */}
       <div className="relative z-20 h-full flex flex-col justify-end p-5">
         <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{emoji}</div>
         <div className="pb-3">
@@ -52,7 +52,7 @@ function ModeCard({ title, emoji, active, onClick, subtitle, imageSrc }) {
         </div>
       </div>
       
-    {/* diamond emblem (above frame) */}
+  {/* emblema em losango (acima da moldura) */}
     <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
       <div className="w-10 h-10 rotate-45 bg-yellow-500/90 border-2 border-yellow-300 shadow-lg flex items-center justify-center">
         <div className="-rotate-45">{emoji}</div>
@@ -62,21 +62,21 @@ function ModeCard({ title, emoji, active, onClick, subtitle, imageSrc }) {
   );
 }
 
-export default function PvPLobby() {
+export default function LobbyPvP() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('quick'); // 'quick' | 'rooms' | 'ranked'
-  const [showDeckModal, setShowDeckModal] = useState(false);
-  const [savingDeck, setSavingDeck] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState('quick'); // 'quick' | 'rooms' | 'ranked'
+  const [mostrarModalDeck, setMostrarModalDeck] = useState(false);
+  const [salvandoDeck, setSalvandoDeck] = useState(false);
 
   const { user, isAuthenticated } = useAuth();
-  const { cards: ownedIds, loading: loadingCollection } = useCollection();
+  const { cards: idsPossuidos, loading: carregandoColecao } = useCollection();
 
-  // Build real collection from owned ids; fallback to small sample if unauthenticated
-  const modalCollection = useMemo(() => {
-    const all = cardsDatabase || [];
-    if (isAuthenticated() && !loadingCollection && ownedIds?.length) {
+  // Monta a coleção real a partir dos IDs possuídos; fallback para amostra pequena se não autenticado
+  const colecaoModal = useMemo(() => {
+  const all = bancoDeCartas || [];
+    if (isAuthenticated() && !carregandoColecao && idsPossuidos?.length) {
       const map = new Map(all.map(c => [c.id, c]));
-      return ownedIds
+      return idsPossuidos
         .map(id => map.get(id))
         .filter(Boolean)
         .map(c => ({ id: c.id, name: c.name, category: c.category, attack: c.attack || 0, defense: c.defense || 0, life: c.health || 0 }));
@@ -86,18 +86,18 @@ export default function PvPLobby() {
       .filter(c => c?.name && c?.discovered)
       .slice(0, 12)
       .map(c => ({ id: c.id, name: c.name, category: c.category, attack: c.attack || 0, defense: c.defense || 0, life: c.health || 0 }));
-  }, [ownedIds, isAuthenticated, loadingCollection]);
+  }, [idsPossuidos, isAuthenticated, carregandoColecao]);
 
-  const [modalDeckCards, setModalDeckCards] = useState([]); // {id, quantity}
-  const modalDeckCount = useMemo(() => modalDeckCards.reduce((s,c)=>s+c.quantity,0), [modalDeckCards]);
+  const [cartasDoDeckModal, setCartasDoDeckModal] = useState([]); // {id, quantity}
+  const contagemDeckModal = useMemo(() => cartasDoDeckModal.reduce((s,c)=>s+c.quantity,0), [cartasDoDeckModal]);
 
-  const handleQuickMatch = () => {
-  // Simular busca por partida e entrar
-  const roomId = 'QUICK' + Math.random().toString(36).substr(2, 6).toUpperCase();
-  router.push(`/pvp/game/${roomId}`);
+  const entrarPartidaRapida = () => {
+    // Simula busca por partida e entra
+    const roomId = 'QUICK' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    router.push(`/pvp/game/${roomId}`);
   };
 
-  const handleCreateRoom = async () => {
+  const criarSala = async () => {
     try {
       const res = await fetch('/api/game', {
         method: 'POST',
@@ -121,7 +121,7 @@ export default function PvPLobby() {
   // demo removido para foco nos cards + ação
 
   return (
-    <PageLayout>
+    <LayoutDePagina>
       <div className="container mx-auto px-4 py-6">
         <div className="text-center mb-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -130,35 +130,35 @@ export default function PvPLobby() {
           <p className="text-sm md:text-base text-red-300">Escolha um modo e jogue</p>
         </div>
 
-        {/* mode picker cards */}
+        {/* cartões para escolher o modo */}
         <div className="mx-auto mb-4 max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ModeCard
+            <CartaoDeModo
               title="Normal"
               emoji="🎯"
-              active={activeTab==='quick'}
+              active={abaAtiva==='quick'}
               subtitle="Partida casual rápida"
               imageSrc="/images/banners/menubatalha.png"
-              onClick={() => setActiveTab('quick')}
+              onClick={() => setAbaAtiva('quick')}
             />
-            <ModeCard
+            <CartaoDeModo
               title="Ranqueada"
               emoji="🏆"
-              active={activeTab==='ranked'}
+              active={abaAtiva==='ranked'}
               subtitle="Valendo pontos de ranking"
               imageSrc="/images/banners/batalha.jpg"
-              onClick={() => setActiveTab('ranked')}
+              onClick={() => setAbaAtiva('ranked')}
             />
-            <ModeCard
+            <CartaoDeModo
               title="Personalizada"
               emoji="🏠"
-              active={activeTab==='rooms'}
+              active={abaAtiva==='rooms'}
               subtitle="Crie ou entre em salas"
               imageSrc="/images/banners/museu.jpg"
-              onClick={() => setActiveTab('rooms')}
+              onClick={() => setAbaAtiva('rooms')}
             />
           </div>
-          {/* primary action similar to PLAY in the reference */}
+          {/* ação primária semelhante a JOGAR */}
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Link
@@ -171,7 +171,7 @@ export default function PvPLobby() {
               <button
                 type="button"
                 className="px-4 py-2 rounded-lg border border-purple-400/50 text-purple-200 hover:border-purple-300 hover:text-white bg-black/30"
-                onClick={() => setShowDeckModal(true)}
+                onClick={() => setMostrarModalDeck(true)}
               >
                 ⚙️ Editar Deck
               </button>
@@ -182,37 +182,37 @@ export default function PvPLobby() {
                 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 
                 text-white shadow-[0_12px_40px_-18px_rgba(0,0,0,0.6)]`}
               onClick={() => {
-                if (activeTab === 'quick' || activeTab === 'ranked') return handleQuickMatch();
-                return handleCreateRoom();
+                if (abaAtiva === 'quick' || abaAtiva === 'ranked') return entrarPartidaRapida();
+                return criarSala();
               }}
             >
-              {activeTab === 'rooms' ? 'CRIAR SALA' : 'JOGAR'}
+              {abaAtiva === 'rooms' ? 'CRIAR SALA' : 'JOGAR'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Deck Editor Modal */}
-      {showDeckModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowDeckModal(false)}>
+      {/* Modal do Editor de Deck */}
+      {mostrarModalDeck && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarModalDeck(false)}>
           <div className="bg-[#101c2a] rounded-xl shadow-lg p-6 md:p-8 w-[95vw] md:w-[900px] max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-lg md:text-xl font-bold">Editar Deck</h2>
                 <p className="text-sm text-white/70">Selecione até 30 cartas</p>
               </div>
-              <button type="button" className="text-white text-2xl hover:text-cyan-300" onClick={() => setShowDeckModal(false)}>×</button>
+              <button type="button" className="text-white text-2xl hover:text-cyan-300" onClick={() => setMostrarModalDeck(false)}>×</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* coleção */}
               <div className="md:col-span-2 border border-white/10 rounded-lg p-3 bg-black/30">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {modalCollection.map(card => (
+                  {colecaoModal.map(card => (
                     <button
                       key={card.id}
                       type="button"
                       onClick={() => {
-                        setModalDeckCards(prev => {
+                        setCartasDoDeckModal(prev => {
                           const total = prev.reduce((s,c) => s + c.quantity, 0);
                           if (total >= 30) return prev; // limit
                           if (prev.some(c => c.id === card.id)) return prev; // 1x each
@@ -239,14 +239,14 @@ export default function PvPLobby() {
               <div className="border border-white/10 rounded-lg p-3 bg-black/30 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold">Deck Atual</div>
-                  <div className="text-sm text-white/70">{modalDeckCards.reduce((s,c)=>s+c.quantity,0)}/30</div>
+                  <div className="text-sm text-white/70">{cartasDoDeckModal.reduce((s,c)=>s+c.quantity,0)}/30</div>
                 </div>
                 <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '48vh' }}>
-                  {modalDeckCards.length === 0 && (
+                  {cartasDoDeckModal.length === 0 && (
                     <div className="text-xs text-white/60">Seu deck está vazio. Clique nas cartas para adicionar.</div>
                   )}
-                  {modalDeckCards.map(dc => {
-                    const c = modalCollection.find(x => x.id === dc.id);
+                  {cartasDoDeckModal.map(dc => {
+                    const c = colecaoModal.find(x => x.id === dc.id);
                     return (
                       <div key={dc.id} className="bg-black/40 p-2 rounded border border-white/10 flex items-center justify-between">
                         <div className="truncate pr-2">
@@ -255,7 +255,7 @@ export default function PvPLobby() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setModalDeckCards(prev => prev.filter(x => x.id !== dc.id))}
+                          onClick={() => setCartasDoDeckModal(prev => prev.filter(x => x.id !== dc.id))}
                           className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
                         >
                           Remover
@@ -268,34 +268,34 @@ export default function PvPLobby() {
                   <button
                     type="button"
                     className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm"
-                    onClick={() => setModalDeckCards([])}
+                    onClick={() => setCartasDoDeckModal([])}
                   >
                     Limpar
                   </button>
                   <button
                     type="button"
                     className="px-3 py-2 bg-green-600 hover:bg-green-700 rounded text-sm disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    disabled={modalDeckCount < 20 || savingDeck}
+                    disabled={contagemDeckModal < 20 || salvandoDeck}
                     onClick={async () => {
-                      if (modalDeckCount < 20) return;
+                      if (contagemDeckModal < 20) return;
                       try {
-                        setSavingDeck(true);
+                        setSalvandoDeck(true);
                         if (!isAuthenticated()) {
-                          setShowDeckModal(false);
+                          setMostrarModalDeck(false);
                           return;
                         }
-                        const payload = { ownerId: Number(user?.id), name: 'Deck PvP', cards: modalDeckCards.map(c => c.id) };
+                        const payload = { ownerId: Number(user?.id), name: 'Deck PvP', cards: cartasDoDeckModal.map(c => c.id) };
                         await fetch('/api/decks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        setShowDeckModal(false);
+                        setMostrarModalDeck(false);
                       } catch (e) {
                         console.error(e);
-                        setShowDeckModal(false);
+                        setMostrarModalDeck(false);
                       } finally {
-                        setSavingDeck(false);
+                        setSalvandoDeck(false);
                       }
                     }}
                   >
-                    {savingDeck ? 'Salvando...' : 'Salvar'}
+                    {salvandoDeck ? 'Salvando...' : 'Salvar'}
                   </button>
                 </div>
               </div>
@@ -303,6 +303,6 @@ export default function PvPLobby() {
           </div>
         </div>
       )}
-    </PageLayout>
+    </LayoutDePagina>
   );
 }

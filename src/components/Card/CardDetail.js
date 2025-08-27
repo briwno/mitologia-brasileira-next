@@ -3,10 +3,11 @@
 
 import CardImage from './CardImage';
 
-export default function CardDetail({ card, onClose = null }) {
+// Detalhe da Carta
+export default function DetalheDaCarta({ card, onClose = null }) {
   if (!card) return null;
 
-  const getRarityColor = (rarity) => {
+  const obterCorDeRaridade = (rarity) => {
     switch (rarity) {
       case 'Épico': return 'border-purple-500 text-purple-400 bg-purple-900/20';
       case 'Lendário': return 'border-yellow-500 text-yellow-400 bg-yellow-900/20';
@@ -15,9 +16,9 @@ export default function CardDetail({ card, onClose = null }) {
     }
   };
 
-  const getDefaultMaxPP = (idx) => {
-    // idx is 0-based for skill1..skill5
-    switch (idx) {
+  const obterPPMaximoPadrao = (indice) => {
+    // índice começa em 0 para skill1..skill5
+    switch (indice) {
       case 0: return 10;
       case 1: return 10;
       case 2: return 5;
@@ -27,7 +28,7 @@ export default function CardDetail({ card, onClose = null }) {
     }
   };
 
-  const getTypeIcon = (type) => {
+  const obterIconeDoTipo = (type) => {
     switch (type) {
       case 'creature': return '👾';
       case 'spell': return '✨';
@@ -77,12 +78,12 @@ export default function CardDetail({ card, onClose = null }) {
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Tipo</div>
               <div className="font-semibold text-sm sm:text-base">
-                {getTypeIcon(card.type)} {card.type === 'creature' ? 'Criatura' : card.type === 'spell' ? 'Feitiço' : 'Artefato'}
+                {obterIconeDoTipo(card.type)} {card.type === 'creature' ? 'Criatura' : card.type === 'spell' ? 'Feitiço' : 'Artefato'}
               </div>
             </div>
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Raridade</div>
-              <div className={`font-semibold text-sm sm:text-base ${getRarityColor(card.rarity).split(' ')[1]}`}>
+              <div className={`font-semibold text-sm sm:text-base ${obterCorDeRaridade(card.rarity).split(' ')[1]}`}>
                 {card.rarity}
               </div>
             </div>
@@ -126,7 +127,7 @@ export default function CardDetail({ card, onClose = null }) {
                   return (
                     <>
                       {skillBlocks.map((s, idx) => {
-                        const pal = palettes[idx] || palettes[0];
+      const pal = palettes[idx] || palettes[0];
                         return (
                           <div key={`skill-${idx}`} className={`${pal.box} p-2 sm:p-3 rounded border`}>
                             <div className="flex justify-between items-center mb-1">
@@ -137,7 +138,7 @@ export default function CardDetail({ card, onClose = null }) {
                               {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
                                 <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
                               ) : (
-                                <div className="text-xs text-yellow-400">PP {getDefaultMaxPP(idx)}/{getDefaultMaxPP(idx)}</div>
+        <div className="text-xs text-yellow-400">PP {obterPPMaximoPadrao(idx)}/{obterPPMaximoPadrao(idx)}</div>
                               )}
                             </div>
                             <div className="font-semibold mb-1 text-sm sm:text-base">{s.name}</div>

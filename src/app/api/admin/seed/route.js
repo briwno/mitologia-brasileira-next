@@ -1,7 +1,7 @@
 // src/app/api/admin/seed/route.js
 import { NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabase';
-import { cardsDatabase } from '@/data/cardsDatabase';
+import { bancoDeCartas } from '@/data/cardsDatabase';
 
 function isAuthorized(req) {
   const url = new URL(req.url);
@@ -53,7 +53,7 @@ export async function POST(req) {
       row = upd.data || row;
     }
 
-    const allIds = cardsDatabase.map((c) => c.id).filter(Boolean);
+  const allIds = bancoDeCartas.map((c) => c.id).filter(Boolean);
 
     // upsert coleção
     const up = await supabase

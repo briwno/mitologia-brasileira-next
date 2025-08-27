@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-export default function BenchZone({
+// Zona de banco (bench) com slots
+export default function ZonaDoBanco({
   cards = [],
   position = 'player',
   onCardClick,
@@ -14,11 +15,13 @@ export default function BenchZone({
   onCardContextMenu,
   highlightSelectable = false
 }) {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [errorIndices, setErrorIndices] = useState(new Set());
-  const isPlayer = position === 'player';
-  const slots = Array(maxSlots).fill(null).map((_, idx) => cards[idx] || null);
-  const baseShadow = '0 10px 26px -6px rgba(0,0,0,0.85)';
+  const [indiceEmHover, definirIndiceEmHover] = useState(null);
+  const [indicesComErro, definirIndicesComErro] = useState(new Set());
+  const ehJogador = position === 'player';
+  const slots = Array(maxSlots)
+    .fill(null)
+    .map((_, idx) => cards[idx] || null);
+  const sombraBase = '0 10px 26px -6px rgba(0,0,0,0.85)';
 
   return (
     <div className="relative flex flex-col items-center">
@@ -27,12 +30,12 @@ export default function BenchZone({
         {slots.map((card, index) => (
           <div
             key={index}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseEnter={() => definirIndiceEmHover(index)}
+            onMouseLeave={() => definirIndiceEmHover(null)}
             onClick={() => card && onCardClick && onCardClick(card, index)}
             onContextMenu={card ? (e => { e.preventDefault(); onCardContextMenu && onCardContextMenu(card, index); }) : undefined}
-            className={`relative w-24 h-32 rounded-xl border-2 overflow-hidden flex items-center justify-center text-center text-[12px] font-semibold transition-all cursor-pointer ${card ? (isPlayer ? 'border-blue-500 bg-[#123047]' : 'border-red-500 bg-[#472222]') : 'border-dashed border-neutral-600 bg-[#101b25]'} ${hoveredIndex === index ? 'scale-105' : ''}`}
-            style={{ boxShadow: card ? baseShadow : 'none', perspective: '800px' }}
+            className={`relative w-24 h-32 rounded-xl border-2 overflow-hidden flex items-center justify-center text-center text-[12px] font-semibold transition-all cursor-pointer ${card ? (ehJogador ? 'border-blue-500 bg-[#123047]' : 'border-red-500 bg-[#472222]') : 'border-dashed border-neutral-600 bg-[#101b25]'} ${indiceEmHover === index ? 'scale-105' : ''}`}
+            style={{ boxShadow: card ? sombraBase : 'none', perspective: '800px' }}
           >
             {card ? (
               <div
@@ -41,9 +44,9 @@ export default function BenchZone({
               >
                 {/* front */}
                 <div className="absolute inset-0 backface-hidden">
-                  {(canSeeHidden || card.foiRevelada) ? (
+                  {canSeeHidden || card.foiRevelada ? (
                     <>
-                      {card.images?.portrait && !errorIndices.has(index) ? (
+                      {card.images?.portrait && !indicesComErro.has(index) ? (
                         <Image
                           src={card.images.portrait}
                           alt={card.name}
@@ -51,11 +54,13 @@ export default function BenchZone({
                           height={280}
                           quality={95}
                           className="w-full h-full object-cover pointer-events-none select-none will-change-transform"
-                          onError={() => setErrorIndices(prev => {
-                            const next = new Set(Array.from(prev));
-                            next.add(index);
-                            return next;
-                          })}
+                          onError={() =>
+                            definirIndicesComErro((anterior) => {
+                              const proximo = new Set(Array.from(anterior));
+                              proximo.add(index);
+                              return proximo;
+                            })
+                          }
                         />
                       ) : (
                         <Image
@@ -72,7 +77,7 @@ export default function BenchZone({
                         <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
                           <span className="px-1 rounded bg-neutral-900/70">⚔ {card.attack}</span>
                           <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defense}</span>
-                          <span className={`px-1 rounded ${isPlayer ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.health}</span>
+                          <span className={`px-1 rounded ${ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.health}</span>
                         </div>
                       </div>
                     </>

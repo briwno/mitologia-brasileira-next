@@ -1,5 +1,5 @@
 // src/data/cardsDatabase.js
-export const CARD_CATEGORIES = {
+export const CATEGORIAS_CARTAS = {
   GUARDIANS: 'Guardiões da Floresta',
   SPIRITS: 'Espíritos das Águas',
   HAUNTS: 'Assombrações',
@@ -7,13 +7,13 @@ export const CARD_CATEGORIES = {
   MYSTICAL: 'Entidades Místicas'
 };
 
-export const CARD_RARITIES = {
+export const RARIDADES_CARTAS = {
   EPIC: 'Épico',
   LEGENDARY: 'Lendário',
   MYTHIC: 'Mítico'
 };
 
-export const REGIONS = {
+export const REGIOES = {
   AMAZONIA: 'Amazônia',
   NORTHEAST: 'Nordeste',
   SOUTHEAST: 'Sudeste',
@@ -22,13 +22,13 @@ export const REGIONS = {
   NATIONAL: 'Nacional'
 };
 
-export const CARD_TYPES = {
+export const TIPOS_CARTA = {
   CREATURE: 'creature',
   SPELL: 'spell',
   ARTIFACT: 'artifact'
 };
 
-export const ELEMENTS = {
+export const ELEMENTOS = {
   EARTH: 'Terra',
   WATER: 'Água',
   FIRE: 'Fogo',
@@ -36,27 +36,27 @@ export const ELEMENTS = {
   SPIRIT: 'Espírito'
 };
 
-export const SEASONS = {
+export const ESTACOES = {
   CARNIVAL: 'Carnaval',
   SAO_JOAO: 'São João',
   FESTA_JUNINA: 'Festa Junina',
   CHRISTMAS: 'Natal'
 };
 
-export const cardsDatabase = [
+export const bancoDeCartas = [
   // REGIÃO AMAZÔNICA
   {
     id: 'cur001',
     name: 'Curupira',
-    region: REGIONS.AMAZONIA,
-    category: CARD_CATEGORIES.GUARDIANS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.AMAZONIA,
+    category: CATEGORIAS_CARTAS.GUARDIANS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 5,
     attack: 7,
     defense: 8,
     health: 15,
-    rarity: CARD_RARITIES.EPIC,
-    element: ELEMENTS.EARTH,
+    rarity: RARIDADES_CARTAS.EPIC,
+    element: ELEMENTOS.EARTH,
     abilities: {
       skill1: { name: 'Confusão da Floresta', description: 'Reduz o ataque do oponente em 2 por 2 turnos', cost: 2, kind: 'debuff' },
       skill2: { name: 'Golpe de Vinha', description: 'Ataque reforçado pelas raízes', cost: 2, kind: 'damage', base: 2 },
@@ -83,15 +83,15 @@ export const cardsDatabase = [
   {
     id: 'tupa001',
     name: 'Tupã',
-    region: REGIONS.AMAZONIA,
-    category: CARD_CATEGORIES.GUARDIANS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.AMAZONIA,
+    category: CATEGORIAS_CARTAS.GUARDIANS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 6,
     attack: 8,
     defense: 7,
     health: 14,
-    rarity: CARD_RARITIES.MYTHIC,
-    element: ELEMENTS.EARTH,
+    rarity: RARIDADES_CARTAS.MYTHIC,
+    element: ELEMENTOS.EARTH,
     abilities: {
       skill1: { name: 'Raio Divino', description: 'Golpe de raio com chance de atordoar', cost: 3, kind: 'stun', base: 3, stun: 1, chance: 0.5 },
       skill2: { name: 'Trovão Ecoante', description: 'Dano elétrico em alvo único', cost: 3, kind: 'damage', base: 4 },
@@ -121,15 +121,15 @@ export const cardsDatabase = [
   {
     id: 'iar001',
     name: 'Iara',
-    region: REGIONS.AMAZONIA,
-    category: CARD_CATEGORIES.SPIRITS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.AMAZONIA,
+    category: CATEGORIAS_CARTAS.SPIRITS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 4,
     attack: 6,
     defense: 5,
     health: 12,
-  rarity: CARD_RARITIES.EPIC,
-    element: ELEMENTS.WATER,
+  rarity: RARIDADES_CARTAS.EPIC,
+    element: ELEMENTOS.WATER,
     abilities: {
       skill1: { name: 'Canto Hipnótico', description: '30% de chance de atordoar por 1 turno', cost: 2, kind: 'stun', stun: 1, chance: 0.3 },
       skill2: { name: 'Jato d’Água', description: 'Ataque aquático veloz', cost: 2, kind: 'damage', base: 2 },
@@ -147,7 +147,7 @@ export const cardsDatabase = [
     tags: ['água', 'sedução', 'controle', 'hipnose'],
     unlockCondition: 'Complete 3 quizzes sobre folclore aquático',
     seasonalBonus: {
-      season: SEASONS.SAO_JOAO,
+      season: ESTACOES.SAO_JOAO,
       multiplier: 1.5,
       description: 'Durante São João, Iara fica mais poderosa'
     }
@@ -155,15 +155,15 @@ export const cardsDatabase = [
   {
     id: 'bot001',
     name: 'Boto Cor-de-Rosa',
-    region: REGIONS.AMAZONIA,
-    category: CARD_CATEGORIES.SPIRITS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.AMAZONIA,
+    category: CATEGORIAS_CARTAS.SPIRITS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 6,
     attack: 8,
     defense: 7,
     health: 14,
-    rarity: CARD_RARITIES.LEGENDARY,
-    element: ELEMENTS.WATER,
+    rarity: RARIDADES_CARTAS.LEGENDARY,
+    element: ELEMENTOS.WATER,
     abilities: {
       skill1: { name: 'Transformação Noturna', description: 'Ganha poder adicional em turnos pares', cost: 2, kind: 'buff' },
       skill2: { name: 'Investida Aquática', description: 'Ataque potente aquático', cost: 2, kind: 'damage', base: 3 },
@@ -181,7 +181,7 @@ export const cardsDatabase = [
     tags: ['transformação', 'sedução', 'água', 'noturno'],
     unlockCondition: 'Explore 100% da região Amazônica',
     seasonalBonus: {
-      season: SEASONS.FESTA_JUNINA,
+      season: ESTACOES.FESTA_JUNINA,
       multiplier: 2.0,
       description: 'Durante Festa Junina, Boto fica irresistível'
     }
@@ -189,15 +189,15 @@ export const cardsDatabase = [
 {
     id: 'enc001',
     name: 'O Encourado',
-    region: REGIONS.NORTHEAST,
-    category: CARD_CATEGORIES.HAUNTS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.NORTHEAST,
+    category: CATEGORIAS_CARTAS.HAUNTS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 4,
     attack: 7,
     defense: 3,
     health: 10,
-    rarity: CARD_RARITIES.MYTHIC,
-    element: ELEMENTS.AIR,
+    rarity: RARIDADES_CARTAS.MYTHIC,
+    element: ELEMENTOS.AIR,
   abilities: {
     skill1: { name: 'Hemorragia', description: 'Causa dano e sangramento', cost: 1, kind: 'damage', base: 2 },
     skill2: { name: 'Lâmina Seca', description: 'Ataque cortante', cost: 2, kind: 'damage', base: 2 },
@@ -219,15 +219,15 @@ export const cardsDatabase = [
   {
     id: 'sac001',
     name: 'Saci-Pererê',
-    region: REGIONS.NATIONAL,
-    category: CARD_CATEGORIES.HAUNTS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.NATIONAL,
+    category: CATEGORIAS_CARTAS.HAUNTS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 3,
     attack: 5,
     defense: 6,
     health: 10,
-  rarity: CARD_RARITIES.EPIC,
-    element: ELEMENTS.AIR,
+  rarity: RARIDADES_CARTAS.EPIC,
+    element: ELEMENTOS.AIR,
     abilities: {
         skill1: { name: 'Travessura', description: 'Rouba um item do oponente', cost: 1, kind: 'debuff' },
         skill2: { name: 'Chute do Redemoinho', description: 'Ataque rápido', cost: 2, kind: 'damage', base: 2 },
@@ -249,15 +249,15 @@ export const cardsDatabase = [
   {
     id: 'boi001',
     name: 'Boitatá',
-    region: REGIONS.SOUTHEAST,
-    category: CARD_CATEGORIES.GUARDIANS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.SOUTHEAST,
+    category: CATEGORIAS_CARTAS.GUARDIANS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 7,
     attack: 9,
     defense: 7,
     health: 18,
-    rarity: CARD_RARITIES.LEGENDARY,
-    element: ELEMENTS.FIRE,
+    rarity: RARIDADES_CARTAS.LEGENDARY,
+    element: ELEMENTOS.FIRE,
     abilities: {
       skill1: { name: 'Fogo Protetor', description: 'Causa dano contínuo', cost: 2, kind: 'damage', base: 3 },
       skill2: { name: 'Chama Ancestral', description: 'Explosão de fogo', cost: 3, kind: 'damage', base: 3 },
@@ -279,15 +279,15 @@ export const cardsDatabase = [
   {
     id: 'cuc001',
     name: 'Cuca',
-    region: REGIONS.SOUTHEAST,
-    category: CARD_CATEGORIES.HAUNTS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.SOUTHEAST,
+    category: CATEGORIAS_CARTAS.HAUNTS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 6,
     attack: 8,
     defense: 9,
     health: 16,
-    rarity: CARD_RARITIES.EPIC,
-    element: ELEMENTS.SPIRIT,
+    rarity: RARIDADES_CARTAS.EPIC,
+    element: ELEMENTOS.SPIRIT,
     abilities: {
       skill1: { name: 'Pesadelo', description: 'Reduz a defesa do oponente', cost: 2, kind: 'debuff' },
       skill2: { name: 'Garra Arcana', description: 'Ataque mágico', cost: 2, kind: 'damage', base: 2 },
@@ -309,15 +309,15 @@ export const cardsDatabase = [
   {
     id: 'mul001',
     name: 'Mula sem Cabeça',
-    region: REGIONS.SOUTHEAST,
-    category: CARD_CATEGORIES.HAUNTS,
-    type: CARD_TYPES.CREATURE,
+    region: REGIOES.SOUTHEAST,
+    category: CATEGORIAS_CARTAS.HAUNTS,
+    type: TIPOS_CARTA.CREATURE,
     cost: 4,
     attack: 7,
     defense: 4,
     health: 11,
-    rarity: CARD_RARITIES.EPIC,
-    element: ELEMENTS.SPIRIT,
+    rarity: RARIDADES_CARTAS.EPIC,
+    element: ELEMENTOS.SPIRIT,
     abilities: {
       skill1: { name: 'Galope Fantasma', description: 'Ataque que ignora bloqueio', cost: 2, kind: 'damage', base: 2 },
       skill2: { name: 'Chamas Assombradas', description: 'Ataque flamejante', cost: 2, kind: 'damage', base: 2 },
@@ -339,7 +339,7 @@ export const cardsDatabase = [
 ];
 
 // Combos especiais
-export const CARD_COMBOS = {
+export const COMBOS_CARTAS = {
   FOREST_GUARDIANS: {
     name: 'Guardiões da Mata',
   cards: ['cur001', 'cai001'], // Curupira + Caiçara (TODO: adicionar Caipora quando existir)
@@ -380,18 +380,18 @@ export const CARD_COMBOS = {
 };
 
 // Multiplicadores de jogo
-export const MULTIPLIERS = {
+export const MULTIPLICADORES = {
   REGIONAL: {
     value: 1.25,
     description: 'Cartas da mesma região recebem +25% de bônus de ataque'
   },
   ELEMENTAL: {
     advantages: {
-      [ELEMENTS.WATER]: [ELEMENTS.FIRE],
-      [ELEMENTS.FIRE]: [ELEMENTS.AIR],
-      [ELEMENTS.AIR]: [ELEMENTS.EARTH],
-      [ELEMENTS.EARTH]: [ELEMENTS.WATER],
-      [ELEMENTS.SPIRIT]: [ELEMENTS.EARTH, ELEMENTS.AIR]
+      [ELEMENTOS.WATER]: [ELEMENTOS.FIRE],
+      [ELEMENTOS.FIRE]: [ELEMENTOS.AIR],
+      [ELEMENTOS.AIR]: [ELEMENTOS.EARTH],
+      [ELEMENTOS.EARTH]: [ELEMENTOS.WATER],
+      [ELEMENTOS.SPIRIT]: [ELEMENTOS.EARTH, ELEMENTOS.AIR]
     },
     value: 1.5,
     description: 'Vantagens elementais garantem multiplicador 1.5x de dano'
@@ -413,7 +413,7 @@ export const MULTIPLIERS = {
 };
 
 // Condições de desbloqueio
-export const UNLOCK_CONDITIONS = {
+export const CONDICOES_DESBLOQUEIO = {
   STARTER: 'Starter card - sempre disponível',
   PVP_WINS: (count) => `Vitória em ${count} partidas PvP`,
   QUIZ_COMPLETE: (region) => `Complete todos os quizzes do ${region}`,
@@ -423,49 +423,57 @@ export const UNLOCK_CONDITIONS = {
   LUNAR_EVENT: 'Jogue durante a lua cheia (evento especial)'
 };
 
+// Utilitários de consulta
 export const getCardsByRegion = (region) => {
-  return cardsDatabase.filter(card => card.region === region);
+  // Retorna cartas da região informada
+  return bancoDeCartas.filter((carta) => carta.region === region);
 };
 
 export const getCardsByCategory = (category) => {
-  return cardsDatabase.filter(card => card.category === category);
+  // Retorna cartas da categoria informada
+  return bancoDeCartas.filter((carta) => carta.category === category);
 };
 
 export const getCardsByRarity = (rarity) => {
-  return cardsDatabase.filter(card => card.rarity === rarity);
+  // Retorna cartas pela raridade
+  return bancoDeCartas.filter((carta) => carta.rarity === rarity);
 };
 
 export const getDiscoveredCards = () => {
-  return cardsDatabase.filter(card => card.discovered);
+  // Cartas já descobertas
+  return bancoDeCartas.filter((carta) => carta.discovered);
 };
 
 export const getUndiscoveredCards = () => {
-  return cardsDatabase.filter(card => !card.discovered);
+  // Cartas ainda não descobertas
+  return bancoDeCartas.filter((carta) => !carta.discovered);
 };
 
 export const searchCards = (query) => {
-  const lowerQuery = query.toLowerCase();
-  return cardsDatabase.filter(card => 
-    card.name.toLowerCase().includes(lowerQuery) ||
-    card.lore.toLowerCase().includes(lowerQuery) ||
-    card.tags.some(tag => tag.includes(lowerQuery))
+  // Busca por nome, lore ou tags (case-insensitive)
+  const consultaMinuscula = query.toLowerCase();
+  return bancoDeCartas.filter((carta) =>
+    carta.name.toLowerCase().includes(consultaMinuscula) ||
+    carta.lore.toLowerCase().includes(consultaMinuscula) ||
+    carta.tags.some((tag) => tag.includes(consultaMinuscula))
   );
 };
 
 export const getCardStats = () => {
-  const total = cardsDatabase.length;
-  const discovered = getDiscoveredCards().length;
-  const byRarity = {};
-  
-  Object.values(CARD_RARITIES).forEach(rarity => {
-    byRarity[rarity] = getCardsByRarity(rarity).length;
+  // Estatísticas agregadas para dashboards/relatórios
+  const totalCartas = bancoDeCartas.length;
+  const descobertas = getDiscoveredCards().length;
+  const porRaridade = {};
+
+  Object.values(RARIDADES_CARTAS).forEach((raridade) => {
+    porRaridade[raridade] = getCardsByRarity(raridade).length;
   });
 
   return {
-    total,
-    discovered,
-    undiscovered: total - discovered,
-    progress: Math.round((discovered / total) * 100),
-    byRarity
+    total: totalCartas,
+    discovered: descobertas,
+    undiscovered: totalCartas - descobertas,
+    progress: Math.round((descobertas / totalCartas) * 100),
+    byRarity: porRaridade,
   };
 };

@@ -2,143 +2,143 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { cards as staticCards } from '../data/cards';
+import { cards as cartasEstaticas } from '../data/cards';
 
 export function useCards() {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [cartas, definirCartas] = useState([]);
+  const [carregando, definirCarregando] = useState(true);
+  const [erro, definirErro] = useState(null);
 
   useEffect(() => {
-    loadCards();
+    carregarCartas();
   }, []);
 
-  const loadCards = async () => {
+  const carregarCartas = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      definirCarregando(true);
+      definirErro(null);
 
       // Tentar carregar da API primeiro, senão usar dados estáticos
       try {
         const response = await fetch('/api/cards');
         if (response.ok) {
           const data = await response.json();
-          setCards(data.cards);
+          definirCartas(data.cards);
         } else {
           throw new Error('API não disponível');
         }
       } catch (apiError) {
         // Fallback para dados estáticos
-        setCards(staticCards);
+        definirCartas(cartasEstaticas);
       }
     } catch (err) {
-      setError(err.message);
-      setCards(staticCards); // Sempre ter dados como fallback
+      definirErro(err.message);
+      definirCartas(cartasEstaticas); // Sempre ter dados como fallback
     } finally {
-      setLoading(false);
+      definirCarregando(false);
     }
   };
 
-  const getCardById = (id) => {
-    return cards.find(card => card.id === id);
+  const obterCartaPorId = (id) => {
+    return cartas.find((carta) => carta.id === id);
   };
 
-  const getCardsByCategory = (category) => {
-    return cards.filter(card => card.category === category);
+  const obterCartasPorCategoria = (categoria) => {
+    return cartas.filter((carta) => carta.category === categoria);
   };
 
-  const getCardsByRegion = (region) => {
-    return cards.filter(card => card.region === region);
+  const obterCartasPorRegiao = (regiao) => {
+    return cartas.filter((carta) => carta.region === regiao);
   };
 
-  const getCardsByRarity = (rarity) => {
-    return cards.filter(card => card.rarity === rarity);
+  const obterCartasPorRaridade = (raridade) => {
+    return cartas.filter((carta) => carta.rarity === raridade);
   };
 
-  const searchCards = (searchTerm) => {
-    if (!searchTerm) return cards;
+  const buscarCartas = (termoBusca) => {
+    if (!termoBusca) return cartas;
     
-    const term = searchTerm.toLowerCase();
-    return cards.filter(card => 
-      card.name.toLowerCase().includes(term) ||
-      card.history.toLowerCase().includes(term) ||
-      card.category.toLowerCase().includes(term) ||
-      card.region.toLowerCase().includes(term)
+    const termo = termoBusca.toLowerCase();
+    return cartas.filter((carta) =>
+      carta.name.toLowerCase().includes(termo) ||
+      carta.history.toLowerCase().includes(termo) ||
+      carta.category.toLowerCase().includes(termo) ||
+      carta.region.toLowerCase().includes(termo)
     );
   };
 
-  const filterCards = (filters) => {
-    let filteredCards = [...cards];
+  const filtrarCartas = (filtros) => {
+    let cartasFiltradas = [...cartas];
 
-    if (filters.category && filters.category !== 'all') {
-      filteredCards = filteredCards.filter(card => card.category === filters.category);
+    if (filtros.category && filtros.category !== 'all') {
+      cartasFiltradas = cartasFiltradas.filter((carta) => carta.category === filtros.category);
     }
 
-    if (filters.region && filters.region !== 'all') {
-      filteredCards = filteredCards.filter(card => card.region === filters.region);
+    if (filtros.region && filtros.region !== 'all') {
+      cartasFiltradas = cartasFiltradas.filter((carta) => carta.region === filtros.region);
     }
 
-    if (filters.rarity && filters.rarity !== 'all') {
-      filteredCards = filteredCards.filter(card => card.rarity === filters.rarity);
+    if (filtros.rarity && filtros.rarity !== 'all') {
+      cartasFiltradas = cartasFiltradas.filter((carta) => carta.rarity === filtros.rarity);
     }
 
-    if (filters.search) {
-      const term = filters.search.toLowerCase();
-      filteredCards = filteredCards.filter(card => 
-        card.name.toLowerCase().includes(term) ||
-        card.history.toLowerCase().includes(term)
+    if (filtros.search) {
+      const termo = filtros.search.toLowerCase();
+      cartasFiltradas = cartasFiltradas.filter((carta) =>
+        carta.name.toLowerCase().includes(termo) ||
+        carta.history.toLowerCase().includes(termo)
       );
     }
 
-    if (filters.minCost !== undefined) {
+    if (filtros.minCost !== undefined) {
   // Sem custo por carta: ignorar filtro de custo mínimo
     }
 
-    if (filters.maxCost !== undefined) {
+    if (filtros.maxCost !== undefined) {
   // Sem custo por carta: ignorar filtro de custo máximo
     }
 
-    return filteredCards;
+    return cartasFiltradas;
   };
 
-  const getUniqueValues = (property) => {
-    return [...new Set(cards.map(card => card[property]))];
+  const obterValoresUnicos = (propriedade) => {
+    return [...new Set(cartas.map((carta) => carta[propriedade]))];
   };
 
-  const getCardStats = () => {
+  const obterEstatisticasDasCartas = () => {
     return {
-      total: cards.length,
-      byCategory: getUniqueValues('category').reduce((acc, category) => {
-        acc[category] = getCardsByCategory(category).length;
+      total: cartas.length,
+      byCategory: obterValoresUnicos('category').reduce((acc, categoria) => {
+        acc[categoria] = obterCartasPorCategoria(categoria).length;
         return acc;
       }, {}),
-      byRegion: getUniqueValues('region').reduce((acc, region) => {
-        acc[region] = getCardsByRegion(region).length;
+      byRegion: obterValoresUnicos('region').reduce((acc, regiao) => {
+        acc[regiao] = obterCartasPorRegiao(regiao).length;
         return acc;
       }, {}),
-      byRarity: getUniqueValues('rarity').reduce((acc, rarity) => {
-        acc[rarity] = getCardsByRarity(rarity).length;
+      byRarity: obterValoresUnicos('rarity').reduce((acc, raridade) => {
+        acc[raridade] = obterCartasPorRaridade(raridade).length;
         return acc;
       }, {}),
   // Sem custo por carta; manter campo se usado em UI (0 como default)
   averageCost: 0,
-      averageAttack: cards.reduce((sum, card) => sum + card.attack, 0) / cards.length,
-      averageDefense: cards.reduce((sum, card) => sum + card.defense, 0) / cards.length
+      averageAttack: cartas.reduce((soma, carta) => soma + carta.attack, 0) / cartas.length,
+      averageDefense: cartas.reduce((soma, carta) => soma + carta.defense, 0) / cartas.length
     };
   };
 
   return {
-    cards,
-    loading,
-    error,
-    loadCards,
-    getCardById,
-    getCardsByCategory,
-    getCardsByRegion,
-    getCardsByRarity,
-    searchCards,
-    filterCards,
-    getUniqueValues,
-    getCardStats
+    cards: cartas,
+    loading: carregando,
+    error: erro,
+    loadCards: carregarCartas,
+    getCardById: obterCartaPorId,
+    getCardsByCategory: obterCartasPorCategoria,
+    getCardsByRegion: obterCartasPorRegiao,
+    getCardsByRarity: obterCartasPorRaridade,
+    searchCards: buscarCartas,
+    filterCards: filtrarCartas,
+    getUniqueValues: obterValoresUnicos,
+    getCardStats: obterEstatisticasDasCartas
   };
 }

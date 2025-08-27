@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import PageLayout from '../../components/UI/PageLayout';
+import LayoutDePagina from '../../components/UI/PageLayout';
 
-export default function Login() {
+export default function PaginaLogin() {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
@@ -39,7 +39,7 @@ export default function Login() {
   };
 
   return (
-    <PageLayout>
+  <LayoutDePagina>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 w-full max-w-md border border-green-500/30">
         <div className="text-center mb-8">
@@ -140,6 +140,6 @@ export default function Login() {
         </div>
         </div>
       </div>
-    </PageLayout>
+  </LayoutDePagina>
   );
 }

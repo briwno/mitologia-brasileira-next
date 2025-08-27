@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { cardsDatabase } from '../../../../data/cardsDatabase';
+import { bancoDeCartas } from '../../../../data/cardsDatabase';
 // Mana removed; using PP per habilidade
 import { FieldIndicator, ActiveZone, Playmat, PlayerHUD, EndTurnButton, BenchZone } from '../../../../components/Game';
 import CardDetail from '../../../../components/Card/CardDetail';
@@ -24,7 +24,7 @@ export default function GameRoom({ params }) {
   // Função para buscar carta por id e garantir todos os campos necessários
   function getCardData(cardID) {
     if (!cardID) return null;
-    const card = cardsDatabase.find(c => c.id === cardID);
+  const card = bancoDeCartas.find(c => c.id === cardID);
     if (!card) return null;
   // Mantém o objeto de habilidades como está (para suportar skill1..skill4 + passive)
   return { ...card, abilities: card.abilities ? { ...card.abilities } : {} };

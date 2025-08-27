@@ -2,20 +2,20 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import PageLayout from '@/components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
-import { cardsDatabase, CARD_RARITIES, REGIONS, CARD_CATEGORIES } from '@/data/cardsDatabase';
+import { bancoDeCartas, RARIDADES_CARTAS, REGIOES, CATEGORIAS_CARTAS } from '@/data/cardsDatabase';
 import CardDetail from '@/components/Card/CardDetail';
 import CardImage from '@/components/Card/CardImage';
 
 function rarityColor(rarity) {
 	switch (rarity) {
-		case CARD_RARITIES.MYTHIC:
+		case RARIDADES_CARTAS.MYTHIC:
 			return 'text-pink-300';
-		case CARD_RARITIES.LEGENDARY:
+		case RARIDADES_CARTAS.LEGENDARY:
 			return 'text-yellow-300';
-		case CARD_RARITIES.EPIC:
+		case RARIDADES_CARTAS.EPIC:
 			return 'text-purple-300';
 		default:
 			return 'text-gray-300';
@@ -28,18 +28,18 @@ function ensureImage(src) {
 
 function rarityFrame(rarity) {
 	switch (rarity) {
-		case CARD_RARITIES.MYTHIC:
+		case RARIDADES_CARTAS.MYTHIC:
 			return 'border-red-500 text-red-400';
-		case CARD_RARITIES.LEGENDARY:
+		case RARIDADES_CARTAS.LEGENDARY:
 			return 'border-yellow-500 text-yellow-400';
-		case CARD_RARITIES.EPIC:
+		case RARIDADES_CARTAS.EPIC:
 			return 'border-purple-500 text-purple-400';
 		default:
 			return 'border-gray-500 text-gray-400';
 	}
 }
 
-export default function CardInventoryPage() {
+export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
 	const { cards: ownedIds, loading: loadingCollection } = useCollection();
 
@@ -80,16 +80,16 @@ export default function CardInventoryPage() {
 	};
 
 	// Mapear coleção real
-	const byId = useMemo(() => new Map(cardsDatabase.map(c => [c.id, c])), []);
+	const byId = useMemo(() => new Map(bancoDeCartas.map(c => [c.id, c])), []);
 	const ownedCards = useMemo(() => {
 		if (!isAuthenticated() || !ownedIds?.length) return [];
 		return ownedIds.map(id => byId.get(id)).filter(Boolean);
 	}, [ownedIds, isAuthenticated, byId]);
 
 	// Filtros derivados
-	const allRegions = useMemo(() => ['all', ...Array.from(new Set(cardsDatabase.map(c => c.region).filter(Boolean)))], []);
-	const allCategories = useMemo(() => ['all', ...Array.from(new Set(cardsDatabase.map(c => c.category).filter(Boolean)))], []);
-	const allRarities = useMemo(() => ['all', CARD_RARITIES.EPIC, CARD_RARITIES.LEGENDARY, CARD_RARITIES.MYTHIC], []);
+	const allRegions = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.region).filter(Boolean)))], []);
+	const allCategories = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.category).filter(Boolean)))], []);
+	const allRarities = useMemo(() => ['all', RARIDADES_CARTAS.EPIC, RARIDADES_CARTAS.LEGENDARY, RARIDADES_CARTAS.MYTHIC], []);
 
 	const filteredCards = useMemo(() => {
 		const pool = ownedCards;
@@ -103,13 +103,13 @@ export default function CardInventoryPage() {
 		});
 	}, [ownedCards, region, category, rarity, search]);
 
-	const totalAvailable = useMemo(() => cardsDatabase.length, []);
+	const totalAvailable = useMemo(() => bancoDeCartas.length, []);
 	const totalOwned = ownedCards.length;
 
 	const [selectedCard, setSelectedCard] = useState(null);
 
 	return (
-		<PageLayout>
+		<LayoutDePagina>
 			<div className="container mx-auto px-4 py-8">
 				{/* Header */}
 				<div className="text-center mb-8">
@@ -307,6 +307,6 @@ export default function CardInventoryPage() {
 					</Link>
 				</div>
 			</div>
-		</PageLayout>
+		</LayoutDePagina>
 	);
 }

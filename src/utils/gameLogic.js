@@ -26,8 +26,8 @@ export class GameEngine {
 
   // Sacar mão inicial
   drawInitialHand(deck) {
-    const shuffledDeck = this.shuffleDeck([...deck]);
-    return shuffledDeck.splice(0, 5); // 5 cartas iniciais
+  const baralhoEmbaralhado = this.shuffleDeck([...deck]);
+  return baralhoEmbaralhado.splice(0, 5); // 5 cartas iniciais
   }
 
   // Embaralhar deck
@@ -53,15 +53,15 @@ export class GameEngine {
 
     if (player.hand.length >= GAME_CONSTANTS.MAX_HAND_SIZE) {
       // Carta é descartada
-      const discardedCard = player.deck.shift();
-      this.addToLog(`${player.name} descartou ${discardedCard.name} (mão cheia)`, 'info');
-      return discardedCard;
+      const cartaDescartada = player.deck.shift();
+      this.addToLog(`${player.name} descartou ${cartaDescartada.name} (mão cheia)`, 'info');
+      return cartaDescartada;
     }
 
-    const drawnCard = player.deck.shift();
-    player.hand.push(drawnCard);
+    const cartaComprada = player.deck.shift();
+    player.hand.push(cartaComprada);
     this.addToLog(`${player.name} comprou uma carta`, 'info');
-    return drawnCard;
+    return cartaComprada;
   }
 
   // Jogar carta
@@ -118,14 +118,14 @@ export class GameEngine {
     switch (card.type || 'creature') {
       case 'creature':
         // Adicionar criatura ao campo
-        const creature = {
+  const criatura = {
           ...card,
           health: card.defense,
           maxHealth: card.defense,
           canAttack: false, // Summoning sickness
           effects: []
         };
-        player.field.push(creature);
+  player.field.push(criatura);
         break;
 
       case 'spell':
@@ -137,14 +137,14 @@ export class GameEngine {
 
       default:
         // Tratar como criatura por padrão
-        const defaultCreature = {
+  const criaturaPadrao = {
           ...card,
           health: card.defense,
           maxHealth: card.defense,
           canAttack: false,
           effects: []
         };
-        player.field.push(defaultCreature);
+  player.field.push(criaturaPadrao);
     }
 
     return { card, target };
@@ -179,7 +179,7 @@ export class GameEngine {
   attackWithCreature(playerIndex, creatureIndex, targetType, targetIndex = null) {
     const player = this.players[playerIndex];
     const opponent = this.players[1 - playerIndex];
-    const creature = player.field[creatureIndex];
+    const criatura = player.field[creatureIndex];
 
     if (!this.canAttack(playerIndex, creatureIndex)) {
       return { success: false, error: 'Criatura não pode atacar' };
@@ -187,35 +187,35 @@ export class GameEngine {
 
     if (targetType === 'player') {
       // Atacar jogador diretamente
-      opponent.health -= creature.attack;
-      this.addToLog(`${creature.name} atacou ${opponent.name} causando ${creature.attack} de dano!`, 'damage');
+      opponent.health -= criatura.attack;
+      this.addToLog(`${criatura.name} atacou ${opponent.name} causando ${criatura.attack} de dano!`, 'damage');
     } else if (targetType === 'creature') {
       // Atacar criatura
-      const targetCreature = opponent.field[targetIndex];
+      const criaturaAlvo = opponent.field[targetIndex];
       
       // Aplicar dano
-      targetCreature.health -= creature.attack;
-      creature.health -= targetCreature.attack;
+      criaturaAlvo.health -= criatura.attack;
+      criatura.health -= criaturaAlvo.attack;
 
-      this.addToLog(`${creature.name} atacou ${targetCreature.name}!`, 'combat');
+      this.addToLog(`${criatura.name} atacou ${criaturaAlvo.name}!`, 'combat');
 
       // Remover criaturas mortas
-      if (targetCreature.health <= 0) {
+      if (criaturaAlvo.health <= 0) {
         opponent.field.splice(targetIndex, 1);
-        opponent.graveyard.push(targetCreature);
-        this.addToLog(`${targetCreature.name} foi destruída!`, 'death');
+        opponent.graveyard.push(criaturaAlvo);
+        this.addToLog(`${criaturaAlvo.name} foi destruída!`, 'death');
       }
 
-      if (creature.health <= 0) {
+      if (criatura.health <= 0) {
         player.field.splice(creatureIndex, 1);
-        player.graveyard.push(creature);
-        this.addToLog(`${creature.name} foi destruída!`, 'death');
+        player.graveyard.push(criatura);
+        this.addToLog(`${criatura.name} foi destruída!`, 'death');
       }
     }
 
     // Marcar criatura como tendo atacado
-    if (creature.health > 0) {
-      creature.canAttack = false;
+    if (criatura.health > 0) {
+      criatura.canAttack = false;
     }
 
     return { success: true };

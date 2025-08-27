@@ -2,11 +2,11 @@
 "use client";
 
 import Link from 'next/link';
-import PageLayout from '../../components/UI/PageLayout';
+import LayoutDePagina from '../../components/UI/PageLayout';
 
 export default function Museum() {
   return (
-    <PageLayout>
+    <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
@@ -111,6 +111,6 @@ export default function Museum() {
           </Link>
         </div>
       </div>
-    </PageLayout>
+  </LayoutDePagina>
   );
 }
