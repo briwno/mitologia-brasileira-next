@@ -87,18 +87,18 @@ export default function PaginaInventarioDeCartas() {
 	}, [ownedIds, isAuthenticated, byId]);
 
 	// Filtros derivados
-	const allRegions = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.region).filter(Boolean)))], []);
-	const allCategories = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.category).filter(Boolean)))], []);
+	const allRegions = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.regiao).filter(Boolean)))], []);
+	const allCategories = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.categoria).filter(Boolean)))], []);
 	const allRarities = useMemo(() => ['all', RARIDADES_CARTAS.EPIC, RARIDADES_CARTAS.LEGENDARY, RARIDADES_CARTAS.MYTHIC], []);
 
 	const filteredCards = useMemo(() => {
 		const pool = ownedCards;
 		const term = search.trim().toLowerCase();
 		return pool.filter(c => {
-			if (region !== 'all' && c.region !== region) return false;
-			if (category !== 'all' && c.category !== category) return false;
-			if (rarity !== 'all' && c.rarity !== rarity) return false;
-			if (term && !(c.name.toLowerCase().includes(term) || (c.lore || '').toLowerCase().includes(term))) return false;
+			if (region !== 'all' && c.regiao !== region) return false;
+			if (category !== 'all' && c.categoria !== category) return false;
+			if (rarity !== 'all' && c.raridade !== rarity) return false;
+			if (term && !(c.nome.toLowerCase().includes(term) || (c.historia || '').toLowerCase().includes(term))) return false;
 			return true;
 		});
 	}, [ownedCards, region, category, rarity, search]);
@@ -203,7 +203,7 @@ export default function PaginaInventarioDeCartas() {
 										) : (
 											<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 												{filteredCards.map((card) => {
-													const frame = rarityFrame(card.rarity);
+													const frame = rarityFrame(card.raridade || card.rarity);
 													const frameText = frame.split(' ')[1] || 'text-gray-400';
 													return (
 														<div
@@ -215,14 +215,14 @@ export default function PaginaInventarioDeCartas() {
 																<div className="mb-3">
 																	<CardImage card={card} size="medium" className="mx-auto" />
 																</div>
-																<h4 className="text-sm font-bold mb-1">{card.name}</h4>
-																<div className="text-xs text-gray-400 mb-1">{card.region} • {card.category}</div>
-																<div className={`text-xs font-semibold mb-2 ${frameText}`}>{card.rarity}</div>
-																{(card.attack != null || card.defense != null || card.health != null) && (
+																<h4 className="text-sm font-bold mb-1">{card.nome}</h4>
+																<div className="text-xs text-gray-400 mb-1">{card.regiao} • {card.categoria}</div>
+																<div className={`text-xs font-semibold mb-2 ${frameText}`}>{card.raridade || card.rarity}</div>
+																{(card.ataque != null || card.attack != null || card.defesa != null || card.defense != null || card.vida != null) && (
 																	<div className="grid grid-cols-3 gap-1 text-xs">
-																		<div className="bg-red-900/40 p-1 rounded">ATQ: {card.attack ?? '-'}</div>
-																		<div className="bg-blue-900/40 p-1 rounded">DEF: {card.defense ?? '-'}</div>
-																		<div className="bg-green-900/40 p-1 rounded">VIDA: {card.health ?? '-'}</div>
+																		<div className="bg-red-900/40 p-1 rounded">ATQ: {card.ataque ?? card.attack ?? '-'}</div>
+																		<div className="bg-blue-900/40 p-1 rounded">DEF: {card.defesa ?? card.defense ?? '-'}</div>
+																		<div className="bg-green-900/40 p-1 rounded">VIDA: {card.vida ?? '-'}</div>
 																	</div>
 																)}
 																{/* Badge específica do inventário */}

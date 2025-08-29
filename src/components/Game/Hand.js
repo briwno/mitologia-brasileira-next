@@ -66,7 +66,7 @@ export default function Mao({
             onClick={(e) => lidarComCliqueNaCarta(card, e)}
             onContextMenu={(e) => lidarComCliqueDireito(card, e)}
             onDoubleClick={() => onCardPlay(card)}
-            title={`${card.name} - Duplo clique para jogar | Ctrl+Click ou botão direito para detalhes`}
+            title={`${card.nome || card.name} - Duplo clique para jogar | Ctrl+Click ou botão direito para detalhes`}
           >
             <CardImage 
               card={card} 
@@ -80,15 +80,15 @@ export default function Mao({
                 className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/95 backdrop-blur-sm rounded-lg p-4 border border-blue-400/50 z-[9999] animate-fade-in min-w-64 max-w-80 shadow-2xl"
               >
                 <div className="text-center mb-2">
-                  <div className="text-sm font-bold text-blue-300">{card.name}</div>
-                  <div className="text-xs text-gray-300">{card.element} • {card.rarity}</div>
-                  <div className="text-xs text-yellow-300">❤️ {card.health} | ⚔️ {card.attack} | 🛡️ {card.defense}</div>
+                  <div className="text-sm font-bold text-blue-300">{card.nome || card.name}</div>
+                  <div className="text-xs text-gray-300">{card.elemento || card.element} • {card.raridade || card.rarity}</div>
+                  <div className="text-xs text-yellow-300">❤️ {card.vida} | ⚔️ {card.ataque || card.attack} | 🛡️ {card.defesa || card.defense}</div>
                 </div>
                 
                 {/* Habilidades */}
                 <div className="space-y-2 text-xs">
                   {(() => {
-          const hab = card.abilities || {};
+          const hab = card.habilidades || card.abilities || {};
           const usaNovoFormato = hab.skill1 || hab.skill2 || hab.skill3 || hab.skill4 || hab.skill5;
           if (usaNovoFormato) {
             const blocos = [hab.skill1, hab.skill2, hab.skill3, hab.skill4, hab.skill5].filter(Boolean);
@@ -140,8 +140,8 @@ export default function Mao({
                   })()}
                   {card.abilities?.passive && (
                     <div className="bg-purple-900/30 rounded p-2">
-                      <div className="font-bold text-purple-300">🔮 {card.abilities.passive.name}</div>
-                      <div className="text-gray-300">{card.abilities.passive.description}</div>
+                      <div className="font-bold text-purple-300">🔮 {(card.habilidades || card.abilities).passive.name}</div>
+                      <div className="text-gray-300">{(card.habilidades || card.abilities).passive.description}</div>
                     </div>
                   )}
                 </div>

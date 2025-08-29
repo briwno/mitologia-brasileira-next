@@ -199,10 +199,10 @@ export function GameMultipliers({ gameState, cards = [] }) {
     });
 
     // Verificar multiplicador regional
-    const regions = [...new Set(cards.map(card => card.region))];
+  const regions = [...new Set(cards.map(card => card.regiao || card.region))];
     const regionCounts = {};
     regions.forEach(region => {
-      const count = cards.filter(card => card.region === region).length;
+  const count = cards.filter(card => (card.regiao || card.region) === region).length;
       if (count > 1) {
         regionCounts[region] = count;
   multiplicadoresAtivos.push({

@@ -46,10 +46,10 @@ export default function ZonaDoBanco({
                 <div className="absolute inset-0 backface-hidden">
                   {canSeeHidden || card.foiRevelada ? (
                     <>
-                      {card.images?.portrait && !indicesComErro.has(index) ? (
+                {(card.imagens?.retrato || card.images?.portrait) && !indicesComErro.has(index) ? (
                         <Image
-                          src={card.images.portrait}
-                          alt={card.name}
+                          src={card.imagens?.retrato || card.images?.portrait}
+                          alt={card.nome || card.name}
                           width={200}
                           height={280}
                           quality={95}
@@ -65,7 +65,7 @@ export default function ZonaDoBanco({
                       ) : (
                         <Image
                           src="/images/placeholder.svg"
-                          alt={`Placeholder de ${card.name}`}
+                  alt={`Placeholder de ${card.nome || card.name}`}
                           width={200}
                           height={280}
                           quality={95}
@@ -73,11 +73,11 @@ export default function ZonaDoBanco({
                         />
                       )}
                       <div className="absolute bottom-0 left-0 right-0 bg-black/65 px-1.5 py-1 flex flex-col items-center backdrop-blur-sm space-y-0.5">
-                        <span className="text-[11px] font-medium text-neutral-100 truncate w-full leading-tight">{card.name}</span>
+                        <span className="text-[11px] font-medium text-neutral-100 truncate w-full leading-tight">{card.nome || card.name}</span>
                         <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
-                          <span className="px-1 rounded bg-neutral-900/70">⚔ {card.attack}</span>
-                          <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defense}</span>
-                          <span className={`px-1 rounded ${ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.health}</span>
+                  <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
+                  <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
+                          <span className={`px-1 rounded ${ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.vida}</span>
                         </div>
                       </div>
                     </>

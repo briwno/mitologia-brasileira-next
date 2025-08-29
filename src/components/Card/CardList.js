@@ -21,12 +21,12 @@ export default function ListaDeCartas({ cards, onCardClick, showFilters = true }
 
   // Derivado: lista filtrada conforme os filtros atuais
   const cartasFiltradas = cards.filter((card) => {
-    const combinaCategoria = filtros.category === 'all' || card.category === filtros.category;
-    const combinaRegiao = filtros.region === 'all' || card.region === filtros.region;
-    const combinaRaridade = filtros.rarity === 'all' || card.rarity === filtros.rarity;
+  const combinaCategoria = filtros.category === 'all' || card.categoria === filtros.category;
+  const combinaRegiao = filtros.region === 'all' || card.regiao === filtros.region;
+  const combinaRaridade = filtros.rarity === 'all' || card.raridade === filtros.rarity;
     const combinaBusca =
       !filtros.search ||
-      card.name.toLowerCase().includes(filtros.search.toLowerCase()) ||
+  (card.nome || '').toLowerCase().includes(filtros.search.toLowerCase()) ||
       card.history.toLowerCase().includes(filtros.search.toLowerCase());
 
     return combinaCategoria && combinaRegiao && combinaRaridade && combinaBusca;

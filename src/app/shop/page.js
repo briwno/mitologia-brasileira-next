@@ -28,7 +28,7 @@ function rolarRaridade(tabela) {
 		if (r < acumulado) return item.rarity;
 	}
 	// Fallback: retorna a última raridade
-	return tabela[tabela.length - 1].rarity;
+		return tabela[tabela.length - 1].rarity;
 }
 
 export default function Loja() {
@@ -78,7 +78,7 @@ export default function Loja() {
 				[RARIDADES_CARTAS.EPIC]: [],
 			};
 		for (const c of bancoDeCartas) {
-			if (porRaridade[c.rarity]) porRaridade[c.rarity].push(c);
+			if (porRaridade[(c.raridade || c.rarity)]) porRaridade[(c.raridade || c.rarity)].push(c);
 		}
 		return porRaridade;
 	}, []);
@@ -220,7 +220,7 @@ export default function Loja() {
 				<div className={`relative rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-0 ring-1 ${A.ring} overflow-hidden`}> 
 					{/* Layout vertical do card */}
 				<div className="relative w-full h-[420px] md:h-[480px]">
-								<Image src={(id === 'weekly' ? (destaque?.images?.full || destaque?.images?.portrait) : (destaque?.images?.portrait || destaque?.images?.full)) || '/images/placeholder.svg'} alt={destaque?.name || 'Banner'} fill className="object-cover" />
+								<Image src={(id === 'weekly' ? (destaque?.imagens?.cheia || destaque?.imagens?.retrato || destaque?.images?.full || destaque?.images?.portrait) : (destaque?.imagens?.retrato || destaque?.imagens?.cheia || destaque?.images?.portrait || destaque?.images?.full)) || '/images/placeholder.svg'} alt={destaque?.nome || destaque?.name || 'Banner'} fill className="object-cover" />
 						<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 						<div className="absolute top-3 left-3">
 							<span className={`px-2 py-1 rounded text-[10px] border ${A.chip}`}>{id === 'weekly' ? 'ROTAÇÃO DA SEMANA' : 'INVOC. PADRÃO'}</span>
@@ -229,12 +229,12 @@ export default function Loja() {
 							<h3 className="text-xl font-extrabold leading-tight">{titulo}</h3>
 							<p className="text-gray-300 text-xs">{subtitulo}</p>
 							{id === 'weekly' && destaque && (
-								<div className="text-xs text-yellow-300 mt-1">Em destaque: <span className="font-semibold">{destaque.name}</span></div>
+								<div className="text-xs text-yellow-300 mt-1">Em destaque: <span className="font-semibold">{destaque.nome || destaque.name}</span></div>
 							)}
 						</div>
 					</div>
 					<div className="p-4 border-t border-white/10">
-									<div className="text-[11px] text-gray-400 mb-2">Taxas: {probabilidades.map(p => `${p.rarity}: ${p.p}%`).join(' • ')}</div>
+									  <div className="text-[11px] text-gray-400 mb-2">Taxas: {probabilidades.map(p => `${p.rarity}: ${p.p}%`).join(' • ')}</div>
 									<div className="flex items-center justify-between text-[11px] text-gray-400 mb-2">
 										<div>Pity Mítico: <span className="text-yellow-300 font-semibold">{pity5}/30</span></div>
 											<div>Pity Lendário: <span className="text-yellow-300 font-semibold">{pity4}/10</span></div>
@@ -310,12 +310,12 @@ export default function Loja() {
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
 								{resultados.map((card, idx) => (
-									<div key={idx} className={`relative rounded-lg p-2 border ${temaDeRaridade[card.rarity] || 'border-gray-600 text-gray-300'} bg-black/30`}>
+									  <div key={idx} className={`relative rounded-lg p-2 border ${temaDeRaridade[card.raridade || card.rarity] || 'border-gray-600 text-gray-300'} bg-black/30`}>
 									<div className="relative w-full h-28 rounded overflow-hidden mb-2 border border-white/10">
-										<Image src={card.images?.portrait || '/images/placeholder.svg'} alt={card.name} fill className="object-cover" />
+										<Image src={card.imagens?.retrato || card.images?.portrait || '/images/placeholder.svg'} alt={card.nome || card.name} fill className="object-cover" />
 									</div>
-									<div className="text-xs font-semibold line-clamp-2">{card.name}</div>
-									<div className="text-[10px] text-gray-400">{card.rarity}</div>
+									  <div className="text-xs font-semibold line-clamp-2">{card.nome || card.name}</div>
+									  <div className="text-[10px] text-gray-400">{card.raridade || card.rarity}</div>
 								</div>
 							))}
 						</div>

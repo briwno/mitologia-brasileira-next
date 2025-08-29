@@ -1,15 +1,15 @@
 // src/utils/constants.js
 
-export const GAME_CONSTANTS = {
+export const CONSTANTES_DO_JOGO = {
   // Configurações de jogo
-  MAX_HAND_SIZE: 7,
-  MAX_DECK_SIZE: 30,
-  MIN_DECK_SIZE: 20,
-  MAX_COPIES_PER_CARD: 3,
-  INITIAL_HEALTH: 20,
-  INITIAL_MANA: 1,
-  MAX_MANA: 10,
-  TURN_TIME_LIMIT: 300, // 5 minutos
+  TAMANHO_MAXIMO_MAO: 7,
+  TAMANHO_MAXIMO_DECK: 30,
+  TAMANHO_MINIMO_DECK: 20,
+  COPIAS_MAXIMAS_POR_CARTA: 3,
+  VIDA_INICIAL: 20,
+  MANA_INICIAL: 1,
+  MANA_MAXIMA: 10,
+  LIMITE_TEMPO_TURNO: 300, // 5 minutos
 
   // Tipos de carta
   CARD_TYPES: {
@@ -54,7 +54,7 @@ export const GAME_CONSTANTS = {
   }
 };
 
-export const UI_CONSTANTS = {
+export const CONSTANTES_UI = {
   // Cores do tema
   COLORS: {
     PRIMARY: '#10B981', // green-500
@@ -76,14 +76,14 @@ export const UI_CONSTANTS = {
   }
 };
 
-export const API_ENDPOINTS = {
+export const ENDPOINTS_API = {
   AUTH: '/api/auth',
   CARDS: '/api/cards',
   GAME: '/api/game',
   USER: '/api/user'
 };
 
-export const ACHIEVEMENT_TYPES = {
+export const TIPOS_DE_CONQUISTA = {
   FIRST_WIN: 'first_win',
   COLLECTOR: 'collector',
   QUIZ_MASTER: 'quiz_master',
@@ -92,21 +92,21 @@ export const ACHIEVEMENT_TYPES = {
   RANKED_WARRIOR: 'ranked_warrior'
 };
 
-export const GAME_MODES = {
+export const MODOS_DE_JOGO = {
   CASUAL: 'casual',
   RANKED: 'ranked',
   TOURNAMENT: 'tournament',
   TUTORIAL: 'tutorial'
 };
 
-export const GAME_PHASES = {
-  DRAW: 'draw',
-  MAIN: 'main',
-  COMBAT: 'combat',
-  END: 'end'
+export const FASES_DO_JOGO = {
+  COMPRA: 'compra',
+  PRINCIPAL: 'principal',
+  COMBATE: 'combate',
+  FIM: 'fim'
 };
 
-export const NOTIFICATION_TYPES = {
+export const TIPOS_DE_NOTIFICACAO = {
   SUCCESS: 'success',
   ERROR: 'error',
   WARNING: 'warning',

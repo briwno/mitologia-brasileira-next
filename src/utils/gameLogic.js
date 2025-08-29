@@ -1,110 +1,110 @@
 // src/utils/gameLogic.js
-import { GAME_CONSTANTS } from './constants';
+import { CONSTANTES_DO_JOGO, FASES_DO_JOGO } from './constants';
 
-export class GameEngine {
+export class MotorDeJogo {
   constructor(players) {
     this.players = players;
-    this.currentPlayerIndex = 0;
+  this.indiceJogadorAtual = 0;
     this.turn = 1;
-    this.phase = GAME_CONSTANTS.GAME_PHASES?.DRAW || 'draw';
+  this.fase = FASES_DO_JOGO?.COMPRA || 'compra';
     this.gameLog = [];
   }
 
   // Inicializar jogo
-  initializeGame() {
+  iniciarJogo() {
     this.players.forEach((player, index) => {
-      player.health = GAME_CONSTANTS.INITIAL_HEALTH;
-      player.mana = GAME_CONSTANTS.INITIAL_MANA;
-      player.hand = this.drawInitialHand(player.deck);
-      player.field = [];
-      player.graveyard = [];
+      player.vida = CONSTANTES_DO_JOGO.VIDA_INICIAL;
+      player.mana = CONSTANTES_DO_JOGO.MANA_INICIAL;
+      player.hand = this.comprarMaoInicial(player.deck);
+  player.field = [];
+  player.cemiterio = [];
     });
 
-    this.addToLog('Jogo iniciado!', 'info');
-    return this.getGameState();
+    this.adicionarAoLog('Jogo iniciado!', 'info');
+    return this.obterEstadoDoJogo();
   }
 
   // Sacar mão inicial
-  drawInitialHand(deck) {
-  const baralhoEmbaralhado = this.shuffleDeck([...deck]);
-  return baralhoEmbaralhado.splice(0, 5); // 5 cartas iniciais
+  comprarMaoInicial(deck) {
+    const baralhoEmbaralhado = this.embaralharBaralho([...deck]);
+    return baralhoEmbaralhado.splice(0, 5); // 5 cartas iniciais
   }
 
   // Embaralhar deck
-  shuffleDeck(deck) {
-    const shuffled = [...deck];
-    for (let i = shuffled.length - 1; i > 0; i--) {
+  embaralharBaralho(deck) {
+    const embaralhado = [...deck];
+    for (let i = embaralhado.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      [embaralhado[i], embaralhado[j]] = [embaralhado[j], embaralhado[i]];
     }
-    return shuffled;
+    return embaralhado;
   }
 
   // Comprar carta
-  drawCard(playerIndex) {
+  comprarCarta(playerIndex) {
     const player = this.players[playerIndex];
     
     if (player.deck.length === 0) {
       // Dano por fadiga
-      player.health -= this.turn;
-      this.addToLog(`${player.name} sofreu ${this.turn} de dano por fadiga!`, 'warning');
+      player.vida -= this.turn;
+      this.adicionarAoLog(`${player.name} sofreu ${this.turn} de dano por fadiga!`, 'warning');
       return null;
     }
 
-    if (player.hand.length >= GAME_CONSTANTS.MAX_HAND_SIZE) {
+    if (player.hand.length >= CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_MAO) {
       // Carta é descartada
       const cartaDescartada = player.deck.shift();
-      this.addToLog(`${player.name} descartou ${cartaDescartada.name} (mão cheia)`, 'info');
+  this.adicionarAoLog(`${player.name} descartou ${cartaDescartada.nome || cartaDescartada.name} (mão cheia)`, 'info');
       return cartaDescartada;
     }
 
     const cartaComprada = player.deck.shift();
     player.hand.push(cartaComprada);
-    this.addToLog(`${player.name} comprou uma carta`, 'info');
+  this.adicionarAoLog(`${player.name} comprou uma carta`, 'info');
     return cartaComprada;
   }
 
   // Jogar carta
-  playCard(playerIndex, cardIndex, target = null) {
+  jogarCarta(playerIndex, cardIndex, target = null) {
     const player = this.players[playerIndex];
     const card = player.hand[cardIndex];
 
     // Verificações
-    if (!this.canPlayCard(playerIndex, card)) {
+    if (!this.podeJogarCarta(playerIndex, card)) {
       return { success: false, error: 'Não é possível jogar esta carta' };
     }
 
-  // Gastar mana (cartas não têm mais custo; custos estão nas habilidades)
-  player.mana -= (card.cost || 0);
+    // Gastar mana (cartas não têm mais custo; custos estão nas habilidades)
+  player.mana -= (card.custo || card.cost || 0);
 
     // Remover carta da mão
     player.hand.splice(cardIndex, 1);
 
     // Aplicar efeito da carta
-    const result = this.applyCardEffect(card, playerIndex, target);
+    const result = this.aplicarEfeitoDaCarta(card, playerIndex, target);
 
-    this.addToLog(`${player.name} jogou ${card.name}`, 'action');
+  this.adicionarAoLog(`${player.name} jogou ${card.nome || card.name}`, 'action');
 
     return { success: true, result };
   }
 
   // Verificar se pode jogar carta
-  canPlayCard(playerIndex, card) {
+  podeJogarCarta(playerIndex, card) {
     const player = this.players[playerIndex];
     
     // Verificar turno
-    if (playerIndex !== this.currentPlayerIndex) {
+  if (playerIndex !== this.indiceJogadorAtual) {
       return false;
     }
 
     // Verificar mana
-  // Cartas não têm mais custo; manter compat por segurança
-  if (player.mana < (card.cost || 0)) {
+    // Cartas não têm mais custo; manter compat por segurança
+  if (player.mana < (card.custo || card.cost || 0)) {
       return false;
     }
 
     // Verificar fase
-    if (this.phase === 'combat' && card.type === 'creature') {
+  if (this.fase === FASES_DO_JOGO.COMBATE && (card.tipo || card.type) === 'creature') {
       return false;
     }
 
@@ -112,46 +112,46 @@ export class GameEngine {
   }
 
   // Aplicar efeito da carta
-  applyCardEffect(card, playerIndex, target) {
+  aplicarEfeitoDaCarta(card, playerIndex, target) {
     const player = this.players[playerIndex];
 
-    switch (card.type || 'creature') {
+  switch (card.tipo || card.type || 'creature') {
       case 'creature':
         // Adicionar criatura ao campo
-  const criatura = {
+        const criatura = {
           ...card,
-          health: card.defense,
-          maxHealth: card.defense,
-          canAttack: false, // Summoning sickness
+          vida: card.defesa || card.defense,
+          vidaMaxima: card.defesa || card.defense,
+          podeAtacar: false, // lentidão de invocação
           effects: []
         };
-  player.field.push(criatura);
+        player.field.push(criatura);
         break;
 
-      case 'spell':
+  case 'spell':
         // Aplicar efeito do feitiço
-        this.applySpellEffect(card, playerIndex, target);
+        this.aplicarEfeitoDoFeitico(card, playerIndex, target);
         // Feitiços vão para o cemitério
-        player.graveyard.push(card);
+  player.cemiterio.push(card);
         break;
 
       default:
         // Tratar como criatura por padrão
-  const criaturaPadrao = {
+        const criaturaPadrao = {
           ...card,
-          health: card.defense,
-          maxHealth: card.defense,
-          canAttack: false,
+          vida: card.defense,
+          vidaMaxima: card.defense,
+          podeAtacar: false,
           effects: []
         };
-  player.field.push(criaturaPadrao);
+        player.field.push(criaturaPadrao);
     }
 
     return { card, target };
   }
 
   // Aplicar efeito de feitiço
-  applySpellEffect(spell, playerIndex, target) {
+  aplicarEfeitoDoFeitico(spell, playerIndex, target) {
     const player = this.players[playerIndex];
     const opponent = this.players[1 - playerIndex];
 
@@ -160,84 +160,84 @@ export class GameEngine {
       case 'Canto Hipnótico':
         if (Math.random() < 0.3) { // 30% de chance
           // Pular próximo turno do oponente (simplificado)
-          this.addToLog(`${opponent.name} perdeu o próximo turno!`, 'special');
+          this.adicionarAoLog(`${opponent.name} perdeu o próximo turno!`, 'special');
         }
         break;
 
       case 'Fogo Protetor':
         // Causar dano contínuo
-        opponent.health -= 3;
-        this.addToLog(`${opponent.name} sofreu 3 de dano de fogo!`, 'damage');
+  opponent.vida -= 3;
+        this.adicionarAoLog(`${opponent.name} sofreu 3 de dano de fogo!`, 'damage');
         break;
 
       default:
-        this.addToLog(`Efeito de ${spell.name} aplicado`, 'info');
+  this.adicionarAoLog(`Efeito de ${spell.nome || spell.name} aplicado`, 'info');
     }
   }
 
   // Atacar com criatura
-  attackWithCreature(playerIndex, creatureIndex, targetType, targetIndex = null) {
+  atacarComCriatura(playerIndex, creatureIndex, targetType, targetIndex = null) {
     const player = this.players[playerIndex];
     const opponent = this.players[1 - playerIndex];
     const criatura = player.field[creatureIndex];
 
-    if (!this.canAttack(playerIndex, creatureIndex)) {
+    if (!this.podeAtacar(playerIndex, creatureIndex)) {
       return { success: false, error: 'Criatura não pode atacar' };
     }
 
     if (targetType === 'player') {
       // Atacar jogador diretamente
-      opponent.health -= criatura.attack;
-      this.addToLog(`${criatura.name} atacou ${opponent.name} causando ${criatura.attack} de dano!`, 'damage');
+  opponent.vida -= (criatura.ataque || criatura.attack);
+  this.adicionarAoLog(`${criatura.nome || criatura.name} atacou ${opponent.name} causando ${(criatura.ataque || criatura.attack)} de dano!`, 'damage');
     } else if (targetType === 'creature') {
       // Atacar criatura
       const criaturaAlvo = opponent.field[targetIndex];
       
       // Aplicar dano
-      criaturaAlvo.health -= criatura.attack;
-      criatura.health -= criaturaAlvo.attack;
+  criaturaAlvo.vida -= (criatura.ataque || criatura.attack);
+  criatura.vida -= (criaturaAlvo.ataque || criaturaAlvo.attack);
 
-      this.addToLog(`${criatura.name} atacou ${criaturaAlvo.name}!`, 'combat');
+  this.adicionarAoLog(`${criatura.nome || criatura.name} atacou ${criaturaAlvo.nome || criaturaAlvo.name}!`, 'combat');
 
       // Remover criaturas mortas
-      if (criaturaAlvo.health <= 0) {
+      if (criaturaAlvo.vida <= 0) {
         opponent.field.splice(targetIndex, 1);
-        opponent.graveyard.push(criaturaAlvo);
-        this.addToLog(`${criaturaAlvo.name} foi destruída!`, 'death');
+        opponent.cemiterio.push(criaturaAlvo);
+  this.adicionarAoLog(`${criaturaAlvo.nome || criaturaAlvo.name} foi destruída!`, 'death');
       }
 
-      if (criatura.health <= 0) {
+      if (criatura.vida <= 0) {
         player.field.splice(creatureIndex, 1);
-        player.graveyard.push(criatura);
-        this.addToLog(`${criatura.name} foi destruída!`, 'death');
+        player.cemiterio.push(criatura);
+  this.adicionarAoLog(`${criatura.nome || criatura.name} foi destruída!`, 'death');
       }
     }
 
     // Marcar criatura como tendo atacado
-    if (criatura.health > 0) {
-      criatura.canAttack = false;
+    if (criatura.vida > 0) {
+      criatura.podeAtacar = false;
     }
 
     return { success: true };
   }
 
   // Verificar se criatura pode atacar
-  canAttack(playerIndex, creatureIndex) {
+  podeAtacar(playerIndex, creatureIndex) {
     const player = this.players[playerIndex];
-    const creature = player.field[creatureIndex];
+  const criaturaRef = player.field[creatureIndex];
 
     // Verificar turno
-    if (playerIndex !== this.currentPlayerIndex) {
+  if (playerIndex !== this.indiceJogadorAtual) {
       return false;
     }
 
     // Verificar fase
-    if (this.phase !== 'combat') {
+  if (this.fase !== FASES_DO_JOGO.COMBATE) {
       return false;
     }
 
     // Verificar se pode atacar
-    if (!creature.canAttack) {
+  if (!criaturaRef.podeAtacar) {
       return false;
     }
 
@@ -245,49 +245,49 @@ export class GameEngine {
   }
 
   // Finalizar turno
-  endTurn() {
-    const currentPlayer = this.players[this.currentPlayerIndex];
+  finalizarTurno() {
+  const jogadorAtual = this.players[this.indiceJogadorAtual];
 
     // Reset de criaturas
-    currentPlayer.field.forEach(creature => {
-      creature.canAttack = true;
+    jogadorAtual.field.forEach(creature => {
+      creature.podeAtacar = true;
     });
 
     // Próximo jogador
-    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+  this.indiceJogadorAtual = (this.indiceJogadorAtual + 1) % this.players.length;
     
-    if (this.currentPlayerIndex === 0) {
+  if (this.indiceJogadorAtual === 0) {
       this.turn++;
     }
 
     // Novo turno
-    this.startTurn();
+    this.iniciarTurno();
 
-    return this.getGameState();
+    return this.obterEstadoDoJogo();
   }
 
   // Iniciar turno
-  startTurn() {
-    const currentPlayer = this.players[this.currentPlayerIndex];
+  iniciarTurno() {
+  const jogadorAtual = this.players[this.indiceJogadorAtual];
 
     // Aumentar mana
-    currentPlayer.mana = Math.min(GAME_CONSTANTS.MAX_MANA, this.turn);
+  jogadorAtual.mana = Math.min(CONSTANTES_DO_JOGO.MANA_MAXIMA, this.turn);
 
     // Comprar carta
-    this.drawCard(this.currentPlayerIndex);
+  this.comprarCarta(this.indiceJogadorAtual);
 
-    // Mudar para fase de draw
-    this.phase = 'draw';
+    // Mudar para fase de compra
+  this.fase = FASES_DO_JOGO.COMPRA;
 
-    this.addToLog(`Turno ${this.turn} - ${currentPlayer.name}`, 'turn');
+  this.adicionarAoLog(`Turno ${this.turn} - ${jogadorAtual.name}`, 'turn');
   }
 
   // Verificar condições de vitória
-  checkWinCondition() {
+  verificarCondicaoDeVitoria() {
     for (let i = 0; i < this.players.length; i++) {
-      if (this.players[i].health <= 0) {
-        const winner = this.players[1 - i];
-        return { gameEnded: true, winner, reason: 'health' };
+  if (this.players[i].vida <= 0) {
+  const winner = this.players[1 - i];
+  return { gameEnded: true, winner, reason: 'vida' };
       }
     }
 
@@ -295,19 +295,19 @@ export class GameEngine {
   }
 
   // Obter estado do jogo
-  getGameState() {
+  obterEstadoDoJogo() {
     return {
       players: this.players.map(p => ({ ...p })),
-      currentPlayerIndex: this.currentPlayerIndex,
+  indiceJogadorAtual: this.indiceJogadorAtual,
       turn: this.turn,
-      phase: this.phase,
+  fase: this.fase,
       gameLog: [...this.gameLog],
-      winCondition: this.checkWinCondition()
+      winCondition: this.verificarCondicaoDeVitoria()
     };
   }
 
   // Adicionar ao log
-  addToLog(message, type = 'info') {
+  adicionarAoLog(message, type = 'info') {
     this.gameLog.push({
       message,
       type,
@@ -323,17 +323,17 @@ export class GameEngine {
 }
 
 // Utilitários de deck
-export const DeckUtils = {
+export const UtilitariosDeck = {
   // Validar deck
-  validateDeck(cards) {
+  validarDeck(cards) {
     const errors = [];
 
-    if (cards.length < GAME_CONSTANTS.MIN_DECK_SIZE) {
-      errors.push(`Deck deve ter pelo menos ${GAME_CONSTANTS.MIN_DECK_SIZE} cartas`);
+    if (cards.length < CONSTANTES_DO_JOGO.TAMANHO_MINIMO_DECK) {
+      errors.push(`Deck deve ter pelo menos ${CONSTANTES_DO_JOGO.TAMANHO_MINIMO_DECK} cartas`);
     }
 
-    if (cards.length > GAME_CONSTANTS.MAX_DECK_SIZE) {
-      errors.push(`Deck não pode ter mais de ${GAME_CONSTANTS.MAX_DECK_SIZE} cartas`);
+    if (cards.length > CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_DECK) {
+      errors.push(`Deck não pode ter mais de ${CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_DECK} cartas`);
     }
 
     // Verificar limite de cópias
@@ -343,8 +343,8 @@ export const DeckUtils = {
     });
 
     for (const [cardId, count] of Object.entries(cardCounts)) {
-      if (count > GAME_CONSTANTS.MAX_COPIES_PER_CARD) {
-        errors.push(`Máximo ${GAME_CONSTANTS.MAX_COPIES_PER_CARD} cópias da mesma carta`);
+      if (count > CONSTANTES_DO_JOGO.COPIAS_MAXIMAS_POR_CARTA) {
+        errors.push(`Máximo ${CONSTANTES_DO_JOGO.COPIAS_MAXIMAS_POR_CARTA} cópias da mesma carta`);
         break;
       }
     }
@@ -356,20 +356,21 @@ export const DeckUtils = {
   },
 
   // Calcular estatísticas do deck
-  calculateDeckStats(cards) {
-  // Compat: sem custo por carta, agregados baseados em ataque
-  const totalCost = cards.reduce((sum, card) => sum + (card.cost || 0), 0);
-  const averageCost = cards.length ? (totalCost / cards.length) : 0;
+  calcularEstatisticasDoDeck(cards) {
+    // Compat: sem custo por carta, agregados baseados em ataque
+  const totalCost = cards.reduce((sum, card) => sum + (card.custo || card.cost || 0), 0);
+    const averageCost = cards.length ? (totalCost / cards.length) : 0;
 
     const costDistribution = {};
     cards.forEach(card => {
-  const c = card.cost || 0;
-  costDistribution[c] = (costDistribution[c] || 0) + 1;
+  const c = card.custo || card.cost || 0;
+      costDistribution[c] = (costDistribution[c] || 0) + 1;
     });
 
     const categoryDistribution = {};
     cards.forEach(card => {
-      categoryDistribution[card.category] = (categoryDistribution[card.category] || 0) + 1;
+  const cat = card.categoria || card.category;
+  categoryDistribution[cat] = (categoryDistribution[cat] || 0) + 1;
     });
 
     return {

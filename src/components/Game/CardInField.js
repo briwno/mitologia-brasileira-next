@@ -45,8 +45,8 @@ export default function CartaEmCampo({
     >
       {card && (
         <div className="flex flex-col items-center text-[11px] font-semibold text-white leading-tight">
-          <span className="line-clamp-3">{card.name}</span>
-          <span className="mt-1 text-[10px] font-normal opacity-80">{card.health} HP</span>
+          <span className="line-clamp-3">{card.nome || card.name}</span>
+          <span className="mt-1 text-[10px] font-normal opacity-80">{card.vida} HP</span>
         </div>
       )}
     </div>

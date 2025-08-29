@@ -44,15 +44,15 @@ export function useCards() {
   };
 
   const obterCartasPorCategoria = (categoria) => {
-    return cartas.filter((carta) => carta.category === categoria);
+  return cartas.filter((carta) => (carta.categoria || carta.category) === categoria);
   };
 
   const obterCartasPorRegiao = (regiao) => {
-    return cartas.filter((carta) => carta.region === regiao);
+  return cartas.filter((carta) => (carta.regiao || carta.region) === regiao);
   };
 
   const obterCartasPorRaridade = (raridade) => {
-    return cartas.filter((carta) => carta.rarity === raridade);
+  return cartas.filter((carta) => (carta.raridade || carta.rarity) === raridade);
   };
 
   const buscarCartas = (termoBusca) => {
@@ -60,10 +60,10 @@ export function useCards() {
     
     const termo = termoBusca.toLowerCase();
     return cartas.filter((carta) =>
-      carta.name.toLowerCase().includes(termo) ||
+  (carta.nome || carta.name).toLowerCase().includes(termo) ||
       carta.history.toLowerCase().includes(termo) ||
-      carta.category.toLowerCase().includes(termo) ||
-      carta.region.toLowerCase().includes(termo)
+  (carta.categoria || carta.category).toLowerCase().includes(termo) ||
+  (carta.regiao || carta.region).toLowerCase().includes(termo)
     );
   };
 
@@ -71,21 +71,21 @@ export function useCards() {
     let cartasFiltradas = [...cartas];
 
     if (filtros.category && filtros.category !== 'all') {
-      cartasFiltradas = cartasFiltradas.filter((carta) => carta.category === filtros.category);
+      cartasFiltradas = cartasFiltradas.filter((carta) => (carta.categoria || carta.category) === filtros.category);
     }
 
     if (filtros.region && filtros.region !== 'all') {
-      cartasFiltradas = cartasFiltradas.filter((carta) => carta.region === filtros.region);
+      cartasFiltradas = cartasFiltradas.filter((carta) => (carta.regiao || carta.region) === filtros.region);
     }
 
     if (filtros.rarity && filtros.rarity !== 'all') {
-      cartasFiltradas = cartasFiltradas.filter((carta) => carta.rarity === filtros.rarity);
+      cartasFiltradas = cartasFiltradas.filter((carta) => (carta.raridade || carta.rarity) === filtros.rarity);
     }
 
     if (filtros.search) {
       const termo = filtros.search.toLowerCase();
       cartasFiltradas = cartasFiltradas.filter((carta) =>
-        carta.name.toLowerCase().includes(termo) ||
+  (carta.nome || carta.name).toLowerCase().includes(termo) ||
         carta.history.toLowerCase().includes(termo)
       );
     }
@@ -122,8 +122,8 @@ export function useCards() {
       }, {}),
   // Sem custo por carta; manter campo se usado em UI (0 como default)
   averageCost: 0,
-      averageAttack: cartas.reduce((soma, carta) => soma + carta.attack, 0) / cartas.length,
-      averageDefense: cartas.reduce((soma, carta) => soma + carta.defense, 0) / cartas.length
+  averageAttack: cartas.reduce((soma, carta) => soma + (carta.ataque || carta.attack), 0) / cartas.length,
+  averageDefense: cartas.reduce((soma, carta) => soma + (carta.defesa || carta.defense), 0) / cartas.length
     };
   };
 

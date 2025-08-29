@@ -187,7 +187,7 @@ export default function GameRoom({ params }) {
 
   const getAttackWithField = useCallback((card) => {
     if (!card) return 0;
-    let atk = card.attack || 0;
+  let atk = card.ataque || card.attack || 0;
     if (currentField === 'rio' && card.id === 'iar001') atk += 2; // Iara +2 attack on river
     return atk;
   }, [currentField]);
@@ -257,7 +257,7 @@ export default function GameRoom({ params }) {
   // Damage helpers
   const calculateDamage = useCallback((attacker, target, base = 0) => {
     const atk = getAttackWithField(attacker);
-    const def = target?.defense || 0;
+  const def = target?.defesa || target?.defense || 0;
     const raw = atk + base - def;
     return Math.max(1, raw);
   }, [getAttackWithField]);
@@ -367,7 +367,7 @@ export default function GameRoom({ params }) {
       const targetCard = prev[targetSide];
       if (!targetCard) return prev;
       const adjusted = mitigateIncomingDamage(targetCard, amount);
-      const newHealth = (targetCard.health || 0) - adjusted;
+  const newHealth = (targetCard.vida || 0) - adjusted;
       if (newHealth <= 0) {
         // Knockout -> move to discard
         setDiscardPile(dp => [...dp, targetCard]);
@@ -375,7 +375,7 @@ export default function GameRoom({ params }) {
         setLastKOSide(targetSide);
         return { ...prev, [targetSide]: null };
       }
-      return { ...prev, [targetSide]: { ...targetCard, health: newHealth } };
+  return { ...prev, [targetSide]: { ...targetCard, vida: newHealth } };
     });
   }, [mitigateIncomingDamage]);
 
@@ -385,12 +385,12 @@ export default function GameRoom({ params }) {
     if (currentField === 'rio') {
       setActiveCards(prev => {
         const upd = { ...prev };
-        if (upd.player && upd.player.id === 'iar001') upd.player = { ...upd.player, health: (upd.player.health || 0) + 1 };
-        if (upd.opponent && upd.opponent.id === 'iar001') upd.opponent = { ...upd.opponent, health: (upd.opponent.health || 0) + 1 };
+  if (upd.player && upd.player.id === 'iar001') upd.player = { ...upd.player, vida: (upd.player.vida || 0) + 1 };
+  if (upd.opponent && upd.opponent.id === 'iar001') upd.opponent = { ...upd.opponent, vida: (upd.opponent.vida || 0) + 1 };
         return upd;
       });
-      setPlayerBench(prev => prev.map(c => (c && c.id === 'iar001') ? { ...c, health: (c.health || 0) + 1 } : c));
-      setOpponentBench(prev => prev.map(c => (c && c.id === 'iar001') ? { ...c, health: (c.health || 0) + 1 } : c));
+  setPlayerBench(prev => prev.map(c => (c && c.id === 'iar001') ? { ...c, vida: (c.vida || 0) + 1 } : c));
+  setOpponentBench(prev => prev.map(c => (c && c.id === 'iar001') ? { ...c, vida: (c.vida || 0) + 1 } : c));
     }
   }, [currentField]);
 
@@ -457,13 +457,13 @@ export default function GameRoom({ params }) {
               } else {
                 // dano
                 const dmg = calculateDamage(ac.opponent, ac.player, chosen.base ?? 0);
-                const newHealth = (ac.player.health || 0) - mitigateIncomingDamage(ac.player, dmg);
+                const newHealth = (ac.player.vida || 0) - mitigateIncomingDamage(ac.player, dmg);
                 if (newHealth <= 0) {
                   setDiscardPile(dp => [...dp, ac.player]);
                   setLastKOSide('player');
                   ac.player = null;
                 } else {
-                  ac.player = { ...ac.player, health: newHealth };
+                  ac.player = { ...ac.player, vida: newHealth };
                 }
               }
             }

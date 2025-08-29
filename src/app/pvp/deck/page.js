@@ -26,11 +26,11 @@ export default function ConstrutorDeDeck() {
       .filter(Boolean)
       .map(card => ({
         id: card.id,
-        name: card.name,
-        category: card.category,
-        attack: card.attack,
-        defense: card.defense,
-        life: card.health,
+        nome: card.nome,
+        categoria: card.categoria,
+        ataque: card.ataque,
+        defesa: card.defesa,
+        vida: card.vida,
         owned: 1, // coleção atual não controla duplicatas
         inDeck: 0,
       }));
@@ -62,7 +62,7 @@ export default function ConstrutorDeDeck() {
 
   const categorias = useMemo(() => {
     const set = new Set(['all']);
-    colecaoDoJogador.forEach(c => set.add(c.category));
+    colecaoDoJogador.forEach(c => set.add(c.categoria));
     return Array.from(set);
   }, [colecaoDoJogador]);
 
@@ -76,8 +76,8 @@ export default function ConstrutorDeDeck() {
   };
 
   const colecaoFiltrada = colecaoDoJogador.filter(card => {
-    const combinaBusca = card.name.toLowerCase().includes(termoBusca.toLowerCase());
-    const combinaCategoria = filtroCategoria === 'all' || card.category === filtroCategoria;
+    const combinaBusca = (card.nome || '').toLowerCase().includes(termoBusca.toLowerCase());
+    const combinaCategoria = filtroCategoria === 'all' || card.categoria === filtroCategoria;
     return combinaBusca && combinaCategoria;
   });
 
@@ -121,7 +121,7 @@ export default function ConstrutorDeDeck() {
   const obterAtaqueMedio = () => {
     const cartasDeck = obterCartasDoDeckAtual();
     if (cartasDeck.length === 0) return 0;
-    const totalAtaque = cartasDeck.reduce((sum, card) => sum + ((card?.attack || 0) * card.quantity), 0);
+  const totalAtaque = cartasDeck.reduce((sum, card) => sum + ((card?.ataque || 0) * card.quantity), 0);
     const totalCartas = cartasDeck.reduce((sum, card) => sum + card.quantity, 0);
     return (totalAtaque / totalCartas).toFixed(1);
   };
@@ -203,12 +203,12 @@ export default function ConstrutorDeDeck() {
                             <div className="w-full h-20 bg-gradient-to-b from-gray-700 to-gray-800 rounded mb-2 flex items-center justify-center">
                               <span className="text-2xl">🎭</span>
                             </div>
-                            <h4 className="font-bold text-sm mb-1">{card.name}</h4>
-                            <div className="text-xs text-gray-400 mb-2">{card.category}</div>
+                            <h4 className="font-bold text-sm mb-1">{card.nome}</h4>
+                            <div className="text-xs text-gray-400 mb-2">{card.categoria}</div>
                             <div className="grid grid-cols-3 gap-1 text-xs mb-2">
-                              <div className="bg-red-900/50 p-1 rounded">{card.attack}</div>
-                              <div className="bg-blue-900/50 p-1 rounded">{card.defense}</div>
-                              <div className="bg-green-900/50 p-1 rounded">{card.life}</div>
+                              <div className="bg-red-900/50 p-1 rounded">{card.ataque}</div>
+                              <div className="bg-blue-900/50 p-1 rounded">{card.defesa}</div>
+                              <div className="bg-green-900/50 p-1 rounded">{card.vida}</div>
                             </div>
                             {isAuthenticated() && (
                               <div className="flex justify-end items-center text-xs">
@@ -242,8 +242,8 @@ export default function ConstrutorDeDeck() {
                                 <span className="text-lg">🎭</span>
                               </div>
                               <div>
-                                <div className="font-semibold">{card.name}</div>
-                                <div className="text-sm text-gray-400">{card.category}</div>
+                                <div className="font-semibold">{card.nome}</div>
+                                <div className="text-sm text-gray-400">{card.categoria}</div>
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">

@@ -47,17 +47,17 @@ export const bancoDeCartas = [
   // REGIÃO AMAZÔNICA
   {
     id: 'cur001',
-    name: 'Curupira',
-    region: REGIOES.AMAZONIA,
-    category: CATEGORIAS_CARTAS.GUARDIANS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 5,
-    attack: 7,
-    defense: 8,
-    health: 15,
-    rarity: RARIDADES_CARTAS.EPIC,
-    element: ELEMENTOS.EARTH,
-    abilities: {
+    nome: 'Curupira',
+    regiao: REGIOES.AMAZONIA,
+    categoria: CATEGORIAS_CARTAS.GUARDIANS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 5,
+    ataque: 7,
+	defesa: 8,
+	vida: 15,
+    raridade: RARIDADES_CARTAS.EPIC,
+    elemento: ELEMENTOS.EARTH,
+    habilidades: {
       skill1: { name: 'Confusão da Floresta', description: 'Reduz o ataque do oponente em 2 por 2 turnos', cost: 2, kind: 'debuff' },
       skill2: { name: 'Golpe de Vinha', description: 'Ataque reforçado pelas raízes', cost: 2, kind: 'damage', base: 2 },
       skill3: { name: 'Enredar', description: 'Atordoa o alvo por 1 turno', cost: 3, kind: 'stun', stun: 1 },
@@ -65,34 +65,34 @@ export const bancoDeCartas = [
   skill5: { name: 'Despertar da Mata', description: 'Poder ancestral da floresta, golpe devastador após resistência em campo.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Protetor da Natureza', description: 'Ganha +1 de defesa para cada aliado da floresta em campo' }
     },
-    lore: 'Protetor da floresta com cabelos vermelhos e pés virados para trás. Confunde caçadores e pune os que destroem a natureza.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/curupira.jpg',
-      full: '/images/cards/full/curupira.jpg'
+    historia: 'Protetor da floresta com cabelos vermelhos e pés virados para trás. Confunde caçadores e pune os que destroem a natureza.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/curupira.jpg',
+      completa: '/images/cards/full/curupira.jpg'
     },
     tags: ['protetor', 'floresta', 'confusão', 'natureza'],
-    unlockCondition: 'Vitória em 5 partidas PvP',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Vitória em 5 partidas PvP',
+    bonusSazonal: null
   },
   {
     id: 'cai001',
-    name: 'Caiçara',
-    discovered: true
+    nome: 'Caiçara',
+    descoberta: true
   },
   {
     id: 'tupa001',
-    name: 'Tupã',
-    region: REGIOES.AMAZONIA,
-    category: CATEGORIAS_CARTAS.GUARDIANS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 6,
-    attack: 8,
-    defense: 7,
-    health: 14,
-    rarity: RARIDADES_CARTAS.MYTHIC,
-    element: ELEMENTOS.EARTH,
-    abilities: {
+    nome: 'Tupã',
+    regiao: REGIOES.AMAZONIA,
+    categoria: CATEGORIAS_CARTAS.GUARDIANS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 6,
+    ataque: 8,
+	defesa: 7,
+	vida: 14,
+    raridade: RARIDADES_CARTAS.MYTHIC,
+    elemento: ELEMENTOS.EARTH,
+    habilidades: {
       skill1: { name: 'Raio Divino', description: 'Golpe de raio com chance de atordoar', cost: 3, kind: 'stun', base: 3, stun: 1, chance: 0.5 },
       skill2: { name: 'Trovão Ecoante', description: 'Dano elétrico em alvo único', cost: 3, kind: 'damage', base: 4 },
       skill3: { name: 'Calmaria Antes da Tempestade', description: 'Enfraquece o inimigo reduzindo ataque', cost: 2, kind: 'debuff' },
@@ -100,37 +100,37 @@ export const bancoDeCartas = [
   skill5: { name: 'Julgamento Celeste', description: 'O trovão final de Tupã que rasga os céus.', cost: 7, kind: 'damage', base: 9 },
   passive: { name: 'O Criador', description: 'Ao entrar, torna o campo sagrado; +1 defesa para aliados' }
     },
-    lore: 'Deus das tempestades e protetor da floresta, Tupã é temido por todos os seres que habitam a Amazônia.',
-    discovered: true
+    historia: 'Deus das tempestades e protetor da floresta, Tupã é temido por todos os seres que habitam a Amazônia.',
+    descoberta: true
   },
   {
     id: 'boiu001',
-    name: 'Boiuna',
-    discovered: true
+    nome: 'Boiuna',
+    descoberta: true
   },
   {
     id: 'cabo001',
-    name: 'Caboclo D’Água',
-    discovered: true
+    nome: 'Caboclo D’Água',
+    descoberta: true
   },
   {
     id:'corpo001',
-    name: 'Corpo Seco',
-    discovered: true
+    nome: 'Corpo Seco',
+    descoberta: true
   },
   {
     id: 'iar001',
-    name: 'Iara',
-    region: REGIOES.AMAZONIA,
-    category: CATEGORIAS_CARTAS.SPIRITS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 4,
-    attack: 6,
-    defense: 5,
-    health: 12,
-  rarity: RARIDADES_CARTAS.EPIC,
-    element: ELEMENTOS.WATER,
-    abilities: {
+    nome: 'Iara',
+    regiao: REGIOES.AMAZONIA,
+    categoria: CATEGORIAS_CARTAS.SPIRITS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 4,
+    ataque: 6,
+	defesa: 5,
+	vida: 12,
+	raridade: RARIDADES_CARTAS.EPIC,
+    elemento: ELEMENTOS.WATER,
+    habilidades: {
       skill1: { name: 'Canto Hipnótico', description: '30% de chance de atordoar por 1 turno', cost: 2, kind: 'stun', stun: 1, chance: 0.3 },
       skill2: { name: 'Jato d’Água', description: 'Ataque aquático veloz', cost: 2, kind: 'damage', base: 2 },
       skill3: { name: 'Redemoinho', description: 'Reduz a mobilidade do alvo', cost: 3, kind: 'debuff' },
@@ -138,33 +138,33 @@ export const bancoDeCartas = [
   skill5: { name: 'Canto do Abismo', description: 'Um chamado profundo que concentra a fúria das águas.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Domínio Aquático', description: 'Recupera 1 ponto de vida por turno em ambientes aquáticos' }
     },
-    lore: 'Sereia dos rios brasileiros que atrai homens com seu canto mágico, levando-os para o fundo das águas.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/iara.jpg',
-      full: '/images/cards/full/iara.jpg'
+    historia: 'Sereia dos rios brasileiros que atrai homens com seu canto mágico, levando-os para o fundo das águas.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/iara.jpg',
+      completa: '/images/cards/full/iara.jpg'
     },
     tags: ['água', 'sedução', 'controle', 'hipnose'],
-    unlockCondition: 'Complete 3 quizzes sobre folclore aquático',
-    seasonalBonus: {
-      season: ESTACOES.SAO_JOAO,
-      multiplier: 1.5,
-      description: 'Durante São João, Iara fica mais poderosa'
+    condicaoDesbloqueio: 'Complete 3 quizzes sobre folclore aquático',
+    bonusSazonal: {
+      estacao: ESTACOES.SAO_JOAO,
+      multiplicador: 1.5,
+      descricao: 'Durante São João, Iara fica mais poderosa'
     }
   },
   {
     id: 'bot001',
-    name: 'Boto Cor-de-Rosa',
-    region: REGIOES.AMAZONIA,
-    category: CATEGORIAS_CARTAS.SPIRITS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 6,
-    attack: 8,
-    defense: 7,
-    health: 14,
-    rarity: RARIDADES_CARTAS.LEGENDARY,
-    element: ELEMENTOS.WATER,
-    abilities: {
+    nome: 'Boto Cor-de-Rosa',
+    regiao: REGIOES.AMAZONIA,
+    categoria: CATEGORIAS_CARTAS.SPIRITS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 6,
+    ataque: 8,
+	defesa: 7,
+	vida: 14,
+    raridade: RARIDADES_CARTAS.LEGENDARY,
+    elemento: ELEMENTOS.WATER,
+    habilidades: {
       skill1: { name: 'Transformação Noturna', description: 'Ganha poder adicional em turnos pares', cost: 2, kind: 'buff' },
       skill2: { name: 'Investida Aquática', description: 'Ataque potente aquático', cost: 2, kind: 'damage', base: 3 },
       skill3: { name: 'Encanto', description: 'Reduz a defesa do alvo', cost: 3, kind: 'debuff' },
@@ -172,33 +172,33 @@ export const bancoDeCartas = [
   skill5: { name: 'Maré Rubra', description: 'Uma onda avassaladora que varre o campo.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Dualidade', description: 'Alterna entre forma humana e golfinho a cada turno' }
     },
-    lore: 'Golfinho encantado que se transforma em homem sedutor nas noites de festa.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/boto.jpg',
-      full: '/images/cards/full/boto.jpg'
+    historia: 'Golfinho encantado que se transforma em homem sedutor nas noites de festa.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/boto.jpg',
+      completa: '/images/cards/full/boto.jpg'
     },
     tags: ['transformação', 'sedução', 'água', 'noturno'],
-    unlockCondition: 'Explore 100% da região Amazônica',
-    seasonalBonus: {
-      season: ESTACOES.FESTA_JUNINA,
-      multiplier: 2.0,
-      description: 'Durante Festa Junina, Boto fica irresistível'
+    condicaoDesbloqueio: 'Explore 100% da região Amazônica',
+    bonusSazonal: {
+      estacao: ESTACOES.FESTA_JUNINA,
+      multiplicador: 2.0,
+      descricao: 'Durante Festa Junina, Boto fica irresistível'
     }
   },
 {
     id: 'enc001',
-    name: 'O Encourado',
-    region: REGIOES.NORTHEAST,
-    category: CATEGORIAS_CARTAS.HAUNTS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 4,
-    attack: 7,
-    defense: 3,
-    health: 10,
-    rarity: RARIDADES_CARTAS.MYTHIC,
-    element: ELEMENTOS.AIR,
-  abilities: {
+    nome: 'O Encourado',
+    regiao: REGIOES.NORTHEAST,
+    categoria: CATEGORIAS_CARTAS.HAUNTS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 4,
+    ataque: 7,
+	defesa: 3,
+	vida: 10,
+    raridade: RARIDADES_CARTAS.MYTHIC,
+    elemento: ELEMENTOS.AIR,
+  habilidades: {
     skill1: { name: 'Hemorragia', description: 'Causa dano e sangramento', cost: 1, kind: 'damage', base: 2 },
     skill2: { name: 'Lâmina Seca', description: 'Ataque cortante', cost: 2, kind: 'damage', base: 2 },
     skill3: { name: 'Medo Noturno', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
@@ -206,29 +206,29 @@ export const bancoDeCartas = [
   skill5: { name: 'Banho de Sangue', description: 'Ataque final brutal que aterroriza a noite.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Sede de Sangue', description: 'A cada 2 turnos, recupera 1 ponto de vida' }
   },
-    lore: 'Um vampiro que se alimenta do sangue dos animais da caatinga. Persegue especialmente aqueles que não vão à igreja.',
-    discovered: true,
-    images: {
-        portrait: '/images/cards/portraits/encourado.jpg',
-        full: '/images/cards/full/encourado.jpg'
+    historia: 'Um vampiro que se alimenta do sangue dos animais da caatinga. Persegue especialmente aqueles que não vão à igreja.',
+    descoberta: true,
+    imagens: {
+        retrato: '/images/cards/portraits/encourado.jpg',
+        completa: '/images/cards/full/encourado.jpg'
     },
     tags: ['travessura', 'mobilidade', 'esquiva', 'vento'],
-    unlockCondition: 'Banner Semanal',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Banner Semanal',
+    bonusSazonal: null
 },
   {
     id: 'sac001',
-    name: 'Saci-Pererê',
-    region: REGIOES.NATIONAL,
-    category: CATEGORIAS_CARTAS.HAUNTS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 3,
-    attack: 5,
-    defense: 6,
-    health: 10,
-  rarity: RARIDADES_CARTAS.EPIC,
-    element: ELEMENTOS.AIR,
-    abilities: {
+    nome: 'Saci-Pererê',
+    regiao: REGIOES.NATIONAL,
+    categoria: CATEGORIAS_CARTAS.HAUNTS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 3,
+    ataque: 5,
+	defesa: 6,
+	vida: 10,
+	raridade: RARIDADES_CARTAS.EPIC,
+    elemento: ELEMENTOS.AIR,
+    habilidades: {
         skill1: { name: 'Travessura', description: 'Rouba um item do oponente', cost: 1, kind: 'debuff' },
         skill2: { name: 'Chute do Redemoinho', description: 'Ataque rápido', cost: 2, kind: 'damage', base: 2 },
         skill3: { name: 'Poeira nos Olhos', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
@@ -236,29 +236,29 @@ export const bancoDeCartas = [
   skill5: { name: 'Tempestade de Redemoinhos', description: 'Um turbilhão incontrolável que leva tudo.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Astúcia', description: '15% de chance de esquivar completamente de qualquer ataque' }
       },
-    lore: 'Menino negro de uma perna só que usa gorro vermelho. Conhecido por suas travessuras e por causar pequenos transtornos.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/saci.jpg',
-      full: '/images/cards/full/saci.jpg'
+    historia: 'Menino negro de uma perna só que usa gorro vermelho. Conhecido por suas travessuras e por causar pequenos transtornos.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/saci.jpg',
+      completa: '/images/cards/full/saci.jpg'
     },
     tags: ['travessura', 'mobilidade', 'esquiva', 'vento'],
-    unlockCondition: 'Starter card - sempre disponível',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Starter card - sempre disponível',
+    bonusSazonal: null
   },
   {
     id: 'boi001',
-    name: 'Boitatá',
-    region: REGIOES.SOUTHEAST,
-    category: CATEGORIAS_CARTAS.GUARDIANS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 7,
-    attack: 9,
-    defense: 7,
-    health: 18,
-    rarity: RARIDADES_CARTAS.LEGENDARY,
-    element: ELEMENTOS.FIRE,
-    abilities: {
+    nome: 'Boitatá',
+    regiao: REGIOES.SOUTHEAST,
+    categoria: CATEGORIAS_CARTAS.GUARDIANS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 7,
+    ataque: 9,
+	defesa: 7,
+	vida: 18,
+    raridade: RARIDADES_CARTAS.LEGENDARY,
+    elemento: ELEMENTOS.FIRE,
+    habilidades: {
       skill1: { name: 'Fogo Protetor', description: 'Causa dano contínuo', cost: 2, kind: 'damage', base: 3 },
       skill2: { name: 'Chama Ancestral', description: 'Explosão de fogo', cost: 3, kind: 'damage', base: 3 },
       skill3: { name: 'Muralha de Fogo', description: 'Reduz o ataque do alvo', cost: 3, kind: 'debuff' },
@@ -266,29 +266,29 @@ export const bancoDeCartas = [
   skill5: { name: 'Inferno da Selva', description: 'Chamas ancestrais que consomem tudo.', cost: 7, kind: 'damage', base: 9 },
   passive: { name: 'Corpo Flamejante', description: 'Reflete parte do dano recebido' }
     },
-    lore: 'Serpente de fogo gigante que protege os campos e florestas contra incêndios e destruição.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/boitata.jpg',
-      full: '/images/cards/full/boitata.jpg'
+    historia: 'Serpente de fogo gigante que protege os campos e florestas contra incêndios e destruição.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/boitata.jpg',
+      completa: '/images/cards/full/boitata.jpg'
     },
     tags: ['fogo', 'proteção', 'dano contínuo', 'serpente'],
-    unlockCondition: 'Ganhe 50 partidas ranqueadas',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Ganhe 50 partidas ranqueadas',
+    bonusSazonal: null
   },
   {
     id: 'cuc001',
-    name: 'Cuca',
-    region: REGIOES.SOUTHEAST,
-    category: CATEGORIAS_CARTAS.HAUNTS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 6,
-    attack: 8,
-    defense: 9,
-    health: 16,
-    rarity: RARIDADES_CARTAS.EPIC,
-    element: ELEMENTOS.SPIRIT,
-    abilities: {
+    nome: 'Cuca',
+    regiao: REGIOES.SOUTHEAST,
+    categoria: CATEGORIAS_CARTAS.HAUNTS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 6,
+    ataque: 8,
+	defesa: 9,
+	vida: 16,
+    raridade: RARIDADES_CARTAS.EPIC,
+    elemento: ELEMENTOS.SPIRIT,
+    habilidades: {
       skill1: { name: 'Pesadelo', description: 'Reduz a defesa do oponente', cost: 2, kind: 'debuff' },
       skill2: { name: 'Garra Arcana', description: 'Ataque mágico', cost: 2, kind: 'damage', base: 2 },
       skill3: { name: 'Assombro', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
@@ -296,29 +296,29 @@ export const bancoDeCartas = [
   skill5: { name: 'Pavor Arcano', description: 'Canaliza terrores antigos em um ataque esmagador.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Resistência Arcana', description: '30% de resistência contra habilidades mágicas inimigas' }
     },
-    lore: 'Bruxa com cabeça de jacaré que rapta crianças desobedientes. Personagem importante do Sítio do Picapau Amarelo.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/cuca.jpg',
-      full: '/images/cards/full/cuca.jpg'
+    historia: 'Bruxa com cabeça de jacaré que rapta crianças desobedientes. Personagem importante do Sítio do Picapau Amarelo.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/cuca.jpg',
+      completa: '/images/cards/full/cuca.jpg'
     },
     tags: ['medo', 'transformação', 'magia', 'jacaré'],
-    unlockCondition: 'Complete todos os quizzes do Sudeste',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Complete todos os quizzes do Sudeste',
+    bonusSazonal: null
   },
   {
     id: 'mul001',
-    name: 'Mula sem Cabeça',
-    region: REGIOES.SOUTHEAST,
-    category: CATEGORIAS_CARTAS.HAUNTS,
-    type: TIPOS_CARTA.CREATURE,
-    cost: 4,
-    attack: 7,
-    defense: 4,
-    health: 11,
-    rarity: RARIDADES_CARTAS.EPIC,
-    element: ELEMENTOS.SPIRIT,
-    abilities: {
+    nome: 'Mula sem Cabeça',
+    regiao: REGIOES.SOUTHEAST,
+    categoria: CATEGORIAS_CARTAS.HAUNTS,
+    tipo: TIPOS_CARTA.CREATURE,
+    custo: 4,
+    ataque: 7,
+	defesa: 4,
+	vida: 11,
+    raridade: RARIDADES_CARTAS.EPIC,
+    elemento: ELEMENTOS.SPIRIT,
+    habilidades: {
       skill1: { name: 'Galope Fantasma', description: 'Ataque que ignora bloqueio', cost: 2, kind: 'damage', base: 2 },
       skill2: { name: 'Chamas Assombradas', description: 'Ataque flamejante', cost: 2, kind: 'damage', base: 2 },
       skill3: { name: 'Assombro Estridente', description: 'Atordoa por 1 turno', cost: 3, kind: 'stun', stun: 1 },
@@ -326,15 +326,15 @@ export const bancoDeCartas = [
   skill5: { name: 'Ruína Fantasmal', description: 'Um clarão sobrenatural que devasta o alvo.', cost: 6, kind: 'damage', base: 8 },
   passive: { name: 'Forma Etérea', description: '20% de chance de ignorar ataques físicos' }
     },
-    lore: 'Alma penada que galopa pelas noites assombrando os pecadores.',
-    discovered: true,
-    images: {
-      portrait: '/images/cards/portraits/mula.jpg',
-      full: '/images/cards/full/mula.jpg'
+    historia: 'Alma penada que galopa pelas noites assombrando os pecadores.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/mula.jpg',
+      completa: '/images/cards/full/mula.jpg'
     },
     tags: ['velocidade', 'atravessar', 'fantasma', 'terror'],
-    unlockCondition: 'Jogue durante a lua cheia (evento especial)',
-    seasonalBonus: null
+    condicaoDesbloqueio: 'Jogue durante a lua cheia (evento especial)',
+    bonusSazonal: null
   }
 ];
 
@@ -426,35 +426,35 @@ export const CONDICOES_DESBLOQUEIO = {
 // Utilitários de consulta
 export const getCardsByRegion = (region) => {
   // Retorna cartas da região informada
-  return bancoDeCartas.filter((carta) => carta.region === region);
+  return bancoDeCartas.filter((carta) => carta.regiao === region);
 };
 
 export const getCardsByCategory = (category) => {
   // Retorna cartas da categoria informada
-  return bancoDeCartas.filter((carta) => carta.category === category);
+  return bancoDeCartas.filter((carta) => carta.categoria === category);
 };
 
 export const getCardsByRarity = (rarity) => {
   // Retorna cartas pela raridade
-  return bancoDeCartas.filter((carta) => carta.rarity === rarity);
+  return bancoDeCartas.filter((carta) => carta.raridade === rarity);
 };
 
 export const getDiscoveredCards = () => {
   // Cartas já descobertas
-  return bancoDeCartas.filter((carta) => carta.discovered);
+  return bancoDeCartas.filter((carta) => carta.descoberta);
 };
 
 export const getUndiscoveredCards = () => {
   // Cartas ainda não descobertas
-  return bancoDeCartas.filter((carta) => !carta.discovered);
+  return bancoDeCartas.filter((carta) => !carta.descoberta);
 };
 
 export const searchCards = (query) => {
   // Busca por nome, lore ou tags (case-insensitive)
   const consultaMinuscula = query.toLowerCase();
   return bancoDeCartas.filter((carta) =>
-    carta.name.toLowerCase().includes(consultaMinuscula) ||
-    carta.lore.toLowerCase().includes(consultaMinuscula) ||
+    (carta.nome || '').toLowerCase().includes(consultaMinuscula) ||
+    (carta.historia || '').toLowerCase().includes(consultaMinuscula) ||
     carta.tags.some((tag) => tag.includes(consultaMinuscula))
   );
 };

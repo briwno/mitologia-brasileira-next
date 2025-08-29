@@ -216,18 +216,18 @@ export class SeasonalEventSystem {
     switch (event.name) {
   case ESTACOES.CARNIVAL:
         return card.tags?.includes('travessura') || 
-               card.category === 'Assombrações';
+               (card.categoria || card.category) === 'Assombrações';
       
   case ESTACOES.SAO_JOAO:
-        return card.region === 'Nordeste' || 
-               card.category === 'Espíritos das Águas';
+        return (card.regiao || card.region) === 'Nordeste' || 
+               (card.categoria || card.category) === 'Espíritos das Águas';
       
       case 'Lua Cheia':
         return card.tags?.includes('noturno') || 
                ['mul001', 'bot001'].includes(card.id);
       
       case 'Dia da Amazônia':
-        return card.region === 'Amazônia';
+        return (card.regiao || card.region) === 'Amazônia';
       
       default:
         return false;

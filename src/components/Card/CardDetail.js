@@ -42,7 +42,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
       {/* Header com botão de fechar */}
       <div className="flex justify-between items-start mb-3 sm:mb-4">
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white pr-2">
-          {card.discovered ? card.name : '???'}
+          {card.descoberta ? card.nome : '???'}
         </h2>
         {onClose && (
           <button
@@ -59,17 +59,17 @@ export default function DetalheDaCarta({ card, onClose = null }) {
         <CardImage card={card} size="large" />
       </div>
 
-      {card.discovered ? (
+  {card.descoberta ? (
         <div className="space-y-3 sm:space-y-4">
           {/* Informações básicas */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Região</div>
-              <div className="font-semibold text-sm sm:text-base">{card.region}</div>
+              <div className="font-semibold text-sm sm:text-base">{card.regiao}</div>
             </div>
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Categoria</div>
-              <div className="font-semibold text-sm sm:text-base">{card.category}</div>
+              <div className="font-semibold text-sm sm:text-base">{card.categoria}</div>
             </div>
           </div>
 
@@ -78,42 +78,42 @@ export default function DetalheDaCarta({ card, onClose = null }) {
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Tipo</div>
               <div className="font-semibold text-sm sm:text-base">
-                {obterIconeDoTipo(card.type)} {card.type === 'creature' ? 'Criatura' : card.type === 'spell' ? 'Feitiço' : 'Artefato'}
+                {obterIconeDoTipo(card.tipo)} {card.tipo === 'creature' ? 'Criatura' : card.tipo === 'spell' ? 'Feitiço' : 'Artefato'}
               </div>
             </div>
             <div>
               <div className="text-xs sm:text-sm text-gray-400">Raridade</div>
-              <div className={`font-semibold text-sm sm:text-base ${obterCorDeRaridade(card.rarity).split(' ')[1]}`}>
-                {card.rarity}
+              <div className={`font-semibold text-sm sm:text-base ${obterCorDeRaridade(card.raridade).split(' ')[1]}`}>
+                {card.raridade}
               </div>
             </div>
           </div>
 
           {/* Estatísticas */}
-          {card.type === 'creature' && (
+          {card.tipo === 'creature' && (
             <div className="bg-black/40 p-2 sm:p-3 rounded">
               <div className="grid grid-cols-3 gap-1 sm:gap-2 text-center">
                 <div>
                   <div className="text-xs text-red-400">Ataque</div>
-                  <div className="text-sm sm:text-lg lg:text-xl font-bold">⚔️{card.attack}</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">⚔️{card.ataque}</div>
                 </div>
                 <div>
                   <div className="text-xs text-blue-400">Defesa</div>
-                  <div className="text-sm sm:text-lg lg:text-xl font-bold">🛡️{card.defense}</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">🛡️{card.defesa}</div>
                 </div>
                 <div>
                   <div className="text-xs text-green-400">Vida</div>
-                  <div className="text-sm sm:text-lg lg:text-xl font-bold">❤️{card.health}</div>
+                  <div className="text-sm sm:text-lg lg:text-xl font-bold">❤️{card.vida}</div>
                 </div>
               </div>
             </div>
           )}
 
           {/* Habilidades */}
-          {card.abilities && (
+          {card.habilidades && (
             <div className="space-y-2 sm:space-y-3">
               {(() => {
-                const { abilities } = card;
+                const abilities = card.habilidades;
                 const usesNew = abilities.skill1 || abilities.skill2 || abilities.skill3 || abilities.skill4 || abilities.skill5;
                 if (usesNew) {
                   const skillBlocks = [abilities.skill1, abilities.skill2, abilities.skill3, abilities.skill4, abilities.skill5].filter(Boolean);
@@ -181,58 +181,58 @@ export default function DetalheDaCarta({ card, onClose = null }) {
               })()}
 
               {/* Habilidade Passiva */}
-              {card.abilities.passive && (
+              {card.habilidades.passive && (
                 <div className="bg-green-900/30 p-2 sm:p-3 rounded border border-green-500/30">
                   <div className="text-xs sm:text-sm text-green-400 font-semibold mb-1">🔮 Passiva</div>
-                  <div className="font-semibold mb-1 text-sm sm:text-base">{card.abilities.passive.name}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">{card.abilities.passive.description}</div>
+                  <div className="font-semibold mb-1 text-sm sm:text-base">{card.habilidades.passive.name}</div>
+                  <div className="text-xs sm:text-sm text-gray-300">{card.habilidades.passive.description}</div>
                 </div>
               )}
             </div>
           )}
 
           {/* Elemento */}
-          {card.element && (
+          {card.elemento && (
             <div className="bg-black/40 p-3 rounded">
               <div className="text-sm text-cyan-400 mb-1">Elemento</div>
               <div className="flex items-center space-x-2">
                 <span className="text-lg">
-                  {card.element === 'Terra' ? '🌍' :
-                   card.element === 'Água' ? '💧' :
-                   card.element === 'Fogo' ? '🔥' :
-                   card.element === 'Ar' ? '💨' :
-                   card.element === 'Espírito' ? '👻' : '⭐'}
+                  {card.elemento === 'Terra' ? '🌍' :
+                   card.elemento === 'Água' ? '💧' :
+                   card.elemento === 'Fogo' ? '🔥' :
+                   card.elemento === 'Ar' ? '💨' :
+                   card.elemento === 'Espírito' ? '👻' : '⭐'}
                 </span>
-                <span className="font-semibold">{card.element}</span>
+                <span className="font-semibold">{card.elemento}</span>
               </div>
             </div>
           )}
 
           {/* Condição de Desbloqueio */}
-          {card.unlockCondition && (
+          {card.condicaoDesbloqueio && (
             <div className="bg-black/40 p-3 rounded">
               <div className="text-sm text-orange-400 mb-1">🔓 Desbloqueio</div>
-              <div className="text-sm text-gray-300">{card.unlockCondition}</div>
+              <div className="text-sm text-gray-300">{card.condicaoDesbloqueio}</div>
             </div>
           )}
 
           {/* Bônus Sazonal */}
-          {card.seasonalBonus && (
+          {card.bonusSazonal && (
             <div className="bg-yellow-900/30 p-3 rounded border border-yellow-500/30">
               <div className="text-sm text-yellow-400 mb-1">🎉 Bônus Sazonal</div>
-              <div className="font-semibold mb-1">{card.seasonalBonus.season}</div>
-              <div className="text-sm text-gray-300 mb-1">{card.seasonalBonus.description}</div>
+              <div className="font-semibold mb-1">{card.bonusSazonal.estacao}</div>
+              <div className="text-sm text-gray-300 mb-1">{card.bonusSazonal.descricao}</div>
               <div className="text-xs text-yellow-300">
-                Multiplicador: {card.seasonalBonus.multiplier}x
+                Multiplicador: {card.bonusSazonal.multiplicador}x
               </div>
             </div>
           )}
 
           {/* Lore */}
-          {card.lore && (
+          {card.historia && (
             <div className="bg-black/40 p-3 rounded">
               <div className="text-sm text-cyan-400 mb-1">História</div>
-              <div className="text-sm text-gray-300 italic">{card.lore}</div>
+              <div className="text-sm text-gray-300 italic">{card.historia}</div>
             </div>
           )}
 

@@ -21,8 +21,8 @@ export class CombatSystem {
     if (gameState) this.gameState = gameState;
 
     // Valores base
-    let danoBase = attacker.attack;
-    let defesa = defender.defense;
+  let danoBase = attacker.ataque ?? attacker.attack;
+  let defesa = defender.defesa ?? defender.defense;
     
     // Aplicar multiplicadores de ataque
     danoBase *= this.getAttackMultipliers(attacker);
@@ -109,8 +109,8 @@ export class CombatSystem {
 
   // Verificar vantagem elemental
   getElementalAdvantage(attacker) {
-  const elementoDoAtacante = attacker.element;
-  const elementoDoDefensor = this.getCurrentTarget()?.element;
+  const elementoDoAtacante = attacker.elemento || attacker.element;
+  const elementoDoDefensor = this.getCurrentTarget()?.elemento || this.getCurrentTarget()?.element;
     
   if (!elementoDoAtacante || !elementoDoDefensor) return 1.0;
     
@@ -126,7 +126,7 @@ export class CombatSystem {
   hasRegionalBonus(card) {
     const allies = this.gameState.battlefield.player;
     const sameRegionAllies = allies.filter(ally => 
-      ally.id !== card.id && ally.region === card.region
+      ally.id !== card.id && (ally.regiao || ally.region) === (card.regiao || card.region)
     );
     return sameRegionAllies.length > 0;
   }
@@ -140,11 +140,12 @@ export class CombatSystem {
 
   // Obter bônus sazonal
   getSeasonalBonus(card) {
-    if (!card.seasonalBonus) return 1.0;
+    const bonus = card.bonusSazonal || card.seasonalBonus;
+    if (!bonus) return 1.0;
     
     const currentEvents = this.gameState.activeEvents || [];
-    if (currentEvents.includes(card.seasonalBonus.season)) {
-      return card.seasonalBonus.multiplier;
+    if (currentEvents.includes(bonus.estacao || bonus.season)) {
+      return bonus.multiplicador || bonus.multiplier;
     }
     
     return 1.0;
@@ -232,7 +233,7 @@ export class CombatSystem {
     const result = {
       success: true,
       effects: [],
-      message: `${card.name} usou ${ability.name}!`
+      message: `${card.nome || card.name} usou ${ability.name}!`
     };
     
     switch (ability.name) {
@@ -277,13 +278,13 @@ export class CombatSystem {
 
   countForestAllies(card) {
     return this.gameState.battlefield.player.filter(ally =>
-      ally.id !== card.id && ally.category === 'Guardiões da Floresta'
+      ally.id !== card.id && (ally.categoria || ally.category) === 'Guardiões da Floresta'
     ).length;
   }
 
   isMagicalAttack(attacker) {
-    return attacker.type === 'spell' || 
-           attacker.element === ELEMENTOS.SPIRIT ||
+  return (attacker.tipo || attacker.type) === 'spell' || 
+       (attacker.elemento || attacker.element) === ELEMENTOS.SPIRIT ||
            attacker.tags?.includes('magia');
   }
 

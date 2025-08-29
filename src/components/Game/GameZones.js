@@ -42,8 +42,8 @@ export default function ZonasDoJogo({
           ${ehJogador ? 'border-amber-600' : 'border-red-600'} bg-[#2d2d2d]`}
         style={{ boxShadow: sombraBase }}
       >
-        {topDiscardCard && topDiscardCard.images?.portrait && (
-          <Image src={topDiscardCard.images.portrait} alt={topDiscardCard.name} fill className="object-cover" />
+        {topDiscardCard && (topDiscardCard.imagens?.retrato || topDiscardCard.images?.portrait) && (
+          <Image src={topDiscardCard.imagens?.retrato || topDiscardCard.images?.portrait} alt={topDiscardCard.nome || topDiscardCard.name} fill className="object-cover" />
         )}
         {!topDiscardCard && (
           <span className="text-[10px] font-semibold text-neutral-400">Vazio</span>

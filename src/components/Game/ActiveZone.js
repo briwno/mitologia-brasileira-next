@@ -32,10 +32,10 @@ export default function ZonaAtiva({
         )}
         {card && (
           <>
-            {card.images?.portrait && !imagemComErro && (
+        {(card.imagens?.retrato || card.images?.portrait) && !imagemComErro && (
               <Image
-                src={card.images.portrait}
-                alt={card.name}
+      src={card.imagens?.retrato || card.images?.portrait}
+        alt={card.nome || card.name}
                 width={320}
                 height={440}
                 quality={100}
@@ -44,21 +44,21 @@ export default function ZonaAtiva({
                 onError={() => definirImagemComErro(true)}
               />
             )}
-            {(!card.images?.portrait || imagemComErro) && (
+        {(!(card.imagens?.retrato || card.images?.portrait) || imagemComErro) && (
               <Image
                 src="/images/placeholder.svg"
-                alt={`Placeholder de ${card.name}`}
+          alt={`Placeholder de ${card.nome || card.name}`}
                 width={320}
                 height={440}
                 className="w-full h-full object-cover rounded-2xl pointer-events-none select-none will-change-transform"
               />
             )}
             <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm px-1.5 py-1.5 flex flex-col items-center gap-1">
-              <span className="text-[12px] font-semibold text-neutral-100 leading-tight truncate max-w-full">{card.name}</span>
+        <span className="text-[12px] font-semibold text-neutral-100 leading-tight truncate max-w-full">{card.nome || card.name}</span>
               <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
-                <span className="px-1 rounded bg-neutral-900/70">⚔ {card.attack}</span>
-                <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defense}</span>
-                <span className={`px-1 rounded ${isPlayer ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.health}</span>
+          <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
+          <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
+                <span className={`px-1 rounded ${isPlayer ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.vida}</span>
               </div>
             </div>
           </>

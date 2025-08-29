@@ -36,8 +36,9 @@ export default function ImagemDaCarta({
 
   // Conteúdo de placeholder quando não há imagem disponível
   const obterConteudoDoPlaceholder = () => {
+    const descoberta = card.descoberta ?? card.discovered;
     // Para cartas não descobertas, mantém o bloco de mistério
-    if (!card.discovered) {
+    if (!descoberta) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-gray-400">
           <div className="text-4xl mb-2">❓</div>
@@ -49,7 +50,7 @@ export default function ImagemDaCarta({
     return (
       <Image
         src="/images/placeholder.svg"
-        alt={`Placeholder de ${card.name}`}
+        alt={`Placeholder de ${card.nome || card.name}`}
         fill
         className="object-cover"
         onLoad={lidarComCarregamentoDaImagem}
@@ -70,10 +71,10 @@ export default function ImagemDaCarta({
       )}
 
       {/* Imagem da carta ou placeholder */}
-      {card.discovered && card.images?.portrait && !erroNaImagem ? (
+    {(card.descoberta ?? card.discovered) && (card.imagens?.retrato || card.images?.portrait) && !erroNaImagem ? (
         <Image
-          src={card.images.portrait}
-          alt={card.name}
+      src={card.imagens?.retrato || card.images?.portrait}
+      alt={card.nome || card.name}
           fill
           className="object-cover"
           onError={lidarComErroDaImagem}
@@ -85,27 +86,27 @@ export default function ImagemDaCarta({
       )}
 
       {/* Overlay de raridade */}
-      {card.discovered && (
+      {(card.descoberta ?? card.discovered) && (
         <div className="absolute top-1 right-1">
           <div
             className={`text-xs px-1 rounded ${
-              card.rarity === 'Mítico'
+              (card.raridade || card.rarity) === 'Mítico'
                 ? 'bg-red-600'
-                : card.rarity === 'Lendário'
+                : (card.raridade || card.rarity) === 'Lendário'
                 ? 'bg-yellow-600'
                 : 'bg-purple-600'
             }`}
           >
-            {card.rarity?.charAt(0)}
+            {(card.raridade || card.rarity)?.charAt(0)}
           </div>
         </div>
       )}
 
       {/* Overlay de tipo de carta */}
-      {card.discovered && card.type !== 'creature' && (
+  {(card.descoberta ?? card.discovered) && ((card.tipo || card.type) !== 'creature') && (
         <div className="absolute bottom-1 left-1">
           <div className="text-xs bg-black/70 px-1 rounded">
-            {card.type === 'spell' ? '✨' : '⚱️'}
+    {(card.tipo || card.type) === 'spell' ? '✨' : '⚱️'}
           </div>
         </div>
       )}

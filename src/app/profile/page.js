@@ -229,8 +229,8 @@ export default function Profile() {
                           <div key={index} className="bg-black/30 p-4 rounded border border-gray-600/30">
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className="font-bold">{card.name}</div>
-                                <div className="text-sm text-gray-400">{card.category}</div>
+                                <div className="font-bold">{card.nome || card.name}</div>
+                                <div className="text-sm text-gray-400">{card.categoria || card.category}</div>
                               </div>
                               <div className="text-right">
                                 <div className="text-sm text-gray-400">{card.timesPlayed} jogos</div>

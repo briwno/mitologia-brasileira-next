@@ -85,24 +85,24 @@ export default function PvPModal({ onClose }) {
         .filter(Boolean)
         .map((c) => ({
           id: c.id,
-          name: c.name,
-          category: c.category,
-          attack: c.attack || 0,
-          defense: c.defense || 0,
-          life: c.health || 0,
+          nome: c.nome,
+          categoria: c.categoria,
+          ataque: c.ataque || 0,
+          defesa: c.defesa || 0,
+          vida: c.vida || 0,
         }));
     }
     // fallback reduzido
     return all
-      .filter((c) => c?.name && c?.discovered)
+  .filter((c) => c?.nome && c?.descoberta)
       .slice(0, 12)
       .map((c) => ({
         id: c.id,
-        name: c.name,
-        category: c.category,
-        attack: c.attack || 0,
-        defense: c.defense || 0,
-        life: c.health || 0,
+        nome: c.nome,
+        categoria: c.categoria,
+        ataque: c.ataque || 0,
+        defesa: c.defesa || 0,
+        vida: c.vida || 0,
       }));
   }, [ownedIds, isAuthenticated, loadingCollection]);
 
@@ -272,12 +272,12 @@ export default function PvPModal({ onClose }) {
                           <div className="w-full h-20 bg-gradient-to-b from-gray-700 to-gray-800 rounded mb-2 flex items-center justify-center">
                             <span className="text-2xl">🎭</span>
                           </div>
-                          <div className="font-semibold text-sm">{card.name}</div>
-                          <div className="text-xs text-gray-400 truncate">{card.category}</div>
+                          <div className="font-semibold text-sm">{card.nome}</div>
+                          <div className="text-xs text-gray-400 truncate">{card.categoria}</div>
                           <div className="grid grid-cols-3 gap-1 text-[10px] mt-1">
-                            <div className="bg-red-900/50 p-1 rounded text-center">{card.attack}</div>
-                            <div className="bg-blue-900/50 p-1 rounded text-center">{card.defense}</div>
-                            <div className="bg-green-900/50 p-1 rounded text-center">{card.life}</div>
+                            <div className="bg-red-900/50 p-1 rounded text-center">{card.ataque}</div>
+                            <div className="bg-blue-900/50 p-1 rounded text-center">{card.defesa}</div>
+                            <div className="bg-green-900/50 p-1 rounded text-center">{card.vida}</div>
                           </div>
                         </button>
                       ))}
@@ -301,8 +301,8 @@ export default function PvPModal({ onClose }) {
                             className="bg-black/40 p-2 rounded border border-white/10 flex items-center justify-between"
                           >
                             <div className="truncate pr-2">
-                              <div className="text-sm font-medium truncate">{c?.name || dc.id}</div>
-                              <div className="text-[11px] text-white/60 truncate">{c?.category}</div>
+                              <div className="text-sm font-medium truncate">{c?.nome || dc.id}</div>
+                              <div className="text-[11px] text-white/60 truncate">{c?.categoria}</div>
                             </div>
                             <button
                               type="button"

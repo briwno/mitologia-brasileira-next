@@ -22,8 +22,8 @@ export default function CatalogoDeCartas() {
   const regions = ['all', ...Object.values(REGIOES)];
 
   const filteredCards = cards.filter(card => {
-    const categoryMatch = selectedCategory === 'all' || card.category === selectedCategory;
-    const regionMatch = selectedRegion === 'all' || card.region === selectedRegion;
+    const categoryMatch = selectedCategory === 'all' || card.categoria === selectedCategory;
+    const regionMatch = selectedRegion === 'all' || card.regiao === selectedRegion;
     return categoryMatch && regionMatch;
   });
 
@@ -99,28 +99,28 @@ export default function CatalogoDeCartas() {
             <div
               key={card.id}
               onClick={() => handleCardClick(card)}
-              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 border-2 transition-all hover:scale-105 cursor-pointer ${getRarityColor(card.rarity)}`}
+              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 border-2 transition-all hover:scale-105 cursor-pointer ${getRarityColor(card.raridade)}`}
             >
               <div className="text-center">
                 <div className="mb-3 sm:mb-4">
                   <CardImage card={{ ...card, discovered: true }} size="medium" className="mx-auto" />
                 </div>
-                <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-2">{card.name}</h3>
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-2">{card.nome}</h3>
                 <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                  {card.region} • {card.category}
+                  {card.regiao} • {card.categoria}
                 </div>
-                <div className={`text-xs font-semibold mb-2 sm:mb-3 ${getRarityColor(card.rarity).split(' ')[1]}`}>
-                  {card.rarity}
+                <div className={`text-xs font-semibold mb-2 sm:mb-3 ${getRarityColor(card.raridade).split(' ')[1]}`}>
+                  {card.raridade}
                 </div>
-                {card.type === 'creature' && (
+                {card.tipo === 'creature' && (
                   <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs mb-2 sm:mb-3">
-                    <div className="bg-red-900/50 p-1 rounded text-xs">ATQ: {card.attack}</div>
-                    <div className="bg-blue-900/50 p-1 rounded text-xs">DEF: {card.defense}</div>
-                    <div className="bg-green-900/50 p-1 rounded text-xs">VIDA: {card.health}</div>
+                    <div className="bg-red-900/50 p-1 rounded text-xs">ATQ: {card.ataque}</div>
+                    <div className="bg-blue-900/50 p-1 rounded text-xs">DEF: {card.defesa}</div>
+                    <div className="bg-green-900/50 p-1 rounded text-xs">VIDA: {card.vida}</div>
                   </div>
                 )}
-                {card.element && (
-                  <div className="text-xs text-yellow-400 line-clamp-2">{card.element}</div>
+                {card.elemento && (
+                  <div className="text-xs text-yellow-400 line-clamp-2">{card.elemento}</div>
                 )}
               </div>
             </div>

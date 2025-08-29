@@ -60,13 +60,13 @@ export default function MaoDoJogador({
                 <div
                   className={`group relative w-20 h-32 rounded-lg border-2 overflow-hidden flex items-center justify-center ${estaSelecionada ? 'border-yellow-400' : 'border-neutral-600 hover:border-neutral-400'} ${estaArrastando ? 'opacity-50' : ''} ${bonusGlow ? 'ring-2 ring-green-400' : ''}`}
                   style={{ background: '#0e2333', boxShadow: sombraBase }}
-                  title={card.name}
+                  title={card.nome || card.name}
                 >
                   {/* Imagem da carta (portrait) */}
-                  {card.images?.portrait && (
+                  {(card.imagens?.retrato || card.images?.portrait) && (
                     <Image
-                      src={card.images.portrait}
-                      alt={card.name}
+                      src={card.imagens?.retrato || card.images?.portrait}
+                      alt={card.nome || card.name}
                       width={240} // resolução intrínseca maior para downscale mais nítido
                       height={360}
                       quality={100}
@@ -75,10 +75,10 @@ export default function MaoDoJogador({
                     />
                   )}
                   {/* Fallback */}
-                  {!card.images?.portrait && (
+                  {!(card.imagens?.retrato || card.images?.portrait) && (
                     <Image
                       src="/images/placeholder.svg"
-                      alt={`Placeholder de ${card.name}`}
+                      alt={`Placeholder de ${card.nome || card.name}`}
                       width={240}
                       height={360}
                       className="w-full h-full object-cover select-none pointer-events-none will-change-transform"
@@ -86,11 +86,11 @@ export default function MaoDoJogador({
                   )}
                   {/* Nome overlay */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-[2px] px-1 pb-1 pt-0.5 text-[9px] leading-tight font-medium text-neutral-100 text-center space-y-0.5">
-                    <div className="truncate">{card.name}</div>
+                    <div className="truncate">{card.nome || card.name}</div>
                     <div className="flex justify-center gap-1 text-[8px] font-semibold">
-                      <span className="px-1 rounded bg-neutral-900/70">⚔ {card.attack}</span>
-                      <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defense}</span>
-                      <span className="px-1 rounded bg-blue-900/70 text-blue-200">❤️ {card.health}</span>
+                      <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
+                      <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
+                      <span className="px-1 rounded bg-blue-900/70 text-blue-200">❤️ {card.vida}</span>
                     </div>
                   </div>
                   {/* Sem custo por carta: custos estão nas habilidades */}
