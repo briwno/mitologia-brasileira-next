@@ -13,10 +13,16 @@ export default function PaginaLogin() {
     confirmPassword: '',
     username: ''
   });
+  const [carregando, setCarregando] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      alert('As senhas não conferem.');
+      return;
+    }
     try {
+      setCarregando(true);
       const payload = isLogin
         ? { action: 'login', username: formData.username, password: formData.password }
         : { action: 'register', username: formData.username, email: formData.email, password: formData.password };
@@ -28,6 +34,8 @@ export default function PaginaLogin() {
       window.location.href = '/';
     } catch (err) {
       alert(err.message);
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -51,7 +59,7 @@ export default function PaginaLogin() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+  <form onSubmit={handleSubmit} className="space-y-4" aria-busy={carregando}>
           {/* Username em ambos os modos */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -62,7 +70,8 @@ export default function PaginaLogin() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
+      className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
+      disabled={carregando}
               required
             />
           </div>
@@ -77,7 +86,8 @@ export default function PaginaLogin() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
+                disabled={carregando}
                 required={!isLogin}
               />
             </div>
@@ -92,7 +102,8 @@ export default function PaginaLogin() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
+              disabled={carregando}
               required
             />
           </div>
@@ -107,7 +118,8 @@ export default function PaginaLogin() {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
+                disabled={carregando}
                 required={!isLogin}
               />
             </div>
@@ -115,9 +127,13 @@ export default function PaginaLogin() {
 
           <button
             type="submit"
-            className="w-full py-2 bg-green-600 hover:bg-green-700 rounded-md font-semibold transition-colors"
+            className="w-full py-2 bg-green-600 hover:bg-green-700 rounded-md font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={carregando}
           >
-            {isLogin ? 'Entrar' : 'Cadastrar'}
+            {carregando && (
+              <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+            )}
+            {carregando ? (isLogin ? 'Entrando...' : 'Cadastrando...') : (isLogin ? 'Entrar' : 'Cadastrar')}
           </button>
         </form>
 

@@ -84,7 +84,7 @@ export default function ZonaDoBanco({
                   ) : (
                     // back visible when not revealed and viewer cannot see hidden
                     <Image
-                      src="/images/card-back.svg"
+                      src="/images/card-back.png"
                       alt="Card back"
                       width={240}
                       height={320}
@@ -96,7 +96,7 @@ export default function ZonaDoBanco({
                 {/* back (for flip effect)*/}
                 <div className="absolute inset-0 rotate-y-180 backface-hidden">
                   <Image
-                    src="/images/card-back.svg"
+                    src="/images/card-back.png"
                     alt="Card back"
                     width={200}
                     height={280}

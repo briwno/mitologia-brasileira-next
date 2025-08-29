@@ -58,7 +58,7 @@ export default function ZonaAtiva({
               <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
           <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
           <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
-                <span className={`px-1 rounded ${isPlayer ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.vida}</span>
+                <span className={`px-1 rounded ${ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.vida}</span>
               </div>
             </div>
           </>

@@ -100,8 +100,12 @@ export const bancoDeCartas = [
   skill5: { name: 'Julgamento Celeste', description: 'O trovão final de Tupã que rasga os céus.', cost: 7, kind: 'damage', base: 9 },
   passive: { name: 'O Criador', description: 'Ao entrar, torna o campo sagrado; +1 defesa para aliados' }
     },
-    historia: 'Deus das tempestades e protetor da floresta, Tupã é temido por todos os seres que habitam a Amazônia.',
-    descoberta: true
+    historia: 'Deus das tempestades e protetor da floresta, Tupã é respeitado por todos os seres que habitam a Amazônia.',
+    descoberta: true,
+    imagens: {
+      retrato: '/images/cards/portraits/tupa.png',
+      completa: '/images/cards/full/tupa.png'
+    },
   },
   {
     id: 'boiu001',
@@ -179,7 +183,7 @@ export const bancoDeCartas = [
       completa: '/images/cards/full/boto.jpg'
     },
     tags: ['transformação', 'sedução', 'água', 'noturno'],
-    condicaoDesbloqueio: 'Explore 100% da região Amazônica',
+    condicaoDesbloqueio: 'Booster ou finalize o quiz sobre a região Amazônica',
     bonusSazonal: {
       estacao: ESTACOES.FESTA_JUNINA,
       multiplicador: 2.0,

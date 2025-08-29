@@ -95,6 +95,9 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+  
+      window.location.href = '/login';
+  
   };
 
   const updateUser = (userData) => {
