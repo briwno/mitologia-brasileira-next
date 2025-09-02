@@ -1,4 +1,4 @@
-# Batalha dos Encantados — Next.js App
+# Ka'aguy — Next.js App
 
 Embarque no folclore brasileiro em um card game moderno: PvP dinâmico, exploração cultural e uma interface elegante.
 
