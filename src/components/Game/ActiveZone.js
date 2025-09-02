@@ -20,7 +20,7 @@ export default function ZonaAtiva({
   return (
     <div className="relative">
       <div
-        className={`relative w-40 h-56 rounded-2xl border-2 flex items-center justify-center transition-all ${card ? (ehJogador ? 'border-blue-500' : 'border-red-500') : 'border-dashed border-neutral-600'} ${!card && ehJogador && isPlayerTurn ? 'hover:border-green-400' : ''}`}
+        className={`relative w-48 h-66 rounded-2xl border-2 flex items-center justify-center transition-all ${card ? (ehJogador ? 'border-blue-500' : 'border-red-500') : 'border-dashed border-neutral-600'} ${!card && ehJogador && isPlayerTurn ? 'hover:border-green-400' : ''}`}
         style={{ background: card ? (ehJogador ? '#123047' : '#472222') : '#111a22', boxShadow: sombraBase }}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -84,3 +84,4 @@ export default function ZonaAtiva({
     </div>
   );
 }
+

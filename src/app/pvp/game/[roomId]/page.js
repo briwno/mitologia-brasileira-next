@@ -4,9 +4,180 @@
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { bancoDeCartas } from '../../../../data/cardsDatabase';
-// Mana removed; using PP per habilidade
 import { FieldIndicator, ActiveZone, Playmat, PlayerHUD, EndTurnButton, BenchZone } from '../../../../components/Game';
 import CardDetail from '../../../../components/Card/CardDetail';
+
+// Componente do Painel de Habilidades estilo Genshin TCG
+function SkillPanel({ card, skills, onSkillUse, onSwitch, onPassTurn, gameState, canUseSkill }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const getSkillIcon = (skill, index) => {
+    const icons = ['⚔️', '🔥', '⚡', '💫', '🌟'];
+    return icons[index] || '⚔️';
+  };
+
+  const getSkillColor = (skill, index) => {
+    const colors = [
+      'from-blue-600/80 to-blue-700/80 hover:from-blue-500/80 hover:to-blue-600/80',
+      'from-green-600/80 to-green-700/80 hover:from-green-500/80 hover:to-green-600/80',
+      'from-purple-600/80 to-purple-700/80 hover:from-purple-500/80 hover:to-purple-600/80',
+      'from-orange-600/80 to-orange-700/80 hover:from-orange-500/80 hover:to-orange-600/80',
+      'from-yellow-600/80 to-yellow-700/80 hover:from-yellow-500/80 hover:to-yellow-600/80'
+    ];
+    return colors[index] || colors[0];
+  };
+
+  if (!card) return null;
+
+  return (
+    <div className="absolute bottom-6 left-6 z-50">
+      {/* Toggle Button */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-2 border-slate-600/50 flex items-center justify-center text-2xl hover:border-slate-500 transition-all duration-200 backdrop-blur-sm shadow-lg"
+        title={expanded ? "Ocultar Habilidades" : "Mostrar Habilidades"}
+      >
+        {expanded ? '🎯' : '⚔️'}
+      </button>
+
+      {/* Skills Panel */}
+      {expanded && (
+        <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border border-slate-600/50 rounded-2xl p-4 shadow-2xl min-w-[280px] max-w-[320px]">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-sm font-bold">
+                {card.nome?.charAt(0) || 'E'}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">{card.nome}</div>
+                <div className="text-xs text-slate-300">Turnos em campo: {card.onFieldTurns || 0}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-slate-400 hover:text-white text-lg"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Skills Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {skills.map((skill, index) => {
+              const disabled = gameState.actionUsed || !canUseSkill('player', skill) || (gameState.playerStun ?? 0) > 0;
+              const isUltimate = skill.key === 'skill5';
+              
+              return (
+                <button
+                  key={skill.key}
+                  onClick={() => onSkillUse(index)}
+                  disabled={disabled || skill.locked}
+                  title={skill.description} // Tooltip com descrição completa
+                  className={`
+                    relative group p-3 rounded-xl border transition-all duration-200 transform
+                    ${disabled || skill.locked 
+                      ? 'bg-slate-700/50 border-slate-600/50 cursor-not-allowed opacity-50' 
+                      : `bg-gradient-to-br ${getSkillColor(skill, index)} border-slate-500/50 hover:scale-105 hover:shadow-lg active:scale-95`
+                    }
+                    ${isUltimate && !skill.locked && !disabled ? 'ring-2 ring-yellow-400/60 ring-offset-1 ring-offset-slate-900' : ''}
+                  `}
+                >
+                  {/* Skill Icon */}
+                  <div className="text-2xl mb-1">{getSkillIcon(skill, index)}</div>
+                  
+                  {/* Skill Name */}
+                  <div className="text-xs font-semibold text-white mb-1 leading-tight">
+                    {skill.name}
+                  </div>
+                  
+                  {/* PP Counter e Custo */}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <div className="text-xs text-yellow-200 font-bold">
+                        {skill.pp}/{skill.ppMax}
+                      </div>
+                      <div className="text-xs text-slate-300">PP</div>
+                    </div>
+                    {skill.cost && (
+                      <div className="text-xs text-blue-200 bg-blue-900/30 px-1 rounded">
+                        ⚡{skill.cost}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Skill Info */}
+                  <div className="text-[10px] text-slate-300 leading-tight">
+                    {skill.kind === 'damage' && skill.base > 0 && `+${skill.base} dano`}
+                    {skill.kind === 'stun' && skill.stun > 0 && `Atordoa ${skill.stun}T`}
+                    {skill.kind === 'debuff' && 'Enfraquece'}
+                  </div>
+                  
+                  {/* Lock Indicator */}
+                  {skill.locked && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
+                      <div className="text-center">
+                        <div className="text-lg">🔒</div>
+                        <div className="text-xs text-yellow-300 font-bold">
+                          {skill.unlockIn}T
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Ultimate Glow */}
+                  {isUltimate && !skill.locked && !disabled && (
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-400/20 to-orange-400/20 animate-pulse"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2">
+            <button
+              onClick={onSwitch}
+              disabled={gameState.actionUsed}
+              className={`
+                w-full p-2 rounded-lg border text-sm font-semibold transition-all duration-200
+                ${gameState.actionUsed 
+                  ? 'bg-slate-700/50 border-slate-600/50 text-slate-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-emerald-600/80 to-emerald-700/80 hover:from-emerald-500/80 hover:to-emerald-600/80 border-emerald-500/50 text-white hover:scale-[1.02]'
+                }
+              `}
+            >
+              🔄 Trocar Encantado
+            </button>
+            
+            <button
+              onClick={onPassTurn}
+              disabled={gameState.actionUsed}
+              className={`
+                w-full p-2 rounded-lg border text-sm font-semibold transition-all duration-200
+                ${gameState.actionUsed 
+                  ? 'bg-slate-700/50 border-slate-600/50 text-slate-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-slate-600/80 to-slate-700/80 hover:from-slate-500/80 hover:to-slate-600/80 border-slate-500/50 text-white hover:scale-[1.02]'
+                }
+              `}
+            >
+              ⏭️ Passar Turno
+            </button>
+          </div>
+
+          {/* Status Effects */}
+          {(gameState.playerStun > 0) && (
+            <div className="mt-3 p-2 bg-red-900/50 border border-red-600/50 rounded-lg">
+              <div className="text-xs text-red-200 font-semibold text-center">
+                😵‍💫 Atordoado por {gameState.playerStun} turno(s)
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function GameRoom({ params }) {
   const [gameState, setGameState] = useState({
@@ -24,17 +195,23 @@ export default function GameRoom({ params }) {
   // Função para buscar carta por id e garantir todos os campos necessários
   function getCardData(cardID) {
     if (!cardID) return null;
-  const card = bancoDeCartas.find(c => c.id === cardID);
+    const card = bancoDeCartas.find(c => c.id === cardID);
     if (!card) return null;
-  // Mantém o objeto de habilidades como está (para suportar skill1..skill4 + passive)
-  return { ...card, abilities: card.abilities ? { ...card.abilities } : {} };
+    // Mapeia 'habilidades' para 'abilities' para compatibilidade
+    const abilities = card.habilidades || card.abilities || {};
+    return { ...card, abilities };
   }
 
-  // PP defaults por slot (inspirado em Pokémon)
-  const getDefaultMaxPP = (slotIdx) => {
+  // PP defaults baseados no custo da habilidade ou valores padrão
+  const getDefaultMaxPP = (skill, slotIdx) => {
+    if (skill && skill.cost) {
+      // PP inicial é inversamente proporcional ao custo (habilidades mais caras têm menos PP)
+      return Math.max(1, Math.ceil(10 / skill.cost));
+    }
+    // Fallback para valores padrão por slot
     switch (slotIdx) {
       case 0: return 10; // skill1
-      case 1: return 10; // skill2
+      case 1: return 8;  // skill2
       case 2: return 5;  // skill3
       case 3: return 3;  // skill4
       case 4: return 1;  // skill5 (ultimate)
@@ -43,13 +220,14 @@ export default function GameRoom({ params }) {
   };
 
   const buildAbilityPP = (card) => {
-    const ab = card?.abilities || {};
+    const ab = card?.abilities || card?.habilidades || {};
     const pp = {};
-    const arr = [ab.skill1, ab.skill2, ab.skill3, ab.skill4, ab.skill5];
-    arr.forEach((s, idx) => {
-      if (s || idx === 4) { // garante slot para a 5ª (genérica pode existir)
+    const skills = [ab.skill1, ab.skill2, ab.skill3, ab.skill4, ab.skill5];
+    skills.forEach((skill, idx) => {
+      if (skill || idx === 4) { // garante slot para a 5ª (genérica pode existir)
         const key = `skill${idx + 1}`;
-        const max = getDefaultMaxPP(idx);
+        // Usa ppMax da database se disponível, caso contrário usa valores padrão
+        const max = skill?.ppMax || getDefaultMaxPP(skill, idx);
         pp[key] = { current: max, max };
       }
     });
@@ -63,6 +241,9 @@ export default function GameRoom({ params }) {
       ...card,
       foiRevelada: !!revealed,
       onFieldTurns: 0,
+      vida: card.vida || 15, // Garante que vida está definida
+      vidaMaxima: card.vida || 15, // Define vida máxima baseada na vida original
+      abilities: card.habilidades || card.abilities, // Normaliza o campo de habilidades
       abilityPP: buildAbilityPP(card)
     };
   }
@@ -155,16 +336,6 @@ export default function GameRoom({ params }) {
   useEffect(() => {
     incrementOnFieldTurns('player');
   }, [incrementOnFieldTurns]);
-  
-  // Fechar menu de ações com ESC
-  useEffect(() => {
-    if (!showSkillMenu) return;
-    const onKey = (e) => {
-      if (e.key === 'Escape') setShowSkillMenu(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showSkillMenu]);
 
   // Helpers: field effects and modifiers (lightweight implementation)
   const hasFieldBuff = useCallback((card) => {
@@ -227,7 +398,7 @@ export default function GameRoom({ params }) {
       setPlayerBench(prev => {
         const next = [...prev];
         const incoming = next[benchIndex];
-        if (!incoming) return prev;
+        if (!incoming || incoming.isDead) return prev; // Não permite trocar com carta morta
         const outgoing = activeCards.player;
         // revelar se necessário
   const revealedIncoming = { ...incoming, foiRevelada: true, onFieldTurns: 0 };
@@ -242,7 +413,7 @@ export default function GameRoom({ params }) {
       setOpponentBench(prev => {
         const next = [...prev];
         const incoming = next[benchIndex];
-        if (!incoming) return prev;
+        if (!incoming || incoming.isDead) return prev; // Não permite trocar com carta morta
         const outgoing = activeCards.opponent;
   const revealedIncoming = { ...incoming, foiRevelada: true, onFieldTurns: 0 };
         setActiveCards(a => ({ ...a, opponent: revealedIncoming }));
@@ -262,79 +433,70 @@ export default function GameRoom({ params }) {
     return Math.max(1, raw);
   }, [getAttackWithField]);
 
-  // Normaliza habilidades: usa skill1..skill4 e adiciona uma 5ª (Ultimate) que desbloqueia após 3 turnos em campo
+  // Normaliza habilidades: usa as habilidades reais das cartas
   const getSkills = useCallback((card) => {
     if (!card) return [];
-    const ab = card.abilities || {};
+    const ab = card.abilities || card.habilidades || {};
     const turns = card.onFieldTurns || 0;
     const ultimateUnlocked = turns >= 3;
-    const hasNewSchema = ab.skill1 || ab.skill2 || ab.skill3 || ab.skill4;
-    if (hasNewSchema) {
-      const mapped = [ab.skill1, ab.skill2, ab.skill3, ab.skill4]
-        .filter(Boolean)
-        .map((s, idx) => ({
-          key: s.key || `s${idx + 1}`,
-          idxKey: `skill${idx + 1}`,
-          name: s.name,
-          description: s.description,
-          kind: s.kind || 'damage',
-          base: s.base ?? 0,
-          stun: s.stun ?? 0,
-          chance: s.chance,
-          pp: card.abilityPP?.[`skill${idx + 1}`]?.current ?? getDefaultMaxPP(idx),
-          ppMax: card.abilityPP?.[`skill${idx + 1}`]?.max ?? getDefaultMaxPP(idx)
-        }));
-      // Garante 4 entradas (preenche com genéricos se faltar)
-      while (mapped.length < 4) {
-        const i = mapped.length;
-        const gens = [
-          { key: 'basic', name: 'Golpe', description: 'Ataque básico.', cost: 1, kind: 'damage', base: 0 },
-          { key: 'power', name: 'Golpe Potente', description: 'Ataque reforçado.', cost: 2, kind: 'damage', base: 2 },
-          { key: 'stun', name: 'Atordoar', description: 'Atordoa o alvo por 1 turno.', cost: 3, kind: 'stun', stun: 1 },
-          { key: 'ultimate', name: 'Golpe Supremo', description: 'Ataque devastador.', cost: 4, kind: 'damage', base: 5 }
+    
+    // Mapeia todas as 5 habilidades
+    const allSkills = [ab.skill1, ab.skill2, ab.skill3, ab.skill4, ab.skill5];
+    const mapped = [];
+    
+    allSkills.forEach((skill, idx) => {
+      const key = `skill${idx + 1}`;
+      const isUltimate = idx === 4; // skill5 é sempre ultimate
+      
+      if (skill) {
+        // Usa habilidade real da carta
+        const ppInfo = card.abilityPP?.[key] || { current: skill.ppMax || getDefaultMaxPP(skill, idx), max: skill.ppMax || getDefaultMaxPP(skill, idx) };
+        mapped.push({
+          key: skill.key || key,
+          idxKey: key,
+          name: skill.name,
+          description: skill.description,
+          kind: skill.kind || 'damage',
+          base: skill.base ?? 0,
+          stun: skill.stun ?? 0,
+          chance: skill.chance,
+          cost: skill.cost,
+          pp: ppInfo.current,
+          ppMax: ppInfo.max,
+          locked: isUltimate ? !ultimateUnlocked : false,
+          unlockIn: isUltimate ? Math.max(0, 3 - turns) : 0
+        });
+      } else {
+        // Habilidade genérica se não existir
+        const genericSkills = [
+          { name: 'Golpe', description: 'Ataque básico.', cost: 1, kind: 'damage', base: 0 },
+          { name: 'Golpe Potente', description: 'Ataque reforçado.', cost: 2, kind: 'damage', base: 2 },
+          { name: 'Atordoar', description: 'Atordoa o alvo por 1 turno.', cost: 3, kind: 'stun', stun: 1 },
+          { name: 'Golpe Supremo', description: 'Ataque devastador.', cost: 4, kind: 'damage', base: 5 },
+          { name: 'Despertar Mítico', description: 'Libera o poder total após 3 turnos em campo.', cost: 6, kind: 'damage', base: 8, stun: 1 }
         ];
-        mapped.push(gens[i] || gens[0]);
+        
+        const genericSkill = genericSkills[idx] || genericSkills[0];
+        const ppInfo = card.abilityPP?.[key] || { current: getDefaultMaxPP(genericSkill, idx), max: getDefaultMaxPP(genericSkill, idx) };
+        
+        mapped.push({
+          key: key,
+          idxKey: key,
+          name: genericSkill.name,
+          description: genericSkill.description,
+          kind: genericSkill.kind || 'damage',
+          base: genericSkill.base ?? 0,
+          stun: genericSkill.stun ?? 0,
+          cost: genericSkill.cost,
+          pp: ppInfo.current,
+          ppMax: ppInfo.max,
+          locked: isUltimate ? !ultimateUnlocked : false,
+          unlockIn: isUltimate ? Math.max(0, 3 - turns) : 0
+        });
       }
-      // 5ª habilidade: usa ab.skill5 se existir, senão cria uma genérica
-      const ult = ab.skill5 ? {
-        key: 'skill5',
-        idxKey: 'skill5',
-        name: ab.skill5.name,
-        description: ab.skill5.description,
-        kind: ab.skill5.kind || 'damage',
-        base: ab.skill5.base ?? 8,
-        stun: ab.skill5.stun ?? 1,
-      } : {
-        key: 'skill5',
-        idxKey: 'skill5',
-        name: 'Despertar Mítico',
-        description: 'Libera o poder total após 3 turnos em campo.',
-        kind: 'damage',
-        base: 8,
-        stun: 1,
-      };
-      const idx = 4;
-      const ppInfo = card.abilityPP?.skill5 || { current: getDefaultMaxPP(idx), max: getDefaultMaxPP(idx) };
-      mapped.push({ ...ult, locked: !ultimateUnlocked, unlockIn: Math.max(0, 3 - turns), pp: ppInfo.current, ppMax: ppInfo.max });
-      return mapped.slice(0, 5);
-    }
-    // Fallback antigo (basic, power, stun, ultimate)
-    const legacy = [];
-    if (ab.basic) {
-      legacy.push({ key: 'basic', idxKey: 'skill1', name: ab.basic.name, description: ab.basic.description, kind: 'damage', base: 0, pp: card.abilityPP?.skill1?.current ?? getDefaultMaxPP(0), ppMax: card.abilityPP?.skill1?.max ?? getDefaultMaxPP(0) });
-    } else {
-      legacy.push({ key: 'basic', idxKey: 'skill1', name: 'Golpe', description: 'Ataque básico.', kind: 'damage', base: 0, pp: card.abilityPP?.skill1?.current ?? getDefaultMaxPP(0), ppMax: card.abilityPP?.skill1?.max ?? getDefaultMaxPP(0) });
-    }
-    legacy.push({ key: 'power', idxKey: 'skill2', name: 'Golpe Potente', description: 'Ataque reforçado.', kind: 'damage', base: 2, pp: card.abilityPP?.skill2?.current ?? getDefaultMaxPP(1), ppMax: card.abilityPP?.skill2?.max ?? getDefaultMaxPP(1) });
-    legacy.push({ key: 'stun', idxKey: 'skill3', name: 'Atordoar', description: 'Atordoa o alvo por 1 turno.', kind: 'stun', stun: 1, pp: card.abilityPP?.skill3?.current ?? getDefaultMaxPP(2), ppMax: card.abilityPP?.skill3?.max ?? getDefaultMaxPP(2) });
-    if (ab.ultimate) {
-      legacy.push({ key: 'ultimate', idxKey: 'skill4', name: ab.ultimate.name, description: ab.ultimate.description, kind: 'damage', base: 5, pp: card.abilityPP?.skill4?.current ?? getDefaultMaxPP(3), ppMax: card.abilityPP?.skill4?.max ?? getDefaultMaxPP(3) });
-    } else {
-      legacy.push({ key: 'ultimate', idxKey: 'skill4', name: 'Golpe Supremo', description: 'Ataque devastador.', kind: 'damage', base: 5, pp: card.abilityPP?.skill4?.current ?? getDefaultMaxPP(3), ppMax: card.abilityPP?.skill4?.max ?? getDefaultMaxPP(3) });
-    }
-    const pp5 = card.abilityPP?.skill5 || { current: getDefaultMaxPP(4), max: getDefaultMaxPP(4) };
-    legacy.push({ key: 'skill5', idxKey: 'skill5', name: 'Despertar Mítico', description: 'Libera após 3 turnos em campo.', kind: 'damage', base: 8, stun: 1, locked: turns < 3, unlockIn: Math.max(0, 3 - turns), pp: pp5.current, ppMax: pp5.max });
-    return legacy.slice(0, 5);
+    });
+    
+    return mapped.slice(0, 5);
   }, []);
 
   const canUseSkill = useCallback((side, skill) => {
@@ -344,7 +506,7 @@ export default function GameRoom({ params }) {
     if (!card) return false;
     const key = skill.idxKey || 'skill1';
     const slot = card.abilityPP?.[key];
-    const current = slot?.current ?? getDefaultMaxPP(key === 'skill5' ? 4 : (parseInt(key.replace('skill',''),10)-1));
+    const current = slot?.current ?? getDefaultMaxPP(skill, parseInt(key.replace('skill',''),10)-1);
     return current > 0;
   }, [activeCards.player, activeCards.opponent]);
 
@@ -355,7 +517,12 @@ export default function GameRoom({ params }) {
       const card = next[side];
       if (!card) return prev;
       const abilityPP = { ...(card.abilityPP || {}) };
-      const slot = abilityPP[idxKey] || { current: getDefaultMaxPP(idxKey === 'skill5' ? 4 : (parseInt(idxKey.replace('skill',''),10)-1)), max: getDefaultMaxPP(idxKey === 'skill5' ? 4 : (parseInt(idxKey.replace('skill',''),10)-1)) };
+      const skillIndex = parseInt(idxKey.replace('skill',''),10)-1;
+      const skill = card.abilities?.[idxKey];
+      const slot = abilityPP[idxKey] || { 
+        current: getDefaultMaxPP(skill, skillIndex), 
+        max: getDefaultMaxPP(skill, skillIndex) 
+      };
       abilityPP[idxKey] = { ...slot, current: Math.max(0, (slot.current ?? slot.max) - 1) };
       next[side] = { ...card, abilityPP };
       return next;
@@ -367,15 +534,39 @@ export default function GameRoom({ params }) {
       const targetCard = prev[targetSide];
       if (!targetCard) return prev;
       const adjusted = mitigateIncomingDamage(targetCard, amount);
-  const newHealth = (targetCard.vida || 0) - adjusted;
+      const newHealth = (targetCard.vida || 0) - adjusted;
       if (newHealth <= 0) {
-        // Knockout -> move to discard
-        setDiscardPile(dp => [...dp, targetCard]);
-        // marca KO para promoção forçada
+        // Marca carta como morta e adiciona ao banco sem remover outras cartas
+        const deadCard = { ...targetCard, vida: 0, isDead: true };
+        if (targetSide === 'player') {
+          setPlayerBench(prev => {
+            const next = [...prev];
+            // Adiciona a carta morta ao final se houver espaço, ou substitui a primeira carta vazia
+            const emptySlot = next.findIndex(card => !card);
+            if (emptySlot >= 0) {
+              next[emptySlot] = deadCard;
+            } else {
+              // Se não há slot vazio, adiciona ao final (expandindo o banco temporariamente)
+              next.push(deadCard);
+            }
+            return next;
+          });
+        } else {
+          setOpponentBench(prev => {
+            const next = [...prev];
+            const emptySlot = next.findIndex(card => !card);
+            if (emptySlot >= 0) {
+              next[emptySlot] = deadCard;
+            } else {
+              next.push(deadCard);
+            }
+            return next;
+          });
+        }
         setLastKOSide(targetSide);
         return { ...prev, [targetSide]: null };
       }
-  return { ...prev, [targetSide]: { ...targetCard, vida: newHealth } };
+      return { ...prev, [targetSide]: { ...targetCard, vida: newHealth } };
     });
   }, [mitigateIncomingDamage]);
 
@@ -459,7 +650,18 @@ export default function GameRoom({ params }) {
                 const dmg = calculateDamage(ac.opponent, ac.player, chosen.base ?? 0);
                 const newHealth = (ac.player.vida || 0) - mitigateIncomingDamage(ac.player, dmg);
                 if (newHealth <= 0) {
-                  setDiscardPile(dp => [...dp, ac.player]);
+                  // Marca carta como morta e adiciona ao banco sem remover outras cartas
+                  const deadCard = { ...ac.player, vida: 0, isDead: true };
+                  setPlayerBench(prev => {
+                    const next = [...prev];
+                    const emptySlot = next.findIndex(card => !card);
+                    if (emptySlot >= 0) {
+                      next[emptySlot] = deadCard;
+                    } else {
+                      next.push(deadCard);
+                    }
+                    return next;
+                  });
                   setLastKOSide('player');
                   ac.player = null;
                 } else {
@@ -516,7 +718,6 @@ export default function GameRoom({ params }) {
       applyDamage('player', 'opponent', damage);
       setGameState(prev => ({ ...prev, actionUsed: true }));
     }
-    setShowSkillMenu(false);
     setTimeout(() => endTurn(), 400);
   }, [gameState.turn, gameState.actionUsed, gameState.playerStun, activeCards.player, activeCards.opponent, getSkills, canUseSkill, spendPP, calculateDamage, applyDamage, endTurn]);
 
@@ -525,13 +726,11 @@ export default function GameRoom({ params }) {
     if (gameState.turn !== 'player' || gameState.actionUsed) return;
     setAwaitingSwitch(true);
   setShowSwitchModal(true);
-    setShowSkillMenu(false);
   }, [gameState.turn, gameState.actionUsed]);
 
   // Ação: Passar o turno
   const passTurn = useCallback(() => {
     if (gameState.turn !== 'player' || gameState.actionUsed) return;
-    setShowSkillMenu(false);
     setGameState(prev => ({ ...prev, actionUsed: true }));
     setTimeout(() => endTurn(), 100);
   }, [gameState.turn, gameState.actionUsed, endTurn]);
@@ -542,7 +741,7 @@ export default function GameRoom({ params }) {
 
   // Troca via clique no banco (quando aguardando seleção)
   const onPlayerBenchClick = useCallback((card, index) => {
-    if (!card) return;
+    if (!card || card.isDead) return; // Não permite selecionar cartas mortas
     if (!awaitingSwitch && forcePromotionFor !== 'player') return;
     switchActive('player', index);
     setAwaitingSwitch(false);
@@ -559,11 +758,11 @@ export default function GameRoom({ params }) {
   useEffect(() => {
     if (!lastKOSide) return;
     if (lastKOSide === 'player') {
-      const hasBench = playerBench.some(c => !!c);
+      const hasBench = playerBench.some(c => c && !c.isDead); // Só considera cartas vivas
       if (hasBench) setForcePromotionFor('player');
-      else console.log('Derrota: sem encantados no banco');
+      else console.log('Derrota: sem encantados vivos no banco');
     } else if (lastKOSide === 'opponent') {
-      const idx = opponentBench.findIndex(c => !!c);
+      const idx = opponentBench.findIndex(c => c && !c.isDead); // Só considera cartas vivas
       if (idx >= 0) switchActive('opponent', idx);
     }
     setLastKOSide(null);
@@ -644,65 +843,10 @@ export default function GameRoom({ params }) {
                       card={activeCards.player}
                       position="player"
                       isPlayerTurn={gameState.turn === 'player'}
-                      onCardClick={() => activeCards.player && setShowSkillMenu(m => !m)}
+                      onCardClick={() => {}} // Remover ação do clique na carta ativa
                       onCardContextMenu={(card) => setDetailCard(card)}
                     />
                   </div>
-                  {/* Overlay para fechar o menu ao clicar fora */}
-                  {showSkillMenu && (
-                    <div className="fixed inset-0 z-40" onClick={() => setShowSkillMenu(false)} />
-                  )}
-                  {showSkillMenu && activeCards.player && (
-                    <div className="absolute -top-2 -right-44 w-44 bg-neutral-900/95 border border-neutral-700 rounded-xl p-3 flex flex-col gap-2 text-[11px] shadow-2xl z-50">
-                      <div className="flex items-center justify-between">
-                        <div className="text-[10px] font-bold tracking-wide text-neutral-300">AÇÕES</div>
-                        <button onClick={() => setShowSkillMenu(false)} className="text-neutral-400 hover:text-neutral-200 text-xs">✖</button>
-                      </div>
-                      {(() => {
-                        const skills = getSkills(activeCards.player);
-                        return (
-                          <div className="flex flex-col gap-2">
-                            {skills.map((s, i) => {
-                              const disabled = gameState.actionUsed || !canUseSkill('player', s) || (gameState.playerStun ?? 0) > 0;
-                              const palette = i === 0 ? 'bg-blue-700/40 hover:bg-blue-600/50 border-blue-600' : i === 1 ? 'bg-cyan-700/40 hover:bg-cyan-600/50 border-cyan-600' : i === 2 ? 'bg-purple-700/40 hover:bg-purple-600/50 border-purple-600' : 'bg-amber-600/40 hover:bg-amber-500/50 border-amber-500';
-                              const glow = s.key === 'skill5' && !s.locked && !disabled ? 'animate-pulse ring-2 ring-amber-400/70 ring-offset-1 ring-offset-black/30' : '';
-                              return (
-                                <button
-                                  key={s.key}
-                                  onClick={() => castSkill(i)}
-                                  disabled={disabled}
-                                  className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${disabled ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : palette} ${glow}`}
-                                >
-                                  {s.name} <span className="text-[10px] text-yellow-200">(PP {s.pp}/{s.ppMax})</span>
-                                  <span className="block text-[9px] font-normal text-neutral-300">{s.description}</span>
-                                  {s.locked && (
-                                    <span className="block text-[9px] font-normal text-amber-300">🔒 Desbloqueia em {s.unlockIn} turno(s)</span>
-                                  )}
-                                </button>
-                              );
-                            })}
-            {/* PP não tem barra global */}
-                          </div>
-                        );
-                      })()}
-                      <button
-                        onClick={startSwitch}
-                        disabled={gameState.actionUsed}
-                        className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${gameState.actionUsed ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : 'bg-emerald-700/40 hover:bg-emerald-600/50 border-emerald-600'}`}
-                      >
-                        Trocar Encantado
-                        <span className="block text-[9px] font-normal text-neutral-200">Escolha do banco</span>
-                      </button>
-                      <button
-                        onClick={passTurn}
-                        disabled={gameState.actionUsed}
-                        className={`px-2 py-1 rounded border text-left font-semibold transition text-neutral-200 ${gameState.actionUsed ? 'bg-neutral-800 border-neutral-700 cursor-not-allowed' : 'bg-neutral-700/40 hover:bg-neutral-600/50 border-neutral-600'}`}
-                      >
-                        Passar Turno
-                        <span className="block text-[9px] font-normal text-neutral-300">Encerrar sem ação</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -723,6 +867,19 @@ export default function GameRoom({ params }) {
             )}
           </div>
         </div>
+
+        {/* Painel de Habilidades - Estilo Genshin TCG (canto inferior esquerdo) */}
+        {activeCards.player && gameState.turn === 'player' && (
+          <SkillPanel
+            card={activeCards.player}
+            skills={getSkills(activeCards.player)}
+            onSkillUse={castSkill}
+            onSwitch={startSwitch}
+            onPassTurn={passTurn}
+            gameState={gameState}
+            canUseSkill={canUseSkill}
+          />
+        )}
 
     {/* Modal simples para promoção forçada */}
     {forcePromotionFor === 'player' && (
@@ -784,7 +941,426 @@ export default function GameRoom({ params }) {
         <div className="absolute top-4 right-4 z-40">
           <OptionsMenu />
         </div>
+        
+        {/* Debug Panel */}
+        <DebugPanel
+          gameState={gameState}
+          setGameState={setGameState}
+          activeCards={activeCards}
+          setActiveCards={setActiveCards}
+          playerBench={playerBench}
+          setPlayerBench={setPlayerBench}
+          opponentBench={opponentBench}
+          setOpponentBench={setOpponentBench}
+          currentField={currentField}
+          setCurrentField={setCurrentField}
+          fields={fields}
+          setLastKOSide={setLastKOSide}
+          buildAbilityPP={buildAbilityPP}
+        />
       </div>
+    </div>
+  );
+}
+
+// Debug Panel para testes
+function DebugPanel({ 
+  gameState, 
+  setGameState, 
+  activeCards, 
+  setActiveCards, 
+  playerBench, 
+  setPlayerBench,
+  opponentBench,
+  setOpponentBench,
+  currentField, 
+  setCurrentField, 
+  fields,
+  setLastKOSide,
+  buildAbilityPP
+}) {
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('game');
+
+  const healCard = (side, slot = 'active') => {
+    if (slot === 'active') {
+      setActiveCards(prev => ({
+        ...prev,
+        [side]: prev[side] ? { ...prev[side], vida: prev[side].vidaMaxima || 100, isDead: false } : prev[side]
+      }));
+    }
+  };
+
+  const killCard = (side, slot = 'active') => {
+    if (slot === 'active') {
+      setActiveCards(prev => {
+        const card = prev[side];
+        if (!card) return prev;
+        
+        const deadCard = { ...card, vida: 0, isDead: true };
+        
+        // Move carta morta para o banco
+        if (side === 'player') {
+          setPlayerBench(benchPrev => {
+            const next = [...benchPrev];
+            const emptySlot = next.findIndex(card => !card);
+            if (emptySlot >= 0) {
+              next[emptySlot] = deadCard;
+            } else {
+              next.push(deadCard);
+            }
+            return next;
+          });
+        } else {
+          setOpponentBench(benchPrev => {
+            const next = [...benchPrev];
+            const emptySlot = next.findIndex(card => !card);
+            if (emptySlot >= 0) {
+              next[emptySlot] = deadCard;
+            } else {
+              next.push(deadCard);
+            }
+            return next;
+          });
+        }
+        
+        setLastKOSide(side);
+        return { ...prev, [side]: null };
+      });
+    }
+  };
+
+  const reviveAllCards = (side) => {
+    if (side === 'player') {
+      setPlayerBench(prev => prev.map(card => 
+        card && card.isDead ? { ...card, vida: card.vidaMaxima || 100, isDead: false } : card
+      ));
+    } else {
+      setOpponentBench(prev => prev.map(card => 
+        card && card.isDead ? { ...card, vida: card.vidaMaxima || 100, isDead: false } : card
+      ));
+    }
+  };
+
+  const restorePP = (side) => {
+    setActiveCards(prev => {
+      const card = prev[side];
+      if (!card) return prev;
+      const newPP = {};
+      Object.keys(card.abilityPP || {}).forEach(key => {
+        const slot = card.abilityPP[key];
+        newPP[key] = { ...slot, current: slot.max };
+      });
+      return {
+        ...prev,
+        [side]: { ...card, abilityPP: newPP }
+      };
+    });
+  };
+
+  const changeCard = (side, cardId, slot = 'active') => {
+    const cardData = bancoDeCartas.find(c => c.id === cardId);
+    if (!cardData) return;
+    
+    const newCard = {
+      ...cardData,
+      foiRevelada: true,
+      onFieldTurns: 0,
+      vida: cardData.vida || 15,
+      vidaMaxima: cardData.vida || 15,
+      abilityPP: buildAbilityPP(cardData)
+    };
+
+    if (slot === 'active') {
+      setActiveCards(prev => ({ ...prev, [side]: newCard }));
+    }
+  };
+
+  const addTurns = (side, amount) => {
+    setActiveCards(prev => ({
+      ...prev,
+      [side]: prev[side] ? { 
+        ...prev[side], 
+        onFieldTurns: Math.max(0, (prev[side].onFieldTurns || 0) + amount)
+      } : prev[side]
+    }));
+  };
+
+  const cardOptions = bancoDeCartas.slice(0, 10).map(c => ({ id: c.id, name: c.nome }));
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-3 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded border border-red-400 backdrop-blur-sm"
+      >
+        🐛 Debug
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed top-4 left-4 right-4 z-50 bg-black/90 backdrop-blur-md border border-neutral-600 rounded-xl p-4 max-h-[80vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white">🐛 Debug Panel</h3>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-neutral-400 hover:text-white text-xl"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        {[
+          { id: 'game', label: '🎮 Game' },
+          { id: 'cards', label: '🃏 Cartas' },
+          { id: 'field', label: '🌍 Campo' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-3 py-1 rounded text-sm font-semibold ${
+              activeTab === tab.id 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Game Tab */}
+      {activeTab === 'game' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">Estado do Jogo</h4>
+            <div className="space-y-2">
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, turn: prev.turn === 'player' ? 'opponent' : 'player' }))}
+                className="w-full px-2 py-1 bg-blue-600/80 hover:bg-blue-500/80 text-white text-xs rounded"
+              >
+                Trocar Turno ({gameState.turn})
+              </button>
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, actionUsed: !prev.actionUsed }))}
+                className="w-full px-2 py-1 bg-purple-600/80 hover:bg-purple-500/80 text-white text-xs rounded"
+              >
+                Toggle Ação ({gameState.actionUsed ? 'Usada' : 'Disponível'})
+              </button>
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, playerStun: 0, opponentStun: 0 }))}
+                className="w-full px-2 py-1 bg-green-600/80 hover:bg-green-500/80 text-white text-xs rounded"
+              >
+                Limpar Stun
+              </button>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">Vida</h4>
+            <div className="text-xs text-neutral-300 mb-2">
+              Player: {activeCards.player?.vida || 0}/{activeCards.player?.vidaMaxima || 100} | Oponente: {activeCards.opponent?.vida || 0}/{activeCards.opponent?.vidaMaxima || 100}
+            </div>
+            <div className="space-y-2">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    console.log('Player +10 clicked, current card health:', activeCards.player?.vida);
+                    setActiveCards(prev => ({
+                      ...prev,
+                      player: prev.player ? { 
+                        ...prev.player, 
+                        vida: Math.min(prev.player.vidaMaxima || 100, (prev.player.vida || 0) + 10),
+                        isDead: false
+                      } : prev.player
+                    }));
+                  }}
+                  className="flex-1 px-2 py-1 bg-green-600/80 hover:bg-green-500/80 text-white text-xs rounded"
+                >
+                  Player +10
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('Player -10 clicked, current card health:', activeCards.player?.vida);
+                    setActiveCards(prev => {
+                      const newHealth = Math.max(0, (prev.player?.vida || 0) - 10);
+                      const updatedPlayer = prev.player ? { 
+                        ...prev.player, 
+                        vida: newHealth,
+                        isDead: newHealth <= 0
+                      } : prev.player;
+
+                      // Se a carta morreu, move para o banco
+                      if (newHealth <= 0 && prev.player) {
+                        const deadCard = { ...updatedPlayer, isDead: true };
+                        setPlayerBench(benchPrev => {
+                          const next = [...benchPrev];
+                          const emptySlot = next.findIndex(card => !card);
+                          if (emptySlot >= 0) {
+                            next[emptySlot] = deadCard;
+                          } else {
+                            next.push(deadCard);
+                          }
+                          return next;
+                        });
+                        setLastKOSide('player');
+                        return { ...prev, player: null };
+                      }
+
+                      return { ...prev, player: updatedPlayer };
+                    });
+                  }}
+                  className="flex-1 px-2 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded"
+                >
+                  Player -10
+                </button>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    console.log('Opponent +10 clicked, current card health:', activeCards.opponent?.vida);
+                    setActiveCards(prev => ({
+                      ...prev,
+                      opponent: prev.opponent ? { 
+                        ...prev.opponent, 
+                        vida: Math.min(prev.opponent.vidaMaxima || 100, (prev.opponent.vida || 0) + 10),
+                        isDead: false
+                      } : prev.opponent
+                    }));
+                  }}
+                  className="flex-1 px-2 py-1 bg-green-600/80 hover:bg-green-500/80 text-white text-xs rounded"
+                >
+                  Oponente +10
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('Opponent -10 clicked, current card health:', activeCards.opponent?.vida);
+                    setActiveCards(prev => {
+                      const newHealth = Math.max(0, (prev.opponent?.vida || 0) - 10);
+                      const updatedOpponent = prev.opponent ? { 
+                        ...prev.opponent, 
+                        vida: newHealth,
+                        isDead: newHealth <= 0
+                      } : prev.opponent;
+
+                      // Se a carta morreu, move para o banco
+                      if (newHealth <= 0 && prev.opponent) {
+                        const deadCard = { ...updatedOpponent, isDead: true };
+                        setOpponentBench(benchPrev => {
+                          const next = [...benchPrev];
+                          const emptySlot = next.findIndex(card => !card);
+                          if (emptySlot >= 0) {
+                            next[emptySlot] = deadCard;
+                          } else {
+                            next.push(deadCard);
+                          }
+                          return next;
+                        });
+                        setLastKOSide('opponent');
+                        return { ...prev, opponent: null };
+                      }
+
+                      return { ...prev, opponent: updatedOpponent };
+                    });
+                  }}
+                  className="flex-1 px-2 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded"
+                >
+                  Oponente -10
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cards Tab */}
+      {activeTab === 'cards' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">Jogador</h4>
+            <div className="space-y-2">
+              <div className="text-xs text-neutral-300">
+                Ativo: {activeCards.player?.nome || 'Nenhum'} (T: {activeCards.player?.onFieldTurns || 0})
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => healCard('player')} className="flex-1 px-2 py-1 bg-green-600/80 text-white text-xs rounded">Curar</button>
+                <button onClick={() => killCard('player')} className="flex-1 px-2 py-1 bg-red-600/80 text-white text-xs rounded">Matar</button>
+              </div>
+              <button onClick={() => restorePP('player')} className="w-full px-2 py-1 bg-blue-600/80 text-white text-xs rounded">Restaurar PP</button>
+              <button onClick={() => reviveAllCards('player')} className="w-full px-2 py-1 bg-purple-600/80 text-white text-xs rounded">Reviver Mortas</button>
+              <div className="flex gap-1">
+                <button onClick={() => addTurns('player', 1)} className="flex-1 px-2 py-1 bg-yellow-600/80 text-white text-xs rounded">+1T</button>
+                <button onClick={() => addTurns('player', -1)} className="flex-1 px-2 py-1 bg-orange-600/80 text-white text-xs rounded">-1T</button>
+              </div>
+              <select 
+                onChange={(e) => changeCard('player', e.target.value)}
+                className="w-full px-2 py-1 bg-neutral-700 text-white text-xs rounded"
+                defaultValue=""
+              >
+                <option value="">Trocar carta...</option>
+                {cardOptions.map(card => (
+                  <option key={card.id} value={card.id}>{card.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">Oponente</h4>
+            <div className="space-y-2">
+              <div className="text-xs text-neutral-300">
+                Ativo: {activeCards.opponent?.nome || 'Nenhum'} (T: {activeCards.opponent?.onFieldTurns || 0})
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => healCard('opponent')} className="flex-1 px-2 py-1 bg-green-600/80 text-white text-xs rounded">Curar</button>
+                <button onClick={() => killCard('opponent')} className="flex-1 px-2 py-1 bg-red-600/80 text-white text-xs rounded">Matar</button>
+              </div>
+              <button onClick={() => restorePP('opponent')} className="w-full px-2 py-1 bg-blue-600/80 text-white text-xs rounded">Restaurar PP</button>
+              <button onClick={() => reviveAllCards('opponent')} className="w-full px-2 py-1 bg-purple-600/80 text-white text-xs rounded">Reviver Mortas</button>
+              <div className="flex gap-1">
+                <button onClick={() => addTurns('opponent', 1)} className="flex-1 px-2 py-1 bg-yellow-600/80 text-white text-xs rounded">+1T</button>
+                <button onClick={() => addTurns('opponent', -1)} className="flex-1 px-2 py-1 bg-orange-600/80 text-white text-xs rounded">-1T</button>
+              </div>
+              <select 
+                onChange={(e) => changeCard('opponent', e.target.value)}
+                className="w-full px-2 py-1 bg-neutral-700 text-white text-xs rounded"
+                defaultValue=""
+              >
+                <option value="">Trocar carta...</option>
+                {cardOptions.map(card => (
+                  <option key={card.id} value={card.id}>{card.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Field Tab */}
+      {activeTab === 'field' && (
+        <div>
+          <h4 className="text-sm font-bold text-white mb-2">Campo Atual: {fields[currentField]?.name}</h4>
+          <div className="grid grid-cols-3 gap-2">
+            {Object.entries(fields).map(([key, field]) => (
+              <button
+                key={key}
+                onClick={() => setCurrentField(key)}
+                className={`px-3 py-2 rounded text-xs font-semibold ${
+                  currentField === key 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {field.icon} {field.name}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 text-xs text-neutral-300">
+            Efeito: {fields[currentField]?.effect}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -819,3 +1395,4 @@ function OptionsMenu() {
     </div>
   );
 }
+

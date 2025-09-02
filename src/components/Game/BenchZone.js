@@ -32,9 +32,9 @@ export default function ZonaDoBanco({
             key={index}
             onMouseEnter={() => definirIndiceEmHover(index)}
             onMouseLeave={() => definirIndiceEmHover(null)}
-            onClick={() => card && onCardClick && onCardClick(card, index)}
+            onClick={() => card && !card.isDead && onCardClick && onCardClick(card, index)}
             onContextMenu={card ? (e => { e.preventDefault(); onCardContextMenu && onCardContextMenu(card, index); }) : undefined}
-            className={`relative w-24 h-32 rounded-xl border-2 overflow-hidden flex items-center justify-center text-center text-[12px] font-semibold transition-all cursor-pointer ${card ? (ehJogador ? 'border-blue-500 bg-[#123047]' : 'border-red-500 bg-[#472222]') : 'border-dashed border-neutral-600 bg-[#101b25]'} ${indiceEmHover === index ? 'scale-105' : ''}`}
+            className={`relative w-24 h-32 rounded-xl border-2 overflow-hidden flex items-center justify-center text-center text-[12px] font-semibold transition-all ${card && !card.isDead ? 'cursor-pointer' : card?.isDead ? 'cursor-not-allowed' : 'cursor-default'} ${card ? (card.isDead ? 'border-neutral-600 bg-neutral-800/50' : (ehJogador ? 'border-blue-500 bg-[#123047]' : 'border-red-500 bg-[#472222]')) : 'border-dashed border-neutral-600 bg-[#101b25]'} ${indiceEmHover === index ? 'scale-105' : ''}`}
             style={{ boxShadow: card ? sombraBase : 'none', perspective: '800px' }}
           >
             {card ? (
@@ -45,8 +45,8 @@ export default function ZonaDoBanco({
                 {/* front */}
                 <div className="absolute inset-0 backface-hidden">
                   {canSeeHidden || card.foiRevelada ? (
-                    <>
-                {(card.imagens?.retrato || card.images?.portrait) && !indicesComErro.has(index) ? (
+                    <div className={`relative w-full h-full ${card.isDead ? 'opacity-50 grayscale' : ''}`}>
+                      {(card.imagens?.retrato || card.images?.portrait) && !indicesComErro.has(index) ? (
                         <Image
                           src={card.imagens?.retrato || card.images?.portrait}
                           alt={card.nome || card.name}
@@ -65,22 +65,32 @@ export default function ZonaDoBanco({
                       ) : (
                         <Image
                           src="/images/placeholder.svg"
-                  alt={`Placeholder de ${card.nome || card.name}`}
+                          alt={`Placeholder de ${card.nome || card.name}`}
                           width={200}
                           height={280}
                           quality={95}
                           className="w-full h-full object-cover pointer-events-none select-none will-change-transform"
                         />
                       )}
+                      
+                      {/* X de morte sobreposto */}
+                      {card.isDead && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-8 h-8 bg-red-600/90 rounded-full flex items-center justify-center border-2 border-red-400 shadow-lg">
+                            <span className="text-white text-lg font-bold">✕</span>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="absolute bottom-0 left-0 right-0 bg-black/65 px-1.5 py-1 flex flex-col items-center backdrop-blur-sm space-y-0.5">
                         <span className="text-[11px] font-medium text-neutral-100 truncate w-full leading-tight">{card.nome || card.name}</span>
                         <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
-                  <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
-                  <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
-                          <span className={`px-1 rounded ${ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200'}`}>❤️ {card.vida}</span>
+                          <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
+                          <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
+                          <span className={`px-1 rounded ${card.isDead ? 'bg-red-900/70 text-red-300' : (ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200')}`}>❤️ {card.vida}</span>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     // back visible when not revealed and viewer cannot see hidden
                     <Image
@@ -108,8 +118,11 @@ export default function ZonaDoBanco({
             ) : (
               <span className="text-[11px] text-neutral-500 font-medium">VAZIO</span>
             )}
-            {highlightSelectable && card && (
+            {highlightSelectable && card && !card.isDead && (
               <div className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-emerald-400/80 animate-pulse" />
+            )}
+            {highlightSelectable && card && card.isDead && (
+              <div className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-red-400/60 bg-red-900/20" />
             )}
           </div>
         ))}

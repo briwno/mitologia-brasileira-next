@@ -85,6 +85,8 @@ export default function DetalheDaCarta({ card, onClose = null }) {
                                 </div>
                                 {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
                                   <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
+                                ) : s.ppMax ? (
+                                  <div className="text-xs text-yellow-400">PP {s.ppMax}/{s.ppMax}</div>
                                 ) : (
                                   <div className="text-xs text-yellow-400">PP {obterPPMaximoPadrao(idx)}/{obterPPMaximoPadrao(idx)}</div>
                                 )}
