@@ -383,6 +383,11 @@ export default function GameRoom({ params }) {
   }, [gameState.turn, gameState.actionUsed, gameState.playerStun]);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
 
+  // Fecha orbes quando modais aparecem
+  useEffect(() => {
+    if (showSwitchModal || forcePromotionFor) setShowOrbs(false);
+  }, [showSwitchModal, forcePromotionFor]);
+
   // Contador de turnos em campo para liberar a 5ª habilidade (Ultimate) após 3 turnos
   const incrementOnFieldTurns = useCallback((side) => {
     setActiveCards((prev) => {
@@ -1000,6 +1005,7 @@ export default function GameRoom({ params }) {
     if (gameState.turn !== "player" || gameState.actionUsed) return;
     setAwaitingSwitch(true);
     setShowSwitchModal(true);
+  setShowOrbs(false);
   }, [gameState.turn, gameState.actionUsed]);
 
   // Ação: Passar o turno
@@ -1283,7 +1289,7 @@ export default function GameRoom({ params }) {
 
         {/* Modal simples para promoção forçada */}
         {forcePromotionFor === "player" && (
-          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
             <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4 w-[640px] max-w-[95vw]">
               <div className="text-sm font-bold mb-3">
                 Sua carta ativa foi derrotada
@@ -1310,7 +1316,7 @@ export default function GameRoom({ params }) {
 
         {/* Modal de troca (estilo Pokémon) */}
         {showSwitchModal && !forcePromotionFor && (
-          <div className="absolute inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center">
             <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4 w-[560px] max-w-[95vw]">
               <div className="text-sm font-bold mb-3">
                 Trocar Encantado — Escolha do Banco
