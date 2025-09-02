@@ -17,6 +17,7 @@ export default function MaoDoJogador({
   const [cartaArrastada, definirCartaArrastada] = useState(null);
 
   const lidarCliqueCarta = (card) => {
+  if (card?.isDead) return; // cartas derrotadas não podem ser usadas
     if (selectedCard?.id === card?.id) onCardSelect(null);
     else onCardSelect(card);
   };
@@ -59,13 +60,13 @@ export default function MaoDoJogador({
                 onMouseEnter={() => definirIndiceEmHover(index)}
                 onMouseLeave={() => definirIndiceEmHover(null)}
                 onClick={() => lidarCliqueCarta(card, index)}
-                draggable
-                onDragStart={(e) => iniciarArrasto(e, card, index)}
+                draggable={!card.isDead}
+                onDragStart={(e) => { if (card.isDead) { e.preventDefault(); return; } iniciarArrasto(e, card, index); }}
                 onDragEnd={finalizarArrasto}
                 onContextMenu={(e) => { e.preventDefault(); onCardContextMenu?.(card); }}
               >
                 <div
-                  className={`group relative w-24 h-36 rounded-lg border-2 overflow-hidden flex items-center justify-center ${estaSelecionada ? 'border-yellow-400' : 'border-neutral-600 hover:border-neutral-400'} ${estaArrastando ? 'opacity-50' : ''} ${bonusGlow ? 'ring-2 ring-green-400' : ''}`}
+                  className={`group relative w-24 h-36 rounded-lg border-2 overflow-hidden flex items-center justify-center ${estaSelecionada ? 'border-yellow-400' : 'border-neutral-600 hover:border-neutral-400'} ${estaArrastando ? 'opacity-50' : ''} ${bonusGlow ? 'ring-2 ring-green-400' : ''} ${card.isDead ? 'grayscale opacity-60 cursor-not-allowed' : ''}`}
                   style={{ background: '#0e2333', boxShadow: sombraBase }}
                   title={card.nome || card.name}
                 >
@@ -100,6 +101,12 @@ export default function MaoDoJogador({
                       <span className="px-1 rounded bg-blue-900/70 text-blue-200">❤️ {card.vida}</span>
                     </div>
                   </div>
+                  {/* Marca de X para derrotadas */}
+                  {card.isDead && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="text-4xl font-black text-red-500/70 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] select-none">✖</div>
+                    </div>
+                  )}
                   {/* Sem custo por carta: custos estão nas habilidades */}
                 </div>
               </div>

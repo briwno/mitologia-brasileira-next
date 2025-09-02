@@ -554,32 +554,13 @@ export default function GameRoom({ params }) {
       const adjusted = mitigateIncomingDamage(targetCard, amount);
       const newHealth = (targetCard.vida || 0) - adjusted;
       if (newHealth <= 0) {
-        // Marca carta como morta e adiciona ao banco sem remover outras cartas
+        // Carta derrotada vai para a mão com marcação isDead e não pode ser usada
         const deadCard = { ...targetCard, vida: 0, isDead: true };
         if (targetSide === 'player') {
-          setPlayerBench(prev => {
-            const next = [...prev];
-            // Adiciona a carta morta ao final se houver espaço, ou substitui a primeira carta vazia
-            const emptySlot = next.findIndex(card => !card);
-            if (emptySlot >= 0) {
-              next[emptySlot] = deadCard;
-            } else {
-              // Se não há slot vazio, adiciona ao final (expandindo o banco temporariamente)
-              next.push(deadCard);
-            }
-            return next;
-          });
+          // Adiciona ao início da mão: usamos playerBench como "pool" de cartas além do ativo; aqui vamos inserir no começo para ficar visível
+          setPlayerBench(prev => [deadCard, ...prev]);
         } else {
-          setOpponentBench(prev => {
-            const next = [...prev];
-            const emptySlot = next.findIndex(card => !card);
-            if (emptySlot >= 0) {
-              next[emptySlot] = deadCard;
-            } else {
-              next.push(deadCard);
-            }
-            return next;
-          });
+          setOpponentBench(prev => [deadCard, ...prev]);
         }
         setLastKOSide(targetSide);
         pushLog({ side: source === 'player' ? 'player' : 'opponent', type: 'damage', title: `K.O. em ${targetCard.nome || targetCard.name}`, desc: `Dano ${adjusted}` });
@@ -791,22 +772,28 @@ export default function GameRoom({ params }) {
   useEffect(() => {
     if (!lastKOSide) return;
     if (lastKOSide === 'player') {
-      const hasBench = playerBench.some(c => c && !c.isDead); // Só considera cartas vivas
-      if (hasBench) setForcePromotionFor('player');
-      else console.log('Derrota: sem encantados vivos no banco');
+      const hasAlive = playerBench.some(c => c && !c.isDead);
+      if (hasAlive) setForcePromotionFor('player');
+      else {
+        // Derrota do jogador
+        setGameState(prev => ({ ...prev, turn: 'opponent' }));
+        pushLog({ side: 'opponent', type: 'damage', title: 'Derrota', desc: 'Você perdeu todos os Encantados.' });
+      }
     } else if (lastKOSide === 'opponent') {
-      const idx = opponentBench.findIndex(c => c && !c.isDead); // Só considera cartas vivas
+      const idx = opponentBench.findIndex(c => c && !c.isDead);
       if (idx >= 0) switchActive('opponent', idx);
+      else {
+        pushLog({ side: 'player', type: 'damage', title: 'Vitória', desc: 'O oponente não tem Encantados vivos.' });
+      }
     }
     setLastKOSide(null);
-  }, [lastKOSide, playerBench, opponentBench, switchActive]);
+  }, [lastKOSide, playerBench, opponentBench, switchActive, pushLog]);
 
   
 
   return (
     <div className="h-screen bg-gradient-to-br from-[#09131d] via-[#0c1f31] to-[#09131d] text-white overflow-hidden relative">
-      <Playmat transitioning={fieldTransitioning} />
-      <FieldIndicator currentField={currentField} fields={fields} fieldTransitioning={fieldTransitioning} />
+  <Playmat transitioning={fieldTransitioning} />
       {/* Backdrop para fechar orbes ao clicar fora */}
       {showOrbs && (
         <div
@@ -885,6 +872,7 @@ export default function GameRoom({ params }) {
                       card={activeCards.player}
                       position="player"
                       isPlayerTurn={gameState.turn === 'player'}
+                      highlightInteract={gameState.turn === 'player' && !gameState.actionUsed && (gameState.playerStun ?? 0) === 0 && !!activeCards.player && !showOrbs}
                       onCardClick={() => {
                         if (gameState.turn !== 'player') return;
                         if (gameState.actionUsed) return;
@@ -939,17 +927,22 @@ export default function GameRoom({ params }) {
           </div>
         </div>
 
-        {/* Direita: Tomo do Cronista (overlay) */}
-        <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-30">
+        {/* Direita: Indicador de Campo acima do Tomo do Cronista (overlay) */}
+        <div className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 flex-col items-center gap-3">
+          <div className="w-full flex justify-center">
+            <FieldIndicator currentField={currentField} fields={fields} fieldTransitioning={fieldTransitioning} />
+          </div>
           <CombatLog entries={logEntries} />
         </div>
 
     {/* Modal simples para promoção forçada */}
     {forcePromotionFor === 'player' && (
       <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-        <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4 w-[520px] max-w-[95vw]">
-          <div className="text-sm font-bold mb-2">Escolha um Encantado para Promover</div>
-          <div className="flex justify-center">
+        <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4 w-[640px] max-w-[95vw]">
+          <div className="text-sm font-bold mb-3">Sua carta ativa foi derrotada</div>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="text-xs text-neutral-300">Escolha um Encantado vivo para entrar no lugar. Cartas derrotadas aparecem com ✖ e não podem ser usadas.</div>
+            {/* Exibe a mão atual (ativo derrotado foi para a mão como isDead) */}
             <BenchZone
               cards={playerBench}
               position="player"
@@ -960,8 +953,6 @@ export default function GameRoom({ params }) {
               highlightSelectable={true}
             />
           </div>
-          <div className="mt-3 text-xs text-emerald-300 bg-emerald-800/30 border border-emerald-600 rounded-full px-3 py-1 shadow inline-block">Escolha um Encantado para promover</div>
-          <div className="text-xs text-neutral-300 mt-2 text-center">Selecione uma carta do banco para ocupar o slot Ativo.</div>
         </div>
       </div>
     )}
@@ -1155,7 +1146,7 @@ function DebugPanel({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-3 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded border border-red-400 backdrop-blur-sm"
+        className="fixed right-5 transform -translate-x-1/2 z-50 px-3 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded border border-red-400 backdrop-blur-sm"
       >
         🐛 Debug
       </button>

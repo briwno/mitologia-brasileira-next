@@ -7,7 +7,7 @@ export default function IndicadorDeCampo({ currentField, fields, fieldTransition
   if (!campo) return null;
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none select-none">
+  <div className="flex flex-col items-center pointer-events-none select-none">
       <div
         className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-cyan-500/60 bg-gradient-to-br from-cyan-900/60 to-cyan-800/40 backdrop-blur-sm shadow-[0_4px_20px_-4px_rgba(0,0,0,0.8)] transition-all ${
           fieldTransitioning ? 'ring-2 ring-cyan-300/50 scale-105' : ''
