@@ -8,6 +8,9 @@ export default function SkillOrbs({
   canUseSkill,
   onUse,
   disabled = false,
+  showSwitchOrb = false,
+  onSwitch,
+  switchDisabled = false,
 }) {
   // Distribui as orbes ao redor de um círculo parcial (210° a 330°)
   const total = Math.min(5, skills.length);
@@ -37,8 +40,8 @@ export default function SkillOrbs({
   if (!skills || skills.length === 0) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none z-40">
-      {skills.slice(0, 5).map((skill, i) => {
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none z-[80]">
+  {skills.slice(0, 5).map((skill, i) => {
         const t = total === 1 ? 0.5 : i / (total - 1);
         const deg = startDeg + (endDeg - startDeg) * t;
         const rad = (deg * Math.PI) / 180;
@@ -65,7 +68,7 @@ export default function SkillOrbs({
             key={skill.key || i}
             title={skill.description || skill.name}
             onClick={handleClick}
-            disabled={!canUse}
+            aria-disabled={!canUse}
             className={`group pointer-events-auto absolute w-14 h-14 rounded-full border-2 backdrop-blur-sm transition-transform duration-150 flex items-center justify-center text-xl shadow-xl ${
               canUse
                 ? 'bg-gradient-to-br from-emerald-500/80 to-cyan-600/80 border-emerald-300/70 hover:scale-110'
@@ -125,6 +128,81 @@ export default function SkillOrbs({
           </button>
         );
       })}
+
+      {/* Switch orb positioned further below the card */}
+      {showSwitchOrb && (
+        (() => {
+          const deg = 90; // below (CSS translate Y positive)
+          const rad = (deg * Math.PI) / 180;
+          const extra = isSmall ? 36 : 48; // a bit lower than skills
+          const x = Math.cos(rad) * (radius + extra);
+          const y = Math.sin(rad) * (radius + extra);
+          const canClick = !switchDisabled && !disabled && typeof onSwitch === 'function';
+          const handleSwitch = (e) => {
+            e.stopPropagation();
+            if (isTouch || isSmall) {
+              if (activeIndex === 'switch') {
+                if (canClick) onSwitch();
+                setActiveIndex(null);
+              } else {
+                setActiveIndex('switch');
+              }
+              return;
+            }
+            if (canClick) onSwitch();
+          };
+          return (
+            <button
+              key="orb-switch"
+              onClick={handleSwitch}
+              aria-disabled={!canClick}
+              className={`group pointer-events-auto absolute w-14 h-14 rounded-full border-2 backdrop-blur-sm transition-transform duration-150 flex items-center justify-center text-xl shadow-xl ${
+                canClick
+                  ? 'bg-gradient-to-br from-indigo-500/80 to-purple-600/80 border-indigo-300/70 hover:scale-110'
+                  : 'bg-gradient-to-br from-slate-700/70 to-slate-800/70 border-slate-500/60 opacity-60 cursor-not-allowed'
+              }`}
+              style={{ transform: `translate(${x}px, ${y}px)` }}
+              title="Trocar Encantado"
+            >
+              <span className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.6)]">🔄</span>
+
+              {/* Popover */}
+              <div
+                className={
+                  `absolute -top-24 left-1/2 -translate-x-1/2 w-48 rounded-lg border border-white/15 bg-neutral-900/95 text-white shadow-2xl p-2 transition-opacity duration-150 z-50 ` +
+                  ((isTouch || isSmall)
+                    ? (activeIndex === 'switch' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-focus:opacity-100')
+                }
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-xs font-bold truncate pr-2">Trocar Encantado</div>
+                </div>
+                <div className="text-[10px] text-neutral-300">Escolha um Encantado do banco para entrar no lugar. A troca encerra o turno.</div>
+                {(isTouch || isSmall) && (
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setActiveIndex(null); }}
+                      className="px-2 py-1 text-[11px] rounded bg-neutral-800 border border-neutral-600 hover:bg-neutral-700"
+                    >
+                      Fechar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!canClick}
+                      onClick={(e) => { e.stopPropagation(); if (canClick) { onSwitch(); setActiveIndex(null); } }}
+                      className={`px-2 py-1 text-[11px] rounded border ${canClick ? 'bg-indigo-600 hover:bg-indigo-500 border-indigo-400 text-white' : 'bg-neutral-700 border-neutral-600 text-neutral-300 cursor-not-allowed'}`}
+                    >
+                      Trocar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })()
+      )}
     </div>
   );
 }

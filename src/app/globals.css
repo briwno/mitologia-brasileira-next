@@ -5,7 +5,7 @@
   --foreground: #171717;
 }
 
-@theme inline {
+:root {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -39,6 +39,17 @@ body {
   }
   75% {
     transform: translateY(-10px) rotate(-2deg);
+  }
+}
+
+@keyframes floatUp {
+  from {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -32px);
+    opacity: 0;
   }
 }
 
