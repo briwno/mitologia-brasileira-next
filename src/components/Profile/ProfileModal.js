@@ -1,4 +1,4 @@
-// src/components/PvP/PvPModal.js
+// src/components/Profile/ProfileModal.js
 "use client";
 
 import Image from 'next/image';
@@ -23,7 +23,7 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
       <div
         className={`group relative h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-visible transition-all select-none w-full text-left ${
           hover
-            ? 'shadow-[0_20px_60px_-20px_rgba(255,215,0,0.45)]'
+            ? 'shadow-[0_20px_60px_-20px_rgba(59,130,246,0.35)]'
             : 'hover:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.3)]'
         }`}
       >
@@ -40,9 +40,9 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/80 z-10" />
         </div>
 
-        {/* moldura dourada */}
-        <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${hover ? 'ring-2 ring-yellow-400' : 'ring-1 ring-yellow-600/60 group-hover:ring-yellow-400'}`} />
-        <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-yellow-300/10 via-transparent to-yellow-300/0 z-10" />
+        {/* moldura azul */}
+        <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${hover ? 'ring-2 ring-blue-400' : 'ring-1 ring-blue-600/60 group-hover:ring-blue-400'}`} />
+        <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-blue-300/10 via-transparent to-blue-300/0 z-10" />
 
         {/* conteúdo */}
         <div className="relative z-20 h-full flex flex-col justify-end p-5">
@@ -53,9 +53,9 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
           </div>
         </div>
 
-        {/* emblema dourado em losango (acima da moldura) */}
+        {/* emblema azul em losango (acima da moldura) */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
-          <div className="w-10 h-10 rotate-45 bg-yellow-500/90 border-2 border-yellow-300 shadow-lg flex items-center justify-center">
+          <div className="w-10 h-10 rotate-45 bg-blue-500/90 border-2 border-blue-300 shadow-lg flex items-center justify-center">
             <div className="-rotate-45">{emoji}</div>
           </div>
         </div>
@@ -64,10 +64,10 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
   );
 }
 
-export default function PvPModal({ onClose }) {
+export default function ProfileModal({ onClose }) {
   // Verificação de segurança
   if (!onClose || typeof onClose !== 'function') {
-    console.warn('PvPModal: onClose prop is required and must be a function');
+    console.warn('ProfileModal: onClose prop is required and must be a function');
     return null;
   }
 
@@ -80,7 +80,7 @@ export default function PvPModal({ onClose }) {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div>
-            <h2 className="text-xl font-bold tracking-wide">⚔️ Batalha</h2>
+            <h2 className="text-xl font-bold tracking-wide">👤 Perfil</h2>
             <p className="text-xs text-white/70">Escolha um modo e jogue</p>
           </div>
           <button
@@ -98,25 +98,25 @@ export default function PvPModal({ onClose }) {
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
-              title="Normal"
-              emoji="🎯"
-              subtitle="Partida casual rápida"
-              href="/pvp/deck"
-              imageSrc="/images/banners/menubatalha.png"
+              title="Seu Perfil"
+              emoji="👤"
+              subtitle="Veja suas informações"
+              href="/profile/me"
+              imageSrc="/images/backgrounds/perfil-background.jpg"
             />
             <CartaoDeModo
-              title="Ranqueada"
-              emoji="🏆"
-              subtitle="Valendo pontos de ranking"
-              href="/pvp/deck?mode=ranked"
-              imageSrc="/images/banners/batalha.jpg"
+              title="Amigos"
+              emoji="👥"
+              subtitle="Lista de amigos e convites"
+              href="/profile/friends"
+              imageSrc="/images/backgrounds/amigos-background.jpg"
             />
             <CartaoDeModo
-              title="Personalizada"
-              emoji="🏠"
-              subtitle="Crie ou entre em salas"
-              href="/pvp/deck?mode=custom"
-              imageSrc="/images/banners/museu.jpg"
+              title="Mascote"
+              emoji="🐾"
+              subtitle="Customize seu companheiro"
+              href="/profile/pet"
+              imageSrc="/images/backgrounds/mascote-background.jpg"
             />
           </div>
 

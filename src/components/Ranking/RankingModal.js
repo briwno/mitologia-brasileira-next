@@ -1,11 +1,11 @@
-// src/components/PvP/PvPModal.js
+// src/components/Ranking/RankingModal.js
 "use client";
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, simboloRanque }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
@@ -23,7 +23,7 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
       <div
         className={`group relative h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-visible transition-all select-none w-full text-left ${
           hover
-            ? 'shadow-[0_20px_60px_-20px_rgba(255,215,0,0.45)]'
+            ? 'shadow-[0_20px_60px_-20px_rgba(255,193,7,0.35)]'
             : 'hover:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.3)]'
         }`}
       >
@@ -46,7 +46,10 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
 
         {/* conteúdo */}
         <div className="relative z-20 h-full flex flex-col justify-end p-5">
-          <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{emoji}</div>
+          <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+            {emoji}
+            {simboloRanque && <span className="ml-2">{simboloRanque}</span>}
+          </div>
           <div className="pb-3">
             <div className="text-white font-extrabold text-2xl md:text-3xl tracking-wide">{title.toUpperCase()}</div>
             {subtitle && <div className="text-neutral-200 text-xs md:text-sm mt-1">{subtitle}</div>}
@@ -64,10 +67,10 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
   );
 }
 
-export default function PvPModal({ onClose }) {
+export default function RankingModal({ onClose }) {
   // Verificação de segurança
   if (!onClose || typeof onClose !== 'function') {
-    console.warn('PvPModal: onClose prop is required and must be a function');
+    console.warn('RankingModal: onClose prop is required and must be a function');
     return null;
   }
 
@@ -80,7 +83,7 @@ export default function PvPModal({ onClose }) {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div>
-            <h2 className="text-xl font-bold tracking-wide">⚔️ Batalha</h2>
+            <h2 className="text-xl font-bold tracking-wide">🏆 Ranking</h2>
             <p className="text-xs text-white/70">Escolha um modo e jogue</p>
           </div>
           <button
@@ -98,25 +101,26 @@ export default function PvPModal({ onClose }) {
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
-              title="Normal"
-              emoji="🎯"
-              subtitle="Partida casual rápida"
-              href="/pvp/deck"
-              imageSrc="/images/banners/menubatalha.png"
+              title="Seu Ranque"
+              emoji="🏅"
+              subtitle="Veja sua posição atual"
+              href="/ranking/your-rank"
+              imageSrc="/images/backgrounds/ranque-background.jpg"
+              simboloRanque="🥉"
             />
             <CartaoDeModo
-              title="Ranqueada"
-              emoji="🏆"
-              subtitle="Valendo pontos de ranking"
-              href="/pvp/deck?mode=ranked"
-              imageSrc="/images/banners/batalha.jpg"
+              title="Top Semanal"
+              emoji="📅"
+              subtitle="Melhores jogadores da semana"
+              href="/ranking/weekly"
+              imageSrc="/images/backgrounds/semanal-background.jpg"
             />
             <CartaoDeModo
-              title="Personalizada"
-              emoji="🏠"
-              subtitle="Crie ou entre em salas"
-              href="/pvp/deck?mode=custom"
-              imageSrc="/images/banners/museu.jpg"
+              title="Recompensas"
+              emoji="🎁"
+              subtitle="Prêmios por ranking"
+              href="/ranking/rewards"
+              imageSrc="/images/backgrounds/recompensas-background.jpg"
             />
           </div>
 

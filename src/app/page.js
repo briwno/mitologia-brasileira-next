@@ -9,16 +9,49 @@ import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
 // Carregamento dinâmico dos modais com fallback de carregamento
-const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { ssr: false, loading: () => (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Batalha..." /></div>
-) });
-const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { ssr: false, loading: () => (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"><LoadingSpinner text="Abrindo Museu..." /></div>
-) });
+const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { 
+  ssr: false, 
+  loading: () => (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+      <LoadingSpinner text="Abrindo Batalha..." />
+    </div>
+  )
+});
+const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { 
+  ssr: false, 
+  loading: () => (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+      <LoadingSpinner text="Abrindo Museu..." />
+    </div>
+  )
+});
+const RankingModal = dynamic(() => import('@/components/Ranking/RankingModal'), { 
+  ssr: false, 
+  loading: () => (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+      <LoadingSpinner text="Abrindo Ranking..." />
+    </div>
+  )
+});
+const ProfileModal = dynamic(() => import('@/components/Profile/ProfileModal'), { 
+  ssr: false, 
+  loading: () => (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
+      <LoadingSpinner text="Abrindo Perfil..." />
+    </div>
+  )
+});
 
 // Cartão clicável para cada modo da página inicial
 function CartaoDeModo({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
   const [erroImagem, setErroImagem] = useState(false);
+  
+  // Verificação de segurança para props obrigatórias
+  if (!title || !emoji) {
+    console.warn('CartaoDeModo: title and emoji are required props');
+    return null;
+  }
+  
   const conteudo = (
     <div
       className={`relative h-80 md:h-[26rem] rounded-2xl border-2 overflow-hidden transition-all select-none
@@ -70,8 +103,39 @@ export default function Inicio() {
   const [mostrarInfoModal, setMostrarInfoModal] = useState(false);
   const [mostrarPvPModal, setMostrarPvPModal] = useState(false);
   const [mostrarMuseuModal, setMostrarMuseuModal] = useState(false);
-  useEffect(() => setCarregado(true), []);
-  const { user, isAuthenticated, logout } = useAuth();
+  const [mostrarRankingModal, setMostrarRankingModal] = useState(false);
+  const [mostrarPerfilModal, setMostrarPerfilModal] = useState(false);
+  
+  useEffect(() => {
+    setCarregado(true);
+  }, []);
+  
+  const authData = useAuth();
+  const { user, isAuthenticated, logout } = authData || {};
+
+  // Verificação de segurança para auth
+  if (!authData) {
+    console.warn('useAuth hook returned null/undefined');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] flex items-center justify-center">
+        <div className="text-white text-center">
+          <p>Erro ao carregar autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Evita renderização no servidor para componentes dinâmicos
+  if (!carregado) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] text-white">
@@ -172,8 +236,12 @@ export default function Inicio() {
             <div onClick={() => setMostrarMuseuModal(true)}>
               <CartaoDeModo href="#" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
             </div>
-            <CartaoDeModo href="/ranking" title="RANKING" emoji="🏆" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
-            <CartaoDeModo href="/profile" title="PERFIL" emoji="👤" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
+            <div onClick={() => setMostrarRankingModal(true)}>
+              <CartaoDeModo href="#" title="RANKING" emoji="🏆" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
+            </div>
+            <div onClick={() => setMostrarPerfilModal(true)}>
+              <CartaoDeModo href="#" title="PERFIL" emoji="👤" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
+            </div>
           </div>
         </div>
 
@@ -275,13 +343,18 @@ export default function Inicio() {
             </div>
           </div>
         )}
-  {/* Modal de PvP a partir da Home */}
-        {mostrarPvPModal && (
+        {/* Modais - Renderizados apenas após carregamento completo */}
+        {carregado && mostrarPvPModal && (
           <PvPModal onClose={() => setMostrarPvPModal(false)} />
         )}
-        {/* Modal de Museu a partir da Home */}
-        {mostrarMuseuModal && (
+        {carregado && mostrarMuseuModal && (
           <MuseumModal onClose={() => setMostrarMuseuModal(false)} />
+        )}
+        {carregado && mostrarRankingModal && (
+          <RankingModal onClose={() => setMostrarRankingModal(false)} />
+        )}
+        {carregado && mostrarPerfilModal && (
+          <ProfileModal onClose={() => setMostrarPerfilModal(false)} />
         )}
       </div>
     </main>
