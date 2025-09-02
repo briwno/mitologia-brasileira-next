@@ -3,23 +3,45 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
-  if (!title || !emoji || !href) {
+  if (!title || !emoji || (!href && !onClick)) {
     return null;
   }
-  
+
+  const Wrapper = ({ children }) => {
+    if (onClick) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          className="block w-full text-left"
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          {children}
+        </button>
+      );
+    }
+    return (
+      <Link
+        href={href}
+        className="block"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {children}
+      </Link>
+    );
+  };
+
   return (
-    <Link
-      href={href}
-      className="block"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
+    <Wrapper>
       <div
         className={`group relative h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-visible transition-all select-none w-full text-left ${
           hover
@@ -60,15 +82,31 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
           </div>
         </div>
       </div>
-    </Link>
+    </Wrapper>
   );
 }
 
 export default function PvPModal({ onClose }) {
-  // Verificação de segurança
+  const router = useRouter();
+
+  const createRoomId = useCallback(() => {
+    // ID curto legível: 4 letras + 2 números
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const nums = '23456789';
+    const pick = (src, n) => Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join('');
+    return `${pick(letters, 4)}-${pick(nums, 2)}`;
+  }, []);
+
+  const startMatch = useCallback((mode) => {
+    const id = createRoomId();
+    const q = mode ? `?mode=${encodeURIComponent(mode)}` : '';
+    router.push(`/pvp/game/${id}${q}`);
+    onClose?.();
+  }, [createRoomId, router, onClose]);
+
+  // Verificação de segurança (apenas avisa, sem interromper hooks)
   if (!onClose || typeof onClose !== 'function') {
-    console.warn('PvPModal: onClose prop is required and must be a function');
-    return null;
+    console.warn('PvPModal: onClose prop is recommended and should be a function');
   }
 
   return (
@@ -101,22 +139,22 @@ export default function PvPModal({ onClose }) {
               title="Normal"
               emoji="🎯"
               subtitle="Partida casual rápida"
-              href="/pvp/deck"
+              onClick={() => startMatch('normal')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
               title="Ranqueada"
               emoji="🏆"
               subtitle="Valendo pontos de ranking"
-              href="/pvp/deck?mode=ranked"
-              imageSrc="/images/banners/batalha.jpg"
+              onClick={() => startMatch('ranked')}
+              imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
               title="Personalizada"
               emoji="🏠"
               subtitle="Crie ou entre em salas"
-              href="/pvp/deck?mode=custom"
-              imageSrc="/images/banners/museu.jpg"
+              onClick={() => startMatch('custom')}
+              imageSrc="/images/banners/menumuseu.png"
             />
           </div>
 

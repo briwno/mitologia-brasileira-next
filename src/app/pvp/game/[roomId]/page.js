@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { bancoDeCartas } from '../../../../data/cardsDatabase';
 import { FieldIndicator, ActiveZone, Playmat, PlayerHUD, EndTurnButton, BenchZone } from '../../../../components/Game';
+import SkillOrbs from '../../../../components/Game/SkillOrbs';
+import CombatLog from '../../../../components/Game/CombatLog';
+import Mascot from '../../../../components/Game/Mascot';
+import PlayerHand from '../../../../components/Game/PlayerHand';
 import CardDetail from '../../../../components/Card/CardDetail';
 
 // Componente do Painel de Habilidades estilo Genshin TCG
@@ -99,11 +103,6 @@ function SkillPanel({ card, skills, onSkillUse, onSwitch, onPassTurn, gameState,
                       </div>
                       <div className="text-xs text-slate-300">PP</div>
                     </div>
-                    {skill.cost && (
-                      <div className="text-xs text-blue-200 bg-blue-900/30 px-1 rounded">
-                        ⚡{skill.cost}
-                      </div>
-                    )}
                   </div>
                   
                   {/* Skill Info */}
@@ -318,6 +317,21 @@ export default function GameRoom({ params }) {
   const [benchFlipPlayer, setBenchFlipPlayer] = useState(new Set());
   const [benchFlipOpponent, setBenchFlipOpponent] = useState(new Set());
   const [detailCard, setDetailCard] = useState(null);
+  const [logEntries, setLogEntries] = useState([]);
+  const [mascotMood, setMascotMood] = useState('neutral');
+  const [showOrbs, setShowOrbs] = useState(false);
+
+  // Reseta humor do mascote após curto período
+  useEffect(() => {
+    if (mascotMood === 'neutral') return;
+    const t = setTimeout(() => setMascotMood('neutral'), 1500);
+    return () => clearTimeout(t);
+  }, [mascotMood]);
+
+  // Esconde as orbes quando o turno muda, ação é usada ou o jogador está atordoado
+  useEffect(() => {
+    setShowOrbs(false);
+  }, [gameState.turn, gameState.actionUsed, gameState.playerStun]);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   
   // Contador de turnos em campo para liberar a 5ª habilidade (Ultimate) após 3 turnos
@@ -529,6 +543,10 @@ export default function GameRoom({ params }) {
     });
   }, []);
 
+  const pushLog = useCallback((entry) => {
+    setLogEntries((prev) => [...prev, entry].slice(-20));
+  }, []);
+
   const applyDamage = useCallback((source, targetSide, amount) => {
     setActiveCards(prev => {
       const targetCard = prev[targetSide];
@@ -564,11 +582,15 @@ export default function GameRoom({ params }) {
           });
         }
         setLastKOSide(targetSide);
+        pushLog({ side: source === 'player' ? 'player' : 'opponent', type: 'damage', title: `K.O. em ${targetCard.nome || targetCard.name}`, desc: `Dano ${adjusted}` });
+        if (source === 'player') setMascotMood('happy'); else setMascotMood('worried');
         return { ...prev, [targetSide]: null };
       }
+      pushLog({ side: source === 'player' ? 'player' : 'opponent', type: 'damage', title: `Dano em ${targetCard.nome || targetCard.name}`, desc: `-${adjusted} HP` });
+      if (source === 'player') setMascotMood('happy'); else setMascotMood('worried');
       return { ...prev, [targetSide]: { ...targetCard, vida: newHealth } };
     });
-  }, [mitigateIncomingDamage]);
+  }, [mitigateIncomingDamage, pushLog]);
 
   // Mudança de campo no início de turnos pares + passivas simples
   const applyPassivesOnFieldChange = useCallback(() => {
@@ -639,12 +661,14 @@ export default function GameRoom({ params }) {
             // escolhe skill que pode pagar (prioriza 5ª se disponível, depois stun, depois dano)
             const usable = skills.filter(s => canUseSkill('opponent', s));
             let chosen = usable.find(s => s.key === 'skill5') || usable.find(s => s.kind === 'stun') || usable[usable.length - 1] || usable[0];
-            if (chosen) {
+      if (chosen) {
               // consome PP
               spendPP('opponent', chosen.idxKey || 'skill1');
               if (chosen.kind === 'stun') {
                 // aplica stun no jogador
-                setGameState(g => ({ ...g, playerStun: (g.playerStun ?? 0) + (chosen.stun ?? 1) }));
+        setGameState(g => ({ ...g, playerStun: (g.playerStun ?? 0) + (chosen.stun ?? 1) }));
+        pushLog({ side: 'opponent', type: 'stun', title: `${chosen.name}`, desc: `Você fica atordoado por ${chosen.stun ?? 1}T` });
+        setMascotMood('worried');
               } else {
                 // dano
                 const dmg = calculateDamage(ac.opponent, ac.player, chosen.base ?? 0);
@@ -663,9 +687,13 @@ export default function GameRoom({ params }) {
                     return next;
                   });
                   setLastKOSide('player');
+                  pushLog({ side: 'opponent', type: 'damage', title: `K.O. em ${ac.player.nome || ac.player.name}`, desc: `Dano ${dmg}` });
+                  setMascotMood('worried');
                   ac.player = null;
                 } else {
                   ac.player = { ...ac.player, vida: newHealth };
+                  pushLog({ side: 'opponent', type: 'damage', title: `${chosen.name}`, desc: `-${dmg} HP em você` });
+                  setMascotMood('worried');
                 }
               }
             }
@@ -698,7 +726,7 @@ export default function GameRoom({ params }) {
         }, 500);
       }
     }, 1500);
-  }, [gameState.turn, gameState.turnNumber, skillCooldown, fields, currentField, calculateDamage, mitigateIncomingDamage, applyPassivesOnFieldChange, getSkills, canUseSkill, incrementOnFieldTurns, spendPP]);
+  }, [gameState.turn, gameState.turnNumber, skillCooldown, fields, currentField, calculateDamage, mitigateIncomingDamage, applyPassivesOnFieldChange, getSkills, canUseSkill, incrementOnFieldTurns, spendPP, pushLog]);
 
   const castSkill = useCallback((index) => {
     if (gameState.turn !== 'player' || gameState.actionUsed || !activeCards.player) return;
@@ -713,13 +741,18 @@ export default function GameRoom({ params }) {
     if (skill.kind === 'stun') {
       // Aplica stun no oponente
       setGameState(prev => ({ ...prev, opponentStun: (prev.opponentStun ?? 0) + (skill.stun ?? 1), actionUsed: true }));
+      pushLog({ side: 'player', type: 'stun', title: `${skill.name}`, desc: `Atordoa por ${skill.stun ?? 1}T` });
+      setMascotMood('happy');
     } else {
       const damage = calculateDamage(activeCards.player, activeCards.opponent, skill.base ?? 0);
       applyDamage('player', 'opponent', damage);
       setGameState(prev => ({ ...prev, actionUsed: true }));
+      pushLog({ side: 'player', type: 'damage', title: `${skill.name}`, desc: `Dano base +${skill.base ?? 0}` });
     }
+  // Ao usar, fechar as orbes
+  setShowOrbs(false);
     setTimeout(() => endTurn(), 400);
-  }, [gameState.turn, gameState.actionUsed, gameState.playerStun, activeCards.player, activeCards.opponent, getSkills, canUseSkill, spendPP, calculateDamage, applyDamage, endTurn]);
+  }, [gameState.turn, gameState.actionUsed, gameState.playerStun, activeCards.player, activeCards.opponent, getSkills, canUseSkill, spendPP, calculateDamage, applyDamage, endTurn, pushLog]);
 
   // Ação: Trocar (inicia seleção do banco)
   const startSwitch = useCallback(() => {
@@ -774,30 +807,39 @@ export default function GameRoom({ params }) {
     <div className="h-screen bg-gradient-to-br from-[#09131d] via-[#0c1f31] to-[#09131d] text-white overflow-hidden relative">
       <Playmat transitioning={fieldTransitioning} />
       <FieldIndicator currentField={currentField} fields={fields} fieldTransitioning={fieldTransitioning} />
-    {/* Layout baseado em grade rigorosa para alinhamento perfeito */}
+      {/* Backdrop para fechar orbes ao clicar fora */}
+      {showOrbs && (
+        <div
+          className="fixed inset-0 z-30 bg-transparent"
+          onClick={() => setShowOrbs(false)}
+          aria-hidden="true"
+        />
+      )}
+    {/* Layout: palco central sempre centrado; Mascote/Log em overlay absoluto (não empurram o centro) */}
       <div
         className="
           relative h-full
-      grid
-      grid-cols-[1fr]
-          grid-rows-[1fr,0.8fr,1fr]
-          items-stretch
+      grid grid-cols-1 grid-rows-[auto,1fr,auto]
+      items-stretch gap-2
         "
       >
         {/* Acentos laterais para preencher o espaço e manter imersão */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-cyan-900/20 via-transparent to-transparent blur-2xl" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-cyan-900/20 via-transparent to-transparent blur-2xl" />
-        {/* HUDs com margens simétricas */}
-        <div className="absolute top-4 left-4 z-30">
+        {/* HUDs */}
+  <div className="absolute top-2 left-2 md:top-4 md:left-4 z-30">
           <PlayerHUD player={opponentData} position="top-left" />
         </div>
-        <div className="absolute bottom-4 right-4 z-30">
+  <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-30">
           <PlayerHUD player={playerData} position="bottom-right" />
         </div>
-  {/* Sidebars de deck/descarte removidas neste modo */}
+        {/* Esquerda: Mascote (overlay) */}
+        <div className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-30">
+          <Mascot type="saci" mood={mascotMood} />
+        </div>
 
-        {/* Coluna Central - topo: Oponente com ativo e banco */}
-        <div className="col-start-1 row-start-1 flex flex-col items-center justify-end px-6">
+  {/* Centro - topo: Oponente com ativo e banco (centrado) */}
+  <div className="row-start-1 flex flex-col items-center justify-end px-3 md:px-6">
           <div className="w-full max-w-6xl flex flex-col items-center">
             <div className="w-full flex justify-center mb-3">
               <BenchZone
@@ -823,8 +865,8 @@ export default function GameRoom({ params }) {
           </div>
         </div>
 
-        {/* Linha do meio: botão de turno central */}
-  <div className="col-start-1 row-start-2 flex items-center justify-center z-40">
+  {/* Linha do meio: botão de turno central */}
+  <div className="row-start-2 flex items-center justify-center z-10 px-3 mt-2 md:mt-3">
           <EndTurnButton
             onEndTurn={endTurn}
             disabled={gameState.actionUsed}
@@ -832,8 +874,8 @@ export default function GameRoom({ params }) {
           />
         </div>
 
-        {/* Coluna Central - base: Jogador com ativo e banco */}
-        <div className="col-start-1 row-start-3 flex flex-col items-center justify-start px-6">
+  {/* Centro - base: Jogador com ativo e banco + orbes de habilidade */}
+  <div className="row-start-3 flex flex-col items-center justify-start px-3 md:px-6">
           <div className="w-full max-w-6xl flex flex-col items-center">
             <div className="w-full flex justify-center relative z-20">
               <div className="min-h-48 min-w-[22rem] flex items-center justify-center">
@@ -843,10 +885,25 @@ export default function GameRoom({ params }) {
                       card={activeCards.player}
                       position="player"
                       isPlayerTurn={gameState.turn === 'player'}
-                      onCardClick={() => {}} // Remover ação do clique na carta ativa
+                      onCardClick={() => {
+                        if (gameState.turn !== 'player') return;
+                        if (gameState.actionUsed) return;
+                        if ((gameState.playerStun ?? 0) > 0) return;
+                        if (!activeCards.player) return;
+                        setShowOrbs(v => !v);
+                      }}
                       onCardContextMenu={(card) => setDetailCard(card)}
                     />
                   </div>
+                  {/* Orbes flutuantes ao redor da carta ativa do jogador */}
+                  {activeCards.player && gameState.turn === 'player' && showOrbs && (
+                    <SkillOrbs
+                      skills={getSkills(activeCards.player)}
+                      canUseSkill={canUseSkill}
+                      onUse={castSkill}
+                      disabled={gameState.actionUsed || (gameState.playerStun ?? 0) > 0}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -868,18 +925,24 @@ export default function GameRoom({ params }) {
           </div>
         </div>
 
-        {/* Painel de Habilidades - Estilo Genshin TCG (canto inferior esquerdo) */}
-        {activeCards.player && gameState.turn === 'player' && (
-          <SkillPanel
-            card={activeCards.player}
-            skills={getSkills(activeCards.player)}
-            onSkillUse={castSkill}
-            onSwitch={startSwitch}
-            onPassTurn={passTurn}
-            gameState={gameState}
-            canUseSkill={canUseSkill}
-          />
-        )}
+        {/* Mão em leque do jogador (rodapé, arco) */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[100vw] px-2">
+          <div className="relative z-30 max-w-[100vw] overflow-x-hidden">
+            <PlayerHand
+              cards={[activeCards.player, ...playerBench.filter(Boolean).slice(0, 5)]}
+              selectedCard={null}
+              onCardSelect={() => {}}
+              onCardPlay={() => {}}
+              bonusGlow={gameState.turn === 'player'}
+              onCardContextMenu={(card) => setDetailCard(card)}
+            />
+          </div>
+        </div>
+
+        {/* Direita: Tomo do Cronista (overlay) */}
+        <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-30">
+          <CombatLog entries={logEntries} />
+        </div>
 
     {/* Modal simples para promoção forçada */}
     {forcePromotionFor === 'player' && (
@@ -930,7 +993,7 @@ export default function GameRoom({ params }) {
 
     {/* Modal de detalhes da carta (botão direito) */}
     {detailCard && (
-      <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center" onClick={() => setDetailCard(null)}>
+      <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center" onClick={() => setDetailCard(null)}>
         <div className="max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
           <CardDetail card={detailCard} onClose={() => setDetailCard(null)} />
         </div>
@@ -1365,7 +1428,6 @@ function DebugPanel({
   );
 }
 
-// Simple options menu replacing red exit button.
 function OptionsMenu() {
   const [open, setOpen] = useState(false);
   return (
