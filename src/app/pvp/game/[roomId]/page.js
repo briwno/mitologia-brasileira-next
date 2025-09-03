@@ -2,7 +2,7 @@
 // src/app/pvp/game/[roomId]/page_new.js
 
 import Link from "next/link";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { bancoDeCartas } from "../../../../data/cardsDatabase";
 import {
   FieldIndicator,
@@ -670,12 +670,26 @@ export default function GameRoom({ params }) {
     });
   }, []);
 
+    // Evita logs duplicados (React StrictMode chama alguns updaters 2x em dev)
+  const lastLogRef = useRef({ key: "", ts: 0 });
+  const opponentTurnGuardRef = useRef({ id: 0, consumed: false });
   const pushLog = useCallback((entry) => {
+    const key = `${entry.type}|${entry.title}|${entry.desc}`;
+    const now = Date.now();
+    // se a última entrada for idêntica e muito recente, ignora
+    if (
+      lastLogRef.current.key === key &&
+      now - (lastLogRef.current.ts || 0) < 400
+    ) {
+      return;
+    }
+    lastLogRef.current = { key, ts: now };
     setLogEntries((prev) => [...prev, entry].slice(-20));
   }, []);
 
+
   const applyDamage = useCallback(
-    (source, targetSide, amount) => {
+    (source, targetSide, amount, skillUsed = null) => {
       setActiveCards((prev) => {
         const targetCard = prev[targetSide];
         if (!targetCard) return prev;
@@ -715,7 +729,7 @@ export default function GameRoom({ params }) {
         pushLog({
           side: source === "player" ? "player" : "opponent",
           type: "damage",
-          title: `Dano em ${targetCard.nome || targetCard.name}`,
+          title: skillUsed ? `${skillUsed.name} usada em ${targetCard.nome || targetCard.name}` : `Dano em ${targetCard.nome || targetCard.name}`,
           desc: `-${adjusted} HP`,
         });
         if (source === "player") setMascotMood("happy");
@@ -770,12 +784,23 @@ export default function GameRoom({ params }) {
       actionUsed: false,
       playerUltimate: prev.playerUltimate,
     }));
+    // Guard para evitar IA do oponente rodar 2x no mesmo turno (StrictMode/dev ou double calls)
+    const opponentTurnGuardId = (opponentTurnGuardRef.current?.id ?? 0) + 1;
+    opponentTurnGuardRef.current = { id: opponentTurnGuardId, consumed: false };
     // Início do turno do oponente: incrementa contador de turnos em campo
     setTimeout(() => incrementOnFieldTurns("opponent"), 0);
     // PP não regenera por turno
 
     // Simular turno do oponente
     setTimeout(() => {
+       // somente o agendamento mais recente executa; e apenas uma vez
+      if (
+        opponentTurnGuardRef.current.id !== opponentTurnGuardId ||
+        opponentTurnGuardRef.current.consumed
+      ) {
+        return;
+      }
+      opponentTurnGuardRef.current.consumed = true;
       // Início do turno do oponente: checa mudança de campo em turnos pares
       setFieldTransitioning(false);
       const isEven = gameState.turnNumber % 2 === 0; // já incrementado acima
@@ -971,14 +996,8 @@ export default function GameRoom({ params }) {
           activeCards.opponent,
           skill.base ?? 0
         );
-        applyDamage("player", "opponent", damage);
+        applyDamage("player", "opponent", damage, skill);
         setGameState((prev) => ({ ...prev, actionUsed: true }));
-        pushLog({
-          side: "player",
-          type: "damage",
-          title: `${skill.name}`,
-          desc: `Dano base +${skill.base ?? 0}`,
-        });
       }
       // Ao usar, fechar as orbes
       setShowOrbs(false);

@@ -10,7 +10,6 @@ import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
 // Carregamento dinâmico dos modais com fallback de carregamento
 const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { 
-  ssr: false, 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Batalha..." />
@@ -18,7 +17,6 @@ const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), {
   )
 });
 const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { 
-  ssr: false, 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Museu..." />
@@ -26,7 +24,6 @@ const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), {
   )
 });
 const RankingModal = dynamic(() => import('@/components/Ranking/RankingModal'), { 
-  ssr: false, 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Ranking..." />
@@ -34,7 +31,6 @@ const RankingModal = dynamic(() => import('@/components/Ranking/RankingModal'), 
   )
 });
 const ProfileModal = dynamic(() => import('@/components/Profile/ProfileModal'), { 
-  ssr: false, 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Perfil..." />
