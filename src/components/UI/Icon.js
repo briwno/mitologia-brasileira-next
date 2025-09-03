@@ -12,7 +12,7 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'home': 'https://img.icons8.com/fluency/48/home.png',
     'battle': 'https://img.icons8.com/fluency/48/sword.png',
     'museum': 'https://img.icons8.com/fluency/48/museum.png',
-    'profile': 'https://img.icons8.com/fluency/48/user.png',
+    'profile': 'https://img.icons8.com/?size=100&id=YtnFdkYn0RsE&format=png&color=000000',
     'trophy': 'https://img.icons8.com/fluency/48/trophy.png',
     
     // Interface

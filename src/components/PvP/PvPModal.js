@@ -6,14 +6,10 @@ import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/UI/Icon';
+import { nanoid } from 'nanoid'
 
 function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
-  
-  // Verificação de segurança para props
-  if (!title || !iconName || (!href && !onClick)) {
-    return null;
-  }
 
   const Wrapper = ({ children }) => {
     if (onClick) {
@@ -78,7 +74,6 @@ function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
           </div>
         </div>
 
-        {/* emblema dourado em losango (acima da moldura) */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
           <div className="w-10 h-10 rotate-45 bg-yellow-500/90 border-2 border-yellow-300 shadow-lg flex items-center justify-center">
             <div className="-rotate-45">
@@ -95,24 +90,16 @@ export default function PvPModal({ onClose }) {
   const router = useRouter();
 
   const createRoomId = useCallback(() => {
-    // ID curto legível: 4 letras + 2 números
-    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const nums = '23456789';
-    const pick = (src, n) => Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join('');
-    return `${pick(letters, 4)}-${pick(nums, 2)}`;
+    const id = nanoid(6);
+    return id;
   }, []);
 
   const startMatch = useCallback((mode) => {
     const id = createRoomId();
-    const q = mode ? `?mode=${encodeURIComponent(mode)}` : '';
-    router.push(`/pvp/game/${id}${q}`);
+    const m = mode ? `?mode=${encodeURIComponent(mode)}` : '';
+    router.push(`/pvp/game/${id}${m}`);
     onClose?.();
   }, [createRoomId, router, onClose]);
-
-  // Verificação de segurança (apenas avisa, sem interromper hooks)
-  if (!onClose || typeof onClose !== 'function') {
-    console.warn('PvPModal: onClose prop is recommended and should be a function');
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => onClose?.()}>
