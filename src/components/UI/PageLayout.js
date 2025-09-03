@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import Icon from '@/components/UI/Icon';
 
 // Layout de página compartilhado
 export default function LayoutDePagina({ children }) {
@@ -31,7 +32,7 @@ export default function LayoutDePagina({ children }) {
           <div className="flex items-center gap-3">
             {/* Selo de marca com logotipo */}
                   <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm" title="Adentre a Ka&#39;aguy. Se for capaz.">
-                    <span className="text-lg">🌿</span>
+                    <Icon name="leaf" size={18} />
                     <Image
                     src="/images/logo.svg"
                     alt="Ka'aguy"
@@ -56,14 +57,14 @@ export default function LayoutDePagina({ children }) {
                     className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
                     onClick={() => definirMostrarModalConfiguracoes(true)}
                   >
-                    ⚙️
+                    <Icon name="settings" size={20} />
                   </button>
                   <button
                     type="button"
                     className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
                     onClick={() => definirMostrarModalInformacoes(true)}
                   >
-                    📜
+                    <Icon name="scroll" size={20} />
                   </button>
                   {isAuthenticated() ? (
                     <button

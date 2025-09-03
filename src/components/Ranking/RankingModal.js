@@ -109,9 +109,9 @@ export default function RankingModal({ onClose }) {
               simboloRanque="🥉"
             />
             <CartaoDeModo
-              title="Top Semanal"
+              title="Top Jogadores"
               emoji="📅"
-              subtitle="Melhores jogadores da semana"
+              subtitle="Melhores jogadores por pontuação"
               href="/ranking/weekly"
               imageSrc="/images/backgrounds/semanal-background.jpg"
             />

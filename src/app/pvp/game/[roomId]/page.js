@@ -17,6 +17,7 @@ import CombatLog from "../../../../components/Game/CombatLog";
 import Mascot from "../../../../components/Game/Mascot";
 import PlayerHand from "../../../../components/Game/PlayerHand";
 import CardDetail from "../../../../components/Card/CardDetail";
+import Icon from "@/components/UI/Icon";
 
 // Componente do Painel de Habilidades estilo Genshin TCG
 function SkillPanel({
@@ -31,8 +32,8 @@ function SkillPanel({
   const [expanded, setExpanded] = useState(true);
 
   const getSkillIcon = (skill, index) => {
-    const icons = ["⚔️", "🔥", "⚡", "💫", "🌟"];
-    return icons[index] || "⚔️";
+    const icons = ["battle", "fire", "lightning", "sparkles", "star"];
+    return icons[index] || "battle";
   };
 
   const getSkillColor = (skill, index) => {
@@ -56,7 +57,7 @@ function SkillPanel({
         className="mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-2 border-slate-600/50 flex items-center justify-center text-2xl hover:border-slate-500 transition-all duration-200 backdrop-blur-sm shadow-lg"
         title={expanded ? "Ocultar Habilidades" : "Mostrar Habilidades"}
       >
-        {expanded ? "🎯" : "⚔️"}
+        {expanded ? <Icon name="target" size={24} /> : <Icon name="battle" size={24} />}
       </button>
 
       {/* Skills Panel */}
@@ -81,7 +82,7 @@ function SkillPanel({
               onClick={() => setExpanded(false)}
               className="text-slate-400 hover:text-white text-lg"
             >
-              ✕
+              <Icon name="x" size={18} />
             </button>
           </div>
 
@@ -116,7 +117,7 @@ function SkillPanel({
                 >
                   {/* Skill Icon */}
                   <div className="text-2xl mb-1">
-                    {getSkillIcon(skill, index)}
+                    <Icon name={getSkillIcon(skill, index)} size={24} />
                   </div>
 
                   {/* Skill Name */}
@@ -149,7 +150,9 @@ function SkillPanel({
                   {skill.locked && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
                       <div className="text-center">
-                        <div className="text-lg">🔒</div>
+                        <div className="text-lg">
+                          <Icon name="lock" size={18} />
+                        </div>
                         <div className="text-xs text-yellow-300 font-bold">
                           {skill.unlockIn}T
                         </div>
@@ -180,7 +183,8 @@ function SkillPanel({
                 }
               `}
             >
-              🔄 Trocar Encantado
+              <Icon name="refresh" size={16} className="inline mr-1" />
+              Trocar Encantado
             </button>
 
             <button
@@ -195,15 +199,17 @@ function SkillPanel({
                 }
               `}
             >
-              ⏭️ Passar Turno
+              <Icon name="next" size={16} className="inline mr-1" />
+              Passar Turno
             </button>
           </div>
 
           {/* Status Effects */}
           {gameState.playerStun > 0 && (
             <div className="mt-3 p-2 bg-red-900/50 border border-red-600/50 rounded-lg">
-              <div className="text-xs text-red-200 font-semibold text-center">
-                😵‍💫 Atordoado por {gameState.playerStun} turno(s)
+              <div className="text-xs text-red-200 font-semibold text-center flex items-center justify-center gap-1">
+                <Icon name="dizzy" size={16} />
+                Atordoado por {gameState.playerStun} turno(s)
               </div>
             </div>
           )}
@@ -322,31 +328,31 @@ export default function GameRoom({ params }) {
     () => ({
       floresta: {
         name: "Floresta Misteriosa",
-        icon: "🌲",
+        icon: "tree",
         bg: "from-green-800/40 to-green-900/40",
         effect: "Curupira +2 Defesa",
       },
       rio: {
         name: "Correnteza do Rio",
-        icon: "🌊",
+        icon: "wave",
         bg: "from-blue-800/40 to-blue-900/40",
         effect: "Iara +2 Ataque",
       },
       caatinga: {
         name: "Caatinga Seca",
-        icon: "🌵",
+        icon: "cactus",
         bg: "from-yellow-800/40 to-orange-900/40",
         effect: "Saci +1 Velocidade",
       },
       pantanal: {
         name: "Pântano Sombrio",
-        icon: "🐊",
+        icon: "crocodile",
         bg: "from-purple-800/40 to-gray-900/40",
         effect: "Boto +3 Vida",
       },
       lua: {
         name: "Lua Cheia Ascendente",
-        icon: "🌕",
+        icon: "moon",
         bg: "from-indigo-800/40 to-purple-900/40",
         effect: "Todos +1 Habilidade",
       },
@@ -1157,7 +1163,7 @@ export default function GameRoom({ params }) {
                   )}
                   {stunFx.opponent && (
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl animate-bounce select-none">
-                      💫
+                      <Icon name="sparkles" size={24} />
                     </div>
                   )}
                   {damageFx
@@ -1224,7 +1230,7 @@ export default function GameRoom({ params }) {
                     )}
                     {stunFx.player && (
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl animate-bounce select-none">
-                        💫
+                        <Icon name="sparkles" size={24} />
                       </div>
                     )}
                     {damageFx
@@ -1316,7 +1322,7 @@ export default function GameRoom({ params }) {
               <div className="grid grid-cols-1 gap-3">
                 <div className="text-xs text-neutral-300">
                   Escolha uma Carta para entrar no lugar. Cartas derrotadas
-                  aparecem com ✖ e não podem ser usadas.
+                  aparecem com <Icon name="disabled" size={12} className="inline" /> e não podem ser usadas.
                 </div>
                 {/* Exibe a mão atual (ativo derrotado foi para a mão como isDead) */}
                 <BenchZone
@@ -1549,7 +1555,8 @@ function DebugPanel({
         onClick={() => setOpen(true)}
         className="fixed right-5 transform -translate-x-1/2 z-50 px-3 py-1 bg-red-600/80 hover:bg-red-500/80 text-white text-xs rounded border border-red-400 backdrop-blur-sm"
       >
-        🐛 Debug
+        <Icon name="disabled" size={12} />
+        Debug
       </button>
     );
   }
@@ -1557,31 +1564,35 @@ function DebugPanel({
   return (
     <div className="fixed top-4 left-4 right-4 z-50 bg-black/90 backdrop-blur-md border border-neutral-600 rounded-xl p-4 max-h-[80vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">🐛 Debug Panel</h3>
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Icon name="disabled" size={18} />
+          Debug Panel
+        </h3>
         <button
           onClick={() => setOpen(false)}
           className="text-neutral-400 hover:text-white text-xl"
         >
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-4">
         {[
-          { id: "game", label: "🎮 Game" },
-          { id: "cards", label: "🃏 Cartas" },
-          { id: "field", label: "🌍 Campo" },
+          { id: "game", label: "Game", icon: "target" },
+          { id: "cards", label: "Cartas", icon: "cards" },
+          { id: "field", label: "Campo", icon: "tree" },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1 rounded text-sm font-semibold ${
+            className={`px-3 py-1 rounded text-sm font-semibold flex items-center gap-1 ${
               activeTab === tab.id
                 ? "bg-blue-600 text-white"
                 : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
             }`}
           >
+            <Icon name={tab.icon} size={14} />
             {tab.label}
           </button>
         ))}
@@ -1950,20 +1961,22 @@ function OptionsMenu() {
         className="w-10 h-10 rounded-full bg-neutral-800/80 border border-neutral-600 text-neutral-200 flex items-center justify-center text-xl hover:bg-neutral-700 transition"
         title="Opções"
       >
-        ⚙️
+        <Icon name="settings" size={20} />
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-52 bg-neutral-900/95 border border-neutral-700 rounded-lg shadow-2xl p-2 flex flex-col gap-1 text-sm z-50 backdrop-blur-sm">
-          <Link href="/pvp" className="block" onClick={() => setOpen(false)}>
+          <Link href="/" className="block" onClick={() => setOpen(false)}>
             <span className="w-full text-left px-3 py-2 rounded hover:bg-red-600/25 hover:text-red-300 flex items-center gap-2 cursor-pointer">
-              ❌ <span>Sair da Partida</span>
+              <Icon name="x" size={16} />
+              <span>Sair da Partida</span>
             </span>
           </Link>
           <button
             className="w-full text-left px-3 py-2 rounded hover:bg-neutral-700/60 flex items-center gap-2 text-neutral-300"
             onClick={() => setOpen(false)}
           >
-            ✖ Fechar
+            <Icon name="x" size={16} />
+            Fechar
           </button>
         </div>
       )}

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Icon from '@/components/UI/Icon';
 
 // Zona de banco (bench) com slots
 export default function ZonaDoBanco({
@@ -77,7 +78,7 @@ export default function ZonaDoBanco({
                       {card.isDead && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-8 h-8 bg-red-600/90 rounded-full flex items-center justify-center border-2 border-red-400 shadow-lg">
-                            <span className="text-white text-lg font-bold">✕</span>
+                            <Icon name="x" size={18} className="text-white" />
                           </div>
                         </div>
                       )}
@@ -85,9 +86,18 @@ export default function ZonaDoBanco({
                       <div className="absolute bottom-0 left-0 right-0 bg-black/65 px-1.5 py-1 flex flex-col items-center backdrop-blur-sm space-y-0.5">
                         <span className="text-[11px] font-medium text-neutral-100 truncate w-full leading-tight">{card.nome || card.name}</span>
                         <div className="flex gap-1.5 text-[10px] font-semibold text-neutral-200">
-                          <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
-                          <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
-                          <span className={`px-1 rounded ${card.isDead ? 'bg-red-900/70 text-red-300' : (ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200')}`}>❤️ {card.vida}</span>
+                          <span className="px-1 rounded bg-neutral-900/70 flex items-center gap-1">
+                            <Icon name="battle" size={10} />
+                            {card.ataque || card.attack}
+                          </span>
+                          <span className="px-1 rounded bg-neutral-900/70 flex items-center gap-1">
+                            <Icon name="shield" size={10} />
+                            {card.defesa || card.defense}
+                          </span>
+                          <span className={`px-1 rounded flex items-center gap-1 ${card.isDead ? 'bg-red-900/70 text-red-300' : (ehJogador ? 'bg-blue-900/70 text-blue-200' : 'bg-red-900/70 text-red-200')}`}>
+                            <Icon name="heart" size={10} />
+                            {card.vida}
+                          </span>
                         </div>
                       </div>
                     </div>

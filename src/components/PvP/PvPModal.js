@@ -5,12 +5,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Icon from '@/components/UI/Icon';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, onClick }) {
+function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
-  if (!title || !emoji || (!href && !onClick)) {
+  if (!title || !iconName || (!href && !onClick)) {
     return null;
   }
 
@@ -68,7 +69,9 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, onClick }) {
 
         {/* conteúdo */}
         <div className="relative z-20 h-full flex flex-col justify-end p-5">
-          <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{emoji}</div>
+          <div className="mb-4 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+            <Icon name={iconName} size={48} />
+          </div>
           <div className="pb-3">
             <div className="text-white font-extrabold text-2xl md:text-3xl tracking-wide">{title.toUpperCase()}</div>
             {subtitle && <div className="text-neutral-200 text-xs md:text-sm mt-1">{subtitle}</div>}
@@ -118,7 +121,10 @@ export default function PvPModal({ onClose }) {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div>
-            <h2 className="text-xl font-bold tracking-wide">⚔️ Batalha</h2>
+            <h2 className="text-xl font-bold tracking-wide flex items-center gap-2">
+              <Icon name="battle" size={24} />
+              Batalha
+            </h2>
             <p className="text-xs text-white/70">Escolha um modo e jogue</p>
           </div>
           <button
@@ -137,21 +143,21 @@ export default function PvPModal({ onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
               title="Normal"
-              emoji="🎯"
+              iconName="target"
               subtitle="Partida casual rápida"
               onClick={() => startMatch('normal')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
               title="Ranqueada"
-              emoji="🏆"
+              iconName="trophy"
               subtitle="Valendo pontos de ranking"
               onClick={() => startMatch('ranked')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
               title="Personalizada"
-              emoji="🏠"
+              iconName="home"
               subtitle="Crie ou entre em salas"
               onClick={() => startMatch('custom')}
               imageSrc="/images/banners/menumuseu.png"

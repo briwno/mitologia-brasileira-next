@@ -2,6 +2,7 @@
 "use client";
 
 import CardImage from './CardImage';
+import Icon from '@/components/UI/Icon';
 
 // Detalhe da Carta
 export default function DetalheDaCarta({ card, onClose = null }) {
@@ -49,7 +50,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors text-lg sm:text-xl flex-shrink-0"
           >
-            ✕
+            <Icon name="x" size={20} />
           </button>
         )}
       </div>

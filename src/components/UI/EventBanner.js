@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { getCurrentEvents, getCardEventBonus } from '../../utils/seasonalEvents';
+import Icon from '@/components/UI/Icon';
 
 export default function EventBanner({ card = null, showDetailed = false }) {
   const [eventosAtivos, definirEventosAtivos] = useState([]);
@@ -22,13 +23,13 @@ export default function EventBanner({ card = null, showDetailed = false }) {
 
   const obterIconeDoEvento = (eventName) => {
     switch (eventName) {
-      case 'Carnaval': return '🎭';
-      case 'São João': return '🔥';
-      case 'Festa Junina': return '🌽';
-      case 'Dia do Folclore': return '📚';
-      case 'Lua Cheia': return '🌕';
-      case 'Dia da Amazônia': return '🌳';
-      default: return '🎉';
+      case 'Carnaval': return 'carnival';
+      case 'São João': return 'bonfire';
+      case 'Festa Junina': return 'corn';
+      case 'Dia do Folclore': return 'book';
+      case 'Lua Cheia': return 'moon';
+      case 'Dia da Amazônia': return 'forest';
+      default: return 'star';
     }
   };
 
@@ -77,7 +78,9 @@ export default function EventBanner({ card = null, showDetailed = false }) {
       className={`bg-gradient-to-r ${obterCorDoEvento(event.name)} text-white p-3 rounded-lg shadow-lg border-2 border-white/20 backdrop-blur-sm mx-auto max-w-md`}
           >
             <div className="flex items-center space-x-3">
-        <span className="text-xl sm:text-2xl">{obterIconeDoEvento(event.name)}</span>
+        <span className="text-xl sm:text-2xl">
+          <Icon name={obterIconeDoEvento(event.name)} size={24} />
+        </span>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm sm:text-base">{event.name}</div>
                 <div className="text-xs sm:text-sm opacity-90 truncate">{event.description}</div>
@@ -87,8 +90,9 @@ export default function EventBanner({ card = null, showDetailed = false }) {
               </div>
             </div>
             {event.duration?.daysRemaining && (
-              <div className="mt-2 text-xs text-center bg-black/20 rounded px-2 py-1">
-                ⏰ {event.duration.daysRemaining} dia(s) restante(s)
+              <div className="mt-2 text-xs text-center bg-black/20 rounded px-2 py-1 flex items-center justify-center gap-1">
+                <Icon name="clock" size={12} />
+                {event.duration.daysRemaining} dia(s) restante(s)
               </div>
             )}
           </div>
@@ -100,7 +104,10 @@ export default function EventBanner({ card = null, showDetailed = false }) {
   // Banner detalhado para página de eventos
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold text-center mb-4">🎉 Eventos Ativos</h3>
+      <h3 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2">
+        <Icon name="star" size={24} />
+        Eventos Ativos
+      </h3>
     {eventosAtivos.map((event, index) => (
         <div
           key={event.id}
@@ -108,7 +115,9 @@ export default function EventBanner({ card = null, showDetailed = false }) {
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-3">
-        <span className="text-3xl">{obterIconeDoEvento(event.name)}</span>
+        <span className="text-3xl">
+          <Icon name={obterIconeDoEvento(event.name)} size={32} />
+        </span>
               <div>
                 <h4 className="text-lg font-bold">{event.name}</h4>
                 <p className="text-sm opacity-90">{event.description}</p>
@@ -122,7 +131,10 @@ export default function EventBanner({ card = null, showDetailed = false }) {
 
           {/* Cartas com bônus */}
           <div className="mb-3">
-            <div className="text-sm font-semibold mb-2">📱 Cartas com Bônus:</div>
+            <div className="text-sm font-semibold mb-2 flex items-center gap-1">
+              <Icon name="cards" size={16} />
+              Cartas com Bônus:
+            </div>
             <div className="flex flex-wrap gap-2">
               {event.bonusCards.includes('all') ? (
                 <span className="text-xs bg-black/20 rounded px-2 py-1">Todas as cartas</span>

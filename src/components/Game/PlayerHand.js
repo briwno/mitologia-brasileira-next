@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Icon from '@/components/UI/Icon';
 
 // Mão em leque com arrastar/soltar
 export default function MaoDoJogador({
@@ -96,15 +97,26 @@ export default function MaoDoJogador({
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-[2px] px-1.5 pb-1 pt-0.5 text-[10px] leading-tight font-medium text-neutral-100 text-center space-y-0.5">
                     <div className="truncate">{card.nome || card.name}</div>
                     <div className="flex justify-center gap-1 text-[9px] font-semibold">
-                      <span className="px-1 rounded bg-neutral-900/70">⚔ {card.ataque || card.attack}</span>
-                      <span className="px-1 rounded bg-neutral-900/70">🛡 {card.defesa || card.defense}</span>
-                      <span className="px-1 rounded bg-blue-900/70 text-blue-200">❤️ {card.vida}</span>
+                      <span className="px-1 rounded bg-neutral-900/70 flex items-center gap-1">
+                        <Icon name="battle" size={8} />
+                        {card.ataque || card.attack}
+                      </span>
+                      <span className="px-1 rounded bg-neutral-900/70 flex items-center gap-1">
+                        <Icon name="shield" size={8} />
+                        {card.defesa || card.defense}
+                      </span>
+                      <span className="px-1 rounded bg-blue-900/70 text-blue-200 flex items-center gap-1">
+                        <Icon name="heart" size={8} />
+                        {card.vida}
+                      </span>
                     </div>
                   </div>
                   {/* Marca de X para derrotadas */}
                   {card.isDead && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-4xl font-black text-red-500/70 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] select-none">✖</div>
+                      <div className="text-4xl font-black text-red-500/70 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] select-none">
+                        <Icon name="disabled" size={48} />
+                      </div>
                     </div>
                   )}
                   {/* Sem custo por carta: custos estão nas habilidades */}

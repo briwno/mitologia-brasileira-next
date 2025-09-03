@@ -1,6 +1,8 @@
 // src/components/Game/FieldIndicator.js
 "use client";
 
+import Icon from '@/components/UI/Icon';
+
 // Indicador do campo/terreno atual com estado de transição
 export default function IndicadorDeCampo({ currentField, fields, fieldTransitioning = false }) {
   const campo = fields[currentField];
@@ -14,7 +16,9 @@ export default function IndicadorDeCampo({ currentField, fields, fieldTransition
         }`}
       >
         <div className="relative w-9 h-9 flex items-center justify-center text-[1.35rem]">
-          <span className="drop-shadow-md">{campo.icon}</span>
+          <span className="drop-shadow-md">
+            <Icon name={campo.icon} size={22} />
+          </span>
           {fieldTransitioning && <div className="absolute inset-0 rounded-full animate-ping bg-cyan-400/30" />}
         </div>
         <div className="flex flex-col leading-tight">

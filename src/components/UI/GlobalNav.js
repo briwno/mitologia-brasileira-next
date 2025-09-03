@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import Icon from '@/components/UI/Icon';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -37,19 +38,19 @@ export default function NavegacaoGlobal() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-white/10 px-4 py-2 z-50">
         <div className="flex justify-around items-center">
           <Link href="/" className="flex flex-col items-center gap-1 p-2 text-cyan-300">
-            <span className="text-xl">🏠</span>
+            <Icon name="home" size={20} />
             <span className="text-xs font-medium">Início</span>
           </Link>
           <button onClick={() => definirMostrarModalPvP(true)} className="flex flex-col items-center gap-1 p-2 text-gray-300">
-            <span className="text-xl">⚔️</span>
+            <Icon name="battle" size={20} />
             <span className="text-xs font-medium">Batalha</span>
           </button>
           <button onClick={() => definirMostrarModalMuseu(true)} className="flex flex-col items-center gap-1 p-2 text-gray-300">
-            <span className="text-xl">🏛️</span>
+            <Icon name="museum" size={20} />
             <span className="text-xs font-medium">Museu</span>
           </button>
           <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-gray-300">
-            <span className="text-xl">👤</span>
+            <Icon name="profile" size={20} />
             <span className="text-xs font-medium">Perfil</span>
           </Link>
         </div>

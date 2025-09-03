@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import Icon from '@/components/UI/Icon';
 
 // Carregamento dinâmico dos modais com fallback de carregamento
 const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { 
@@ -39,12 +40,12 @@ const ProfileModal = dynamic(() => import('@/components/Profile/ProfileModal'), 
 });
 
 // Cartão clicável para cada modo da página inicial
-function CartaoDeModo({ href, title, emoji, available = true, subtitle, highlight = false, imageSrc }) {
+function CartaoDeModo({ href, title, iconName, available = true, subtitle, highlight = false, imageSrc }) {
   const [erroImagem, setErroImagem] = useState(false);
   
   // Verificação de segurança para props obrigatórias
-  if (!title || !emoji) {
-    console.warn('CartaoDeModo: title and emoji are required props');
+  if (!title || !iconName) {
+    console.warn('CartaoDeModo: title and iconName are required props');
     return null;
   }
   
@@ -71,7 +72,9 @@ function CartaoDeModo({ href, title, emoji, available = true, subtitle, highligh
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.15),transparent_55%)]" />
         {highlight && <div className="absolute inset-0 animate-pulse bg-cyan-200/5" />}
       </div>
-      <div className="absolute top-4 right-4 text-2xl">{emoji}</div>
+      <div className="absolute top-4 right-4">
+        <Icon name={iconName} size={32} />
+      </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/70 border-t border-white/10 p-4">
         <div className={`text-center font-extrabold ${available ? 'text-white' : 'text-neutral-400'} text-xl md:text-2xl tracking-wide`}>{title}</div>
         {subtitle && <div className="text-center text-neutral-300 text-xs md:text-sm mt-1">{subtitle}</div>}
@@ -151,7 +154,7 @@ export default function Inicio() {
           <div className="flex items-center gap-3">
             {/* Selo de marca com logotipo */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm" title="Adentre a Ka&#39;aguy. Se for capaz.">
-              <span className="text-lg">🌿</span>
+              <Icon name="leaf" size={18} />
               <Image
                 src="/images/logo.svg"
                 alt="Ka'aguy"
@@ -175,14 +178,14 @@ export default function Inicio() {
               className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
               onClick={() => setMostrarConfigModal(true)}
             >
-              ⚙️
+              <Icon name="settings" size={20} />
             </button>
             <button
               type="button"
               className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
               onClick={() => setMostrarInfoModal(true)}
             >
-              📜
+              <Icon name="scroll" size={20} />
             </button>
             {/* Login/logout minimalista */}
             {isAuthenticated() ? (
@@ -227,16 +230,16 @@ export default function Inicio() {
         <div className="mx-auto mt-6 max-w-7xl px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div onClick={() => setMostrarPvPModal(true)}>
-              <CartaoDeModo href="#" title="BATALHA" emoji="⚔️" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
+              <CartaoDeModo href="#" title="BATALHA" iconName="battle" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
             </div>
             <div onClick={() => setMostrarMuseuModal(true)}>
-              <CartaoDeModo href="#" title="MUSEU" emoji="🏛️" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
+              <CartaoDeModo href="#" title="MUSEU" iconName="museum" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
             </div>
             <div onClick={() => setMostrarRankingModal(true)}>
-              <CartaoDeModo href="#" title="RANKING" emoji="🏆" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
+              <CartaoDeModo href="#" title="RANKING" iconName="trophy" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
             </div>
             <div onClick={() => setMostrarPerfilModal(true)}>
-              <CartaoDeModo href="#" title="PERFIL" emoji="👤" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
+              <CartaoDeModo href="#" title="PERFIL" iconName="profile" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
             </div>
           </div>
         </div>
@@ -247,7 +250,9 @@ export default function Inicio() {
             <Link href="/card_inventory" className="group">
               <div className="relative rounded-xl border border-emerald-500/30 bg-black/40 p-4 backdrop-blur-sm hover:border-emerald-400/60 transition">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center text-2xl">🎴</div>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
+                    <Icon name="cards" size={24} />
+                  </div>
                   <div className="flex-1">
                     <div className="font-bold">SUAS CARTAS</div>
                     <div className="text-emerald-200 text-sm">47/60 cartas coletadas</div>
@@ -259,7 +264,9 @@ export default function Inicio() {
             <Link href="/shop" className="group">
               <div className="relative rounded-xl border border-pink-500/30 bg-black/40 p-4 backdrop-blur-sm hover:border-pink-400/60 transition">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-2xl">🛒</div>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                    <Icon name="shop" size={24} />
+                  </div>
                   <div className="flex-1">
                     <div className="font-bold">LOJA</div>
                     <div className="text-pink-200 text-sm">Pacotes e ofertas especiais</div>
