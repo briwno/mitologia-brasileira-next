@@ -4,12 +4,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import Icon from '@/components/UI/Icon';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, simboloRanque }) {
+function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, simboloRanque }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
-  if (!title || !emoji || !href) {
+  if (!title || !iconName || !href) {
     return null;
   }
   
@@ -46,8 +47,8 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, simboloRanque })
 
         {/* conteúdo */}
         <div className="relative z-20 h-full flex flex-col justify-end p-5">
-          <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
-            {emoji}
+          <div className="mb-4 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
+            <Icon name={iconName} size={48} />
             {simboloRanque && <span className="ml-2">{simboloRanque}</span>}
           </div>
           <div className="pb-3">
@@ -59,7 +60,9 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, simboloRanque })
         {/* emblema dourado em losango (acima da moldura) */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
           <div className="w-10 h-10 rotate-45 bg-yellow-500/90 border-2 border-yellow-300 shadow-lg flex items-center justify-center">
-            <div className="-rotate-45">{emoji}</div>
+            <div className="-rotate-45">
+              <Icon name={iconName} size={20} />
+            </div>
           </div>
         </div>
       </div>
@@ -83,7 +86,10 @@ export default function RankingModal({ onClose }) {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div>
-            <h2 className="text-xl font-bold tracking-wide">🏆 Ranking</h2>
+            <h2 className="text-xl font-bold tracking-wide flex items-center gap-2">
+              <Icon name="trophy" size={24} />
+              Ranking
+            </h2>
             <p className="text-xs text-white/70">Escolha um modo e jogue</p>
           </div>
           <button
@@ -102,7 +108,7 @@ export default function RankingModal({ onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
               title="Seu Ranque"
-              emoji="🏅"
+              iconName="medal"
               subtitle="Veja sua posição atual"
               href="/ranking/your-rank"
               imageSrc="/images/backgrounds/ranque-background.jpg"
@@ -110,14 +116,14 @@ export default function RankingModal({ onClose }) {
             />
             <CartaoDeModo
               title="Top Jogadores"
-              emoji="📅"
+              iconName="calendar"
               subtitle="Melhores jogadores por pontuação"
               href="/ranking/weekly"
               imageSrc="/images/backgrounds/semanal-background.jpg"
             />
             <CartaoDeModo
               title="Recompensas"
-              emoji="🎁"
+              iconName="gift"
               subtitle="Prêmios por ranking"
               href="/ranking/rewards"
               imageSrc="/images/backgrounds/recompensas-background.jpg"

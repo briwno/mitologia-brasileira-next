@@ -81,7 +81,9 @@ function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
         {/* emblema dourado em losango (acima da moldura) */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
           <div className="w-10 h-10 rotate-45 bg-yellow-500/90 border-2 border-yellow-300 shadow-lg flex items-center justify-center">
-            <div className="-rotate-45">{emoji}</div>
+            <div className="-rotate-45">
+              <Icon name={iconName} size={20} />
+            </div>
           </div>
         </div>
       </div>

@@ -53,6 +53,9 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'bonfire': 'https://img.icons8.com/fluency/48/bonfire.png',
     'corn': 'https://img.icons8.com/fluency/48/corn.png',
     'book': 'https://img.icons8.com/fluency/48/book.png',
+    'gift': 'https://img.icons8.com/fluency/48/gift.png',
+    'medal': 'https://img.icons8.com/fluency/48/medal.png',
+    'calendar': 'https://img.icons8.com/fluency/48/calendar.png',
     
     // Redes sociais
     'twitter': 'https://img.icons8.com/fluency/48/twitter.png',
