@@ -32,6 +32,10 @@ export default function NavegacaoGlobal() {
     return null;
   }
 
+  if (pathname?.startsWith('/divulgar')) {
+    return null;
+  }
+
   return (
     <>
       {/* Barra de abas inferior (mobile) - visível em todas as páginas */}

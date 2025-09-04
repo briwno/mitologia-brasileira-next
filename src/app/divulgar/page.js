@@ -1,4 +1,14 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 // src/app/divulgar/page.js
+
+/**
+ * COMO ATUALIZAR PATCH NOTES:
+ * 1. Adicione uma nova entrada no início do array 'patchNotes'
+ * 2. Use o formato: { version, date, icon, color, changes: [] }
+ * 3. Cores disponíveis: 'cyan', 'green', 'purple', 'orange'
+ * 4. A primeira entrada sempre terá a badge "Atual"
+ */
+
 import Image from 'next/image';
 
 export const metadata = {
@@ -23,6 +33,58 @@ export const metadata = {
 };
 
 export default function DivulgarPage() {
+	// Patch notes - fácil de atualizar
+	const patchNotes = [
+		{
+			version: '0.8.2',
+			date: 'Setembro 2025',
+			icon: '✨',
+			color: 'cyan',
+			changes: [
+				'Novo sistema de ranking competitivo',
+				'Adicionadas 5 novas cartas da região Sul',
+				'Melhorias na interface do museu',
+				'Correções de bugs no modo PvP',
+				'Otimizações de performance'
+			]
+		},
+		{
+			version: '0.8.1',
+			date: 'Agosto 2025',
+			icon: '🎮',
+			color: 'green',
+			changes: [
+				'Nova região: Pantanal com 8 cartas exclusivas',
+				'Sistema de conquistas implementado',
+				'Modo tutorial interativo',
+				'Balanceamento de cartas da Amazônia'
+			]
+		},
+		{
+			version: '0.8.0',
+			date: 'Julho 2025',
+			icon: '🚀',
+			color: 'purple',
+			changes: [
+				'Lançamento do modo PvP ranqueado',
+				'Interface completamente redesenhada',
+				'Sistema de coleção aprimorado',
+				'Primeira versão do museu interativo',
+				'Implementação do sistema de moedas'
+			]
+		}
+	];
+
+	const getColorClasses = (color) => {
+		const colors = {
+			cyan: 'border-cyan-500/30 text-cyan-400',
+			green: 'border-green-500/30 text-green-400',
+			purple: 'border-purple-500/30 text-purple-400',
+			orange: 'border-orange-500/30 text-orange-400'
+		};
+		return colors[color] || colors.cyan;
+	};
+
 	return (
 		<main className="min-h-screen bg-gradient-to-b from-[#0a131d] via-[#0b1c2c] to-[#0a131d] text-white">
 			{/* Hero */}
@@ -121,6 +183,143 @@ export default function DivulgarPage() {
 									</div>
 								</div>
 							))}
+						</section>
+
+						{/* Botão Jogar Bem Grande */}
+						<section className="flex justify-center py-16">
+							<a
+								href="/"
+								className="group relative inline-flex items-center justify-center px-16 py-8 text-4xl font-extrabold text-white bg-gradient-to-br from-green-600 via-green-700 to-emerald-800 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105 hover:shadow-green-500/40 border-2 border-green-500/50 backdrop-blur-sm"
+							>
+								{/* Efeito de brilho sutil */}
+								<div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-green-400/20 to-emerald-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+								
+								{/* Conteúdo do botão */}
+								<div className="relative flex items-center gap-4">
+									<span className="text-5xl">🌿</span>
+									<div className="flex flex-col items-start">
+										<span className="text-4xl leading-none">Adentrar</span>
+										<span className="text-2xl text-green-200 font-normal">Ka&apos;aguy</span>
+									</div>
+								</div>
+								
+								{/* Partículas decorativas */}
+								<div className="absolute -inset-2 rounded-3xl opacity-30 bg-gradient-to-r from-green-600/20 to-emerald-600/20 blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+							</a>
+						</section>
+
+						{/* Patch Notes */}
+						<section className="max-w-6xl mx-auto px-6 py-16">
+							<div className="text-center mb-12">
+								<h2 className="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+									📝 Histórico de Atualizações
+								</h2>
+								<p className="text-neutral-300 max-w-2xl mx-auto">
+									Acompanhe todas as novidades e melhorias do Ka&apos;aguy
+								</p>
+							</div>
+							
+							<div className="space-y-8">
+								{patchNotes.map((patch, index) => (
+									<div
+										key={patch.version}
+										className={`bg-black/30 backdrop-blur-sm rounded-2xl p-8 border ${getColorClasses(patch.color).split(' ')[0]}`}
+									>
+										<div className="flex items-center gap-4 mb-6">
+											<div className={`w-14 h-14 bg-gradient-to-br from-${patch.color}-400 to-${patch.color}-600 rounded-xl flex items-center justify-center`}>
+												<span className="text-2xl">{patch.icon}</span>
+											</div>
+											<div>
+												<h3 className={`text-2xl font-bold ${getColorClasses(patch.color).split(' ')[1]}`}>
+													Versão {patch.version}
+												</h3>
+												<p className="text-neutral-400">{patch.date}</p>
+											</div>
+											{index === 0 && (
+												<div className="ml-auto">
+													<span className="bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full text-sm font-semibold">
+														Atual
+													</span>
+												</div>
+											)}
+										</div>
+										
+										<div className="grid md:grid-cols-2 gap-4">
+											{patch.changes.map((change, changeIndex) => (
+												<div key={changeIndex} className="flex items-start gap-3">
+													<span className={`${getColorClasses(patch.color).split(' ')[1]} mt-1`}>•</span>
+													<span className="text-neutral-300">{change}</span>
+												</div>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						</section>
+
+						{/* Seção de Contato */}
+						<section className="max-w-6xl mx-auto px-6 py-16">
+							<div className="text-center mb-12">
+								<h2 className="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
+									💬 Entre em Contato
+								</h2>
+								<p className="text-neutral-300 max-w-2xl mx-auto">
+									Tem sugestões, encontrou bugs ou quer colaborar? Estamos sempre abertos ao diálogo!
+								</p>
+							</div>
+
+							<div className="grid md:grid-cols-3 gap-8">
+								{/* Discord */}
+								<div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-indigo-500/30 text-center">
+									<div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+										<span className="text-3xl">💬</span>
+									</div>
+									<h3 className="text-xl font-bold text-indigo-400 mb-3">Discord</h3>
+									<p className="text-neutral-300 text-sm mb-6">
+										Junte-se à nossa comunidade para discussões, dicas e torneios
+									</p>
+									<a
+										href="#"
+										className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors"
+									>
+										Entrar no Discord
+									</a>
+								</div>
+
+								{/* Email */}
+								<div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-orange-500/30 text-center">
+									<div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+										<span className="text-3xl">📧</span>
+									</div>
+									<h3 className="text-xl font-bold text-orange-400 mb-3">Email</h3>
+									<p className="text-neutral-300 text-sm mb-6">
+										Para parcerias, feedback ou suporte técnico
+									</p>
+									<a
+										href="mailto:contato@kaaguy.com.br"
+										className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl transition-colors"
+									>
+										Enviar Email
+									</a>
+								</div>
+
+								{/* GitHub */}
+								<div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-gray-500/30 text-center">
+									<div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+										<span className="text-3xl">⚙️</span>
+									</div>
+									<h3 className="text-xl font-bold text-gray-400 mb-3">Contribuir</h3>
+									<p className="text-neutral-300 text-sm mb-6">
+										Ka&apos;aguy é open-source! Contribua com código ou reporte bugs
+									</p>
+									<a
+										href="#"
+										className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors"
+									>
+										Ver no GitHub
+									</a>
+								</div>
+							</div>
 						</section>
 
 						{/* Galeria */}
