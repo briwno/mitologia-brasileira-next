@@ -54,4 +54,4 @@ Thumbs.db
 *.log
 
 #schema svg
-/src/app/schema.svg
+/lib/schema.svg
