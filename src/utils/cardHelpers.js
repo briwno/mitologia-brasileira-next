@@ -149,41 +149,6 @@ export async function validateCardCollection(cardIds) {
 }
 
 /**
- * Converte carta do formato do banco para o formato da API legacy
- */
-export function convertCardToLegacyFormat(card) {
-  const firstSkill = card.abilities?.skill1 || {};
-  
-  return {
-    id: card.id,
-    name: card.name,
-    region: card.region,
-    category: card.category,
-    attack: card.attack,
-    defense: card.defense,
-    life: card.health,
-    cost: card.cost,
-    ability: firstSkill.name || null,
-    abilityDescription: firstSkill.description || null,
-    rarity: card.rarity,
-    history: card.lore,
-    element: card.element,
-    image: card.images?.retrato || card.images?.completa || `/images/cards/${card.id}.jpg`,
-    
-    // Campos adicionais do novo formato
-    images: card.images,
-    tags: card.tags,
-    cardType: card.card_type,
-    abilities: card.abilities,
-    unlockCondition: card.unlock_condition,
-    seasonalBonus: card.seasonal_bonus,
-    isStarter: card.is_starter,
-    createdAt: card.created_at,
-    updatedAt: card.updated_at
-  };
-}
-
-/**
  * Obtém estatísticas das cartas
  */
 export async function getCardStats() {

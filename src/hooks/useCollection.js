@@ -14,17 +14,14 @@ export function useCollection() {
 
   const load = useCallback(async () => {
     if (!uid) return;
-    console.log('Loading collection for uid:', uid);
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/collection?uid=${encodeURIComponent(uid)}`);
       const data = await res.json();
-      console.log('Collection API response:', data);
       if (!res.ok) throw new Error(data.error || 'Falha ao carregar coleção');
       setCards(Array.isArray(data.cards) ? data.cards : []);
     } catch (e) {
-      console.error('Collection load error:', e);
       setError(e.message);
     } finally {
       setLoading(false);

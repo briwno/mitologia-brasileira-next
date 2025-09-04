@@ -43,7 +43,7 @@ export async function POST(request) {
       await supabase
         .from('collections')
         .upsert({ player_id: p.id, cards: ['sac001', 'iar001', 'cur001'] }, { onConflict: 'player_id' });
-      const token = `token_${p.id}_${Date.now()}`; // TODO: JWT
+      const token = `token_${p.id}_${Date.now()}`;
       return NextResponse.json({ user: { id: p.id, username: p.name, email: uid, level: p.level, xp: p.xp }, token });
     }
 

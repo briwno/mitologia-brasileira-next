@@ -12,17 +12,14 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get('uid');
-    console.log('Collection GET - uid:', uid);
     if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
 
   const supabase = requireSupabaseAdmin();
   const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-  console.log('Collection GET - found user:', user);
   if (uerr) throw uerr;
   if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
   const { data: row, error } = await supabase.from('collections').select('cards').eq('player_id', user.id).maybeSingle();
-  console.log('Collection GET - found collection:', row);
   if (error && error.code !== 'PGRST116') throw error;
   
   // Converter formato: [{ id: 'cur001' }] -> ['cur001']
@@ -30,7 +27,6 @@ export async function GET(req) {
   if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
     cards = cards.map(c => c.id);
   }
-  console.log('Collection GET - converted cards:', cards);
   
   return NextResponse.json({ cards });
   } catch (e) {
