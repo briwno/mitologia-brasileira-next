@@ -2,55 +2,104 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import LayoutDePagina from '../../components/UI/PageLayout';
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user, isAuthenticated } = useAuth();
 
-  const playerStats = {
-    username: 'CurupiraMain',
-    level: 12,
-    xp: 3750,
-    xpToNext: 1250,
-    rank: 'Ouro III',
-    rankPoints: 1247,
-    joinDate: '15 de Janeiro, 2024',
-    totalGames: 156,
-    wins: 89,
-    losses: 67,
-    winRate: 57,
-    currentStreak: 3,
-    bestStreak: 12,
-    favoriteCard: 'Curupira',
-    totalCardsCollected: 45,
-    totalCardsAvailable: 80,
-    achievements: 18
-  };
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      // Verifica se o usuário está logado
+      if (!isAuthenticated() || !user?.id) {
+        setError('Você precisa estar logado para ver seu perfil');
+        setLoading(false);
+        return;
+      }
 
-  const recentMatches = [
-    { id: 1, opponent: 'SaciPlayer', result: 'win', deck: 'Deck Amazônico', duration: '8:34', date: '2 horas atrás' },
-    { id: 2, opponent: 'IaraQueen', result: 'win', deck: 'Deck Amazônico', duration: '12:15', date: '1 dia atrás' },
-    { id: 3, opponent: 'BoitataKing', result: 'loss', deck: 'Deck Nordestino', duration: '6:22', date: '1 dia atrás' },
-    { id: 4, opponent: 'CucaMaster', result: 'win', deck: 'Deck Amazônico', duration: '15:40', date: '2 dias atrás' },
-    { id: 5, opponent: 'LobisPlayer', result: 'loss', deck: 'Deck Sulista', duration: '9:18', date: '3 dias atrás' }
-  ];
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/profile?playerId=${user.id}`);
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados do perfil');
+        }
 
-  const achievements = [
-    { id: 1, name: 'Primeira Vitória', description: 'Ganhe sua primeira partida', icon: '🏆', completed: true, date: '16 Jan 2024' },
-    { id: 2, name: 'Colecionador', description: 'Colete 50 cartas diferentes', icon: '🃏', completed: false, progress: 45, total: 50 },
-    { id: 3, name: 'Explorador da Amazônia', description: 'Complete todas as lendas amazônicas', icon: '🌳', completed: true, date: '28 Jan 2024' },
-    { id: 4, name: 'Sequência de Vitórias', description: 'Ganhe 5 partidas seguidas', icon: '🔥', completed: true, date: '5 Fev 2024' },
-    { id: 5, name: 'Mestre do Quiz', description: 'Acerte 100 perguntas no modo museu', icon: '🧠', completed: false, progress: 67, total: 100 },
-    { id: 6, name: 'Guerreiro Ranqueado', description: 'Alcance o rank Ouro', icon: '⭐', completed: true, date: '15 Fev 2024' }
-  ];
+        const data = await response.json();
+        setProfileData(data.profile);
+      } catch (err) {
+        console.error('Erro ao buscar dados do perfil:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const favoriteCards = [
-    { name: 'Curupira', category: 'Guardiões', timesPlayed: 89, winRate: 67 },
-    { name: 'Iara', category: 'Águas', timesPlayed: 45, winRate: 72 },
-    { name: 'Saci-Pererê', category: 'Assombrações', timesPlayed: 67, winRate: 55 },
-    { name: 'Boitatá', category: 'Guardiões', timesPlayed: 23, winRate: 78 }
-  ];
+    fetchProfileData();
+  }, [user?.id, isAuthenticated]);
+
+  if (loading) {
+    return (
+      <LayoutDePagina>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+              👤 Perfil do Jogador
+            </h1>
+            <div className="text-xl text-purple-300 mb-8">Carregando dados do perfil...</div>
+            {/* Loading animation */}
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400"></div>
+            </div>
+          </div>
+        </div>
+      </LayoutDePagina>
+    );
+  }
+
+  if (error || !profileData) {
+    return (
+      <LayoutDePagina>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+              👤 Perfil do Jogador
+            </h1>
+            <div className="text-xl text-red-400 mb-4">
+              {error || 'Erro ao carregar dados do perfil'}
+            </div>
+            {error === 'Você precisa estar logado para ver seu perfil' && (
+              <div className="mb-4">
+                <Link
+                  href="/login"
+                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-semibold mr-4"
+                >
+                  Fazer Login
+                </Link>
+              </div>
+            )}
+            <Link
+              href="/"
+              className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold"
+            >
+              ← Voltar ao Menu Principal
+            </Link>
+          </div>
+        </div>
+      </LayoutDePagina>
+    );
+  }
+
+  const playerStats = profileData;
+  const recentMatches = profileData.recentMatches || [];
+  const achievements = profileData.achievementsList || [];
+  const favoriteCards = profileData.favoriteCards || [];
 
   const getWinRateColor = (rate) => {
     if (rate >= 70) return 'text-green-400';
@@ -62,9 +111,72 @@ export default function Profile() {
     <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            👤 Perfil do Jogador
-          </h1>
+          {/* Header com foto e nome do usuário */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative mb-4">
+              {/* Foto do perfil */}
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-600 via-blue-600 to-green-600 rounded-full p-1 shadow-lg">
+                <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
+                  {(user?.avatar_url || playerStats?.avatar_url) ? (
+                    <Image 
+                      src={user?.avatar_url || playerStats?.avatar_url} 
+                      alt={`Avatar de ${playerStats?.username || user?.username}`}
+                      width={88}
+                      height={88}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : (
+                    <Image 
+                      src="/images/avatars/player.jpg"
+                      alt={`Avatar padrão de ${playerStats?.username || user?.username}`}
+                      width={88}
+                      height={88}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Badge de nível */}
+              <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full">
+                Nv. {playerStats?.level || 1}
+              </div>
+            </div>
+            
+            {/* Nome do usuário */}
+            <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+              {playerStats?.username || user?.username || 'Jogador'}
+            </h1>
+            
+            {/* Email e informações adicionais */}
+            {(user?.email || playerStats?.email) && (
+              <p className="text-sm text-gray-400 mb-2">
+                {user?.email || playerStats?.email}
+              </p>
+            )}
+            
+            {/* Rank */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="text-lg font-semibold text-yellow-400">
+                {playerStats?.rank || 'Bronze I'}
+              </span>
+              <span className="text-sm text-gray-400">
+                ({playerStats?.rankPoints || 0} pontos)
+              </span>
+            </div>
+            
+            {/* Botão de editar perfil */}
+            <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm font-semibold">
+              ✏️ Editar Perfil
+            </button>
+          </div>
+          
+          <h2 className="text-2xl font-bold mb-4 text-purple-300">
+            � Perfil do Jogador
+          </h2>
           <p className="text-xl text-purple-300">
             Acompanhe seu progresso e conquistas
           </p>
@@ -73,13 +185,10 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar com informações do jogador */}
           <div className="space-y-6">
-            {/* Card do Jogador */}
+            {/* Card de Progresso */}
             <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-gray-600/30">
+              <h3 className="text-lg font-bold mb-4 text-center text-blue-400">� Progresso</h3>
               <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-b from-green-600 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl">
-                  👤
-                </div>
-                <h2 className="text-2xl font-bold mb-2">{playerStats.username}</h2>
                 <div className="text-sm text-gray-400 mb-4">
                   Membro desde {playerStats.joinDate}
                 </div>
@@ -96,12 +205,20 @@ export default function Profile() {
                       style={{ width: `${(playerStats.xp / (playerStats.xp + playerStats.xpToNext)) * 100}%` }}
                     ></div>
                   </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {playerStats.xpToNext} XP para o próximo nível
+                  </div>
                 </div>
 
-                {/* Rank */}
-                <div className="bg-black/40 p-3 rounded-lg">
-                  <div className="text-yellow-400 font-bold">{playerStats.rank}</div>
-                  <div className="text-sm text-gray-400">{playerStats.rankPoints} pontos</div>
+                {/* Progresso da Coleção */}
+                <div className="bg-black/40 p-4 rounded-lg">
+                  <div className="text-sm font-semibold text-blue-400 mb-2">🃏 Coleção</div>
+                  <div className="text-lg font-bold">
+                    {playerStats.totalCardsCollected}/{playerStats.totalCardsAvailable}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {Math.round((playerStats.totalCardsCollected / playerStats.totalCardsAvailable) * 100)}% completa
+                  </div>
                 </div>
               </div>
             </div>
@@ -229,8 +346,8 @@ export default function Profile() {
                           <div key={index} className="bg-black/30 p-4 rounded border border-gray-600/30">
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className="font-bold">{card.nome || card.name}</div>
-                                <div className="text-sm text-gray-400">{card.categoria || card.category}</div>
+                                <div className="font-bold">{card.name}</div>
+                                <div className="text-sm text-gray-400">{card.category}</div>
                               </div>
                               <div className="text-right">
                                 <div className="text-sm text-gray-400">{card.timesPlayed} jogos</div>

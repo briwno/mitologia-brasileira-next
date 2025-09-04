@@ -101,7 +101,7 @@ export default function ProfileModal({ onClose }) {
               title="Seu Perfil"
               emoji="👤"
               subtitle="Veja suas informações"
-              href="/profile/me"
+              href="/profile"
               imageSrc="/images/backgrounds/perfil-background.jpg"
             />
             <CartaoDeModo

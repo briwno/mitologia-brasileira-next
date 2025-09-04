@@ -31,7 +31,7 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'heart': 'https://img.icons8.com/fluency/48/heart.png',
     
     // Jogo e cartas
-    'cards': 'https://img.icons8.com/fluency/48/playing-cards.png',
+    'cards': 'https://img.icons8.com/?size=100&id=ce72bFahG6vd&format=png&color=000000',
     'shop': 'https://img.icons8.com/fluency/48/shopping-cart.png',
     'magic': 'https://img.icons8.com/fluency/48/magic-wand.png',
     'star': 'https://img.icons8.com/fluency/48/star.png',
