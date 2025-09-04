@@ -41,7 +41,13 @@ function rarityFrame(rarity) {
 
 export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
-	const { cards: ownedIds, loading: loadingCollection } = useCollection();
+	const { cards: ownedIds, loading: loadingCollection, error: collectionError } = useCollection();
+
+	// Debug: vamos ver o que está no user object
+	console.log('User object:', user);
+	console.log('User email/uid:', user?.email || user?.uid);
+	console.log('Collection cards:', ownedIds);
+	console.log('Collection error:', collectionError);
 
 	const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'boosters'
 	const [search, setSearch] = useState('');
@@ -198,6 +204,15 @@ export default function PaginaInventarioDeCartas() {
 
 										{loadingCollection ? (
 											<div className="text-center text-gray-400">Carregando sua coleção...</div>
+										) : collectionError ? (
+											<div className="text-center py-12">
+												<div className="text-red-400 mb-4">Erro ao carregar coleção: {collectionError}</div>
+												<div className="text-sm text-gray-500">
+													User ID: {user?.id || 'N/A'}<br/>
+													User UID: {user?.uid || 'N/A'}<br/>
+													User Email: {user?.email || 'N/A'}
+												</div>
+											</div>
 										) : filteredCards.length === 0 ? (
 											<div className="text-center py-12 text-gray-400">Nenhuma carta encontrada com os filtros atuais.</div>
 										) : (

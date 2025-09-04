@@ -5,23 +5,26 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
 
 export function useCollection() {
-  const { user } = useAuth();
+  const { user, loading: userLoading } = useAuth();
   const [cards, setCards] = useState([]); // array de IDs (ex: ['cur001','iar001'])
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const uid = user?.email || null; // usamos email como uid
+  const uid = user?.email || user?.uid || null; // usamos email ou uid
 
   const load = useCallback(async () => {
     if (!uid) return;
+    console.log('Loading collection for uid:', uid);
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/collection?uid=${encodeURIComponent(uid)}`);
       const data = await res.json();
+      console.log('Collection API response:', data);
       if (!res.ok) throw new Error(data.error || 'Falha ao carregar coleção');
       setCards(Array.isArray(data.cards) ? data.cards : []);
     } catch (e) {
+      console.error('Collection load error:', e);
       setError(e.message);
     } finally {
       setLoading(false);
@@ -84,17 +87,19 @@ export function useCollection() {
 
   // auto-load quando logado
   useEffect(() => {
-    if (uid) load();
-  }, [uid, load]);
+    if (uid && !userLoading) {
+      load();
+    }
+  }, [uid, userLoading, load]);
 
   return {
     cards,
-    loading,
+    loading: loading || userLoading,
     error,
     load,
     setAll,
     addCard,
     removeCard,
-    isReady: !!uid,
+    isReady: !!uid && !userLoading,
   };
 }

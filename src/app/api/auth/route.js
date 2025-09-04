@@ -20,10 +20,18 @@ export async function POST(request) {
       if (!username) return NextResponse.json({ error: 'Username obrigatório' }, { status: 400 });
       if (!password) return NextResponse.json({ error: 'Senha obrigatória' }, { status: 400 });
 
+      // Verificar se email já existe
       const { data: existsByEmail } = await supabase.from('players').select('id').eq('uid', uid).maybeSingle();
       if (existsByEmail) {
         return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
       }
+
+      // Verificar se nome de usuário já existe
+      const { data: existsByName } = await supabase.from('players').select('id').eq('name', username).maybeSingle();
+      if (existsByName) {
+        return NextResponse.json({ error: 'Nome de usuário já está em uso' }, { status: 400 });
+      }
+
       const { data: inserted, error: insErr } = await supabase
         .from('players')
         .insert({ uid, name: username, password, avatar_url: null })
@@ -55,6 +63,17 @@ export async function POST(request) {
     }
   } catch (error) {
     console.error('Auth error:', error);
+    
+    // Tratar erros específicos de constraint
+    if (error.code === '23505') {
+      if (error.message.includes('players_name_key') || error.message.includes('players_name_unique')) {
+        return NextResponse.json({ error: 'Nome de usuário já está em uso' }, { status: 400 });
+      }
+      if (error.message.includes('players_uid_key') || error.message.includes('players_uid_unique')) {
+        return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+      }
+    }
+    
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

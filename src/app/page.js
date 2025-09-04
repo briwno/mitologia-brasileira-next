@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
+import { usePlayerData } from '../hooks/usePlayerData';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import Icon from '@/components/UI/Icon';
@@ -111,6 +112,10 @@ export default function Inicio() {
   
   const authData = useAuth();
   const { user, isAuthenticated, logout } = authData || {};
+  
+  // Use player data hook for enhanced functionality
+  const playerData = usePlayerData();
+  const { currencies, stats, quests, winRate, levelProgress } = playerData;
 
   // Verificação de segurança para auth
   if (!authData) {
@@ -165,11 +170,50 @@ export default function Inicio() {
               />
             </div>
             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/10">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">BR</div>
-            <div className="hidden sm:block">
-              <div className="text-white font-bold text-sm">{user?.username || 'Convidado'}</div>
-              <div className="text-cyan-300 text-xs">{isAuthenticated() ? 'Conectado' : 'Não conectado'}</div>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+              {user?.name?.charAt(0)?.toUpperCase() || 'BR'}
             </div>
+            <div className="hidden sm:block">
+              <div className="text-white font-bold text-sm flex items-center gap-2">
+                {user?.username || user?.name || 'Convidado'}
+                {user?.title && (
+                  <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
+                    {user.title}
+                  </span>
+                )}
+              </div>
+              <div className="text-cyan-300 text-xs flex items-center gap-1">
+                <span>Nível {user?.level || 1}</span>
+                {isAuthenticated() && stats && (
+                  <>
+                    <span>•</span>
+                    <span>{stats.wins}V/{stats.losses}D</span>
+                    <span>•</span>
+                    <span>{winRate}%</span>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* Player Currencies - Only show if authenticated */}
+            {isAuthenticated() && currencies && (
+              <div className="hidden md:flex items-center gap-3 ml-2">
+                <div className="flex items-center gap-1 text-xs">
+                  <Icon name="coins" size={16} className="text-yellow-400" />
+                  <span className="text-yellow-300 font-semibold">{currencies.gold?.toLocaleString() || 0}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <Icon name="gem" size={16} className="text-blue-400" />
+                  <span className="text-blue-300 font-semibold">{currencies.gems?.toLocaleString() || 0}</span>
+                </div>
+                {(currencies.tokens > 0) && (
+                  <div className="flex items-center gap-1 text-xs">
+                    <Icon name="star" size={16} className="text-purple-400" />
+                    <span className="text-purple-300 font-semibold">{currencies.tokens}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           </div>
           <div className="flex items-center gap-2">
@@ -278,8 +322,66 @@ export default function Inicio() {
           </div>
         </div>
 
-  {/* Mobile tab bar moved to GlobalNav */}
-        {/* Modal de Configuração (Home) */}
+        {/* Daily Quests Section - Only show if authenticated and has active quests */}
+        {isAuthenticated() && quests?.active?.length > 0 && (
+          <div className="mx-auto mt-6 max-w-5xl px-6">
+            <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon name="scroll" size={20} className="text-cyan-400" />
+                <h3 className="font-bold text-white">Missões Diárias</h3>
+                <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
+                  {quests.active.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {quests.active.slice(0, 4).map((playerQuest) => {
+                  const quest = playerQuest.quests;
+                  const objective = quest.objectives[0]; // Get first objective
+                  const progress = playerQuest.progress[objective.type] || 0;
+                  const progressPercent = Math.min(100, (progress / objective.target) * 100);
+                  
+                  return (
+                    <div key={quest.id} className="bg-black/30 rounded-lg p-3 border border-white/5">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="font-semibold text-sm text-white">{quest.name}</div>
+                          <div className="text-xs text-gray-300">{quest.description}</div>
+                        </div>
+                        <div className="ml-2 flex items-center gap-1 text-xs">
+                          {quest.rewards.gold && (
+                            <>
+                              <Icon name="coins" size={12} className="text-yellow-400" />
+                              <span className="text-yellow-300">{quest.rewards.gold}</span>
+                            </>
+                          )}
+                          {quest.rewards.xp && (
+                            <>
+                              <span className="text-gray-400 mx-1">•</span>
+                              <span className="text-blue-300">{quest.rewards.xp} XP</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Progresso</span>
+                          <span className="text-white">{progress}/{objective.target}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-cyan-400 h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {mostrarConfigModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarConfigModal(false)}>
             <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative" onClick={(e) => e.stopPropagation()}>
