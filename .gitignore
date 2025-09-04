@@ -52,3 +52,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+#schema svg
+/src/app/schema.svg
