@@ -36,43 +36,16 @@ export default function DivulgarPage() {
 	// Patch notes - fácil de atualizar
 	const patchNotes = [
 		{
-			version: '0.8.2',
+			version: '0.1.0',
 			date: 'Setembro 2025',
 			icon: '✨',
 			color: 'cyan',
 			changes: [
+				'Lançamento inicial do Ka’aguy com modos de jogo básicos',
 				'Novo sistema de ranking competitivo',
-				'Adicionadas 5 novas cartas da região Sul',
-				'Melhorias na interface do museu',
-				'Correções de bugs no modo PvP',
-				'Otimizações de performance'
 			]
 		},
-		{
-			version: '0.8.1',
-			date: 'Agosto 2025',
-			icon: '🎮',
-			color: 'green',
-			changes: [
-				'Nova região: Pantanal com 8 cartas exclusivas',
-				'Sistema de conquistas implementado',
-				'Modo tutorial interativo',
-				'Balanceamento de cartas da Amazônia'
-			]
-		},
-		{
-			version: '0.8.0',
-			date: 'Julho 2025',
-			icon: '🚀',
-			color: 'purple',
-			changes: [
-				'Lançamento do modo PvP ranqueado',
-				'Interface completamente redesenhada',
-				'Sistema de coleção aprimorado',
-				'Primeira versão do museu interativo',
-				'Implementação do sistema de moedas'
-			]
-		}
+		
 	];
 
 	const getColorClasses = (color) => {
