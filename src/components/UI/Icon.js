@@ -60,6 +60,7 @@ const Icon = ({ name, size = 24, className = '' }) => {
     // Redes sociais
     'twitter': 'https://img.icons8.com/fluency/48/twitter.png',
     'whatsapp': 'https://img.icons8.com/fluency/48/whatsapp.png',
+    'instagram': 'https://img.icons8.com/fluency/48/instagram-new.png',
     'share': 'https://img.icons8.com/fluency/48/share.png',
     'link': 'https://img.icons8.com/fluency/48/link.png',
   };
