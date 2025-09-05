@@ -10,7 +10,7 @@
  */
 
 import Image from "next/image";
-import Icon from '@/components/UI/Icon';
+import Icon from "@/components/UI/Icon";
 
 export const metadata = {
   title: "Ka’aguy — Descubra e Compartilhe",
@@ -41,9 +41,7 @@ export default function DivulgarPage() {
       date: "Setembro 2025",
       icon: "✨",
       color: "cyan",
-      changes: [
-        "Em Alfa", "Projeto inicial do Ka’aguy",
-      ],
+      changes: ["Em Alfa", "Projeto inicial do Ka’aguy"],
     },
   ];
 
@@ -328,27 +326,40 @@ export default function DivulgarPage() {
                   <span className="text-4xl">👨‍💻</span>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-purple-400 mb-2">Bruno Alves</h3>
-              <p className="text-sm text-gray-400">Desenvolvedor Em Aprendizado</p>
+              <h3 className="text-xl font-bold text-purple-400 mb-2">
+                Bruno Alves
+              </h3>
+              <p className="text-sm text-gray-400">
+                Desenvolvedor Em Aprendizado
+              </p>
             </div>
 
             {/* Informações sobre o projeto */}
             <div className="md:col-span-2">
-              <h4 className="text-lg font-bold text-white mb-4">Um projeto solo apaixonado</h4>
+              <h4 className="text-lg font-bold text-white mb-4">
+                Um projeto solo apaixonado
+              </h4>
               <p className="text-neutral-300 leading-relaxed mb-4">
-                O Ka&apos;aguy é desenvolvido inteiramente por mim, Bruno, como um projeto educacional da faculdade
-                para celebrar a rica mitologia brasileira através de um jogo de cartas moderno e acessível.
+                O Ka&apos;aguy é desenvolvido inteiramente por mim, Bruno, como
+                um projeto educacional da faculdade para celebrar a rica
+                mitologia brasileira através de um jogo de cartas moderno e
+                acessível.
               </p>
-              
+
               <div className="grid md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-black/40 p-4 rounded-lg">
-                  <h5 className="text-purple-400 font-semibold mb-2">🎯 Objetivo do projeto</h5>
+                  <h5 className="text-purple-400 font-semibold mb-2">
+                    🎯 Objetivo do projeto
+                  </h5>
                   <p className="text-sm text-neutral-300">
-                    Criar um jogo que valorize nossa cultura folclórica de forma divertida e educativa
+                    Criar um jogo que valorize nossa cultura folclórica de forma
+                    divertida e educativa
                   </p>
                 </div>
                 <div className="bg-black/40 p-4 rounded-lg">
-                  <h5 className="text-purple-400 font-semibold mb-2">⚡ Stack do projeto</h5>
+                  <h5 className="text-purple-400 font-semibold mb-2">
+                    ⚡ Stack do projeto
+                  </h5>
                   <p className="text-sm text-neutral-300">
                     Next.js, Supabase, TailwindCSS, JavaScript
                   </p>
@@ -363,14 +374,6 @@ export default function DivulgarPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
                 >
                   <span>🐙</span> GitHub
-                </a>
-                <a
-                  href="https://www.linkedin.com/in/bruno-bezerra-dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition-colors"
-                >
-                  <span>💼</span> LinkedIn
                 </a>
               </div>
             </div>
@@ -389,15 +392,17 @@ export default function DivulgarPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Formulário de Email - Card Maior */}
-          <div className="md:col-span-2 bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-orange-500/30">
-            <div className="flex items-center gap-4 mb-6">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Formulário de Email */}
+          <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 border border-orange-500/30">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-600 rounded-2xl flex items-center justify-center">
                 <span className="text-3xl">📧</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-orange-400">Entre em Contato</h3>
+                <h3 className="text-2xl font-bold text-orange-400">
+                  Entre em Contato
+                </h3>
                 <p className="text-neutral-300">
                   Envie sua mensagem, sugestão ou reporte de bug
                 </p>
@@ -405,9 +410,12 @@ export default function DivulgarPage() {
             </div>
 
             <form className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-neutral-300 mb-2">
+                  <label
+                    htmlFor="nome"
+                    className="block text-sm font-medium text-neutral-300 mb-2"
+                  >
                     Nome
                   </label>
                   <input
@@ -420,7 +428,10 @@ export default function DivulgarPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-neutral-300 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-neutral-300 mb-2"
+                  >
                     Email
                   </label>
                   <input
@@ -433,9 +444,12 @@ export default function DivulgarPage() {
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label htmlFor="assunto" className="block text-sm font-medium text-neutral-300 mb-2">
+                <label
+                  htmlFor="assunto"
+                  className="block text-sm font-medium text-neutral-300 mb-2"
+                >
                   Assunto
                 </label>
                 <select
@@ -454,13 +468,16 @@ export default function DivulgarPage() {
               </div>
 
               <div>
-                <label htmlFor="mensagem" className="block text-sm font-medium text-neutral-300 mb-2">
+                <label
+                  htmlFor="mensagem"
+                  className="block text-sm font-medium text-neutral-300 mb-2"
+                >
                   Mensagem
                 </label>
                 <textarea
                   id="mensagem"
                   name="mensagem"
-                  rows={5}
+                  rows={6}
                   className="w-full px-4 py-3 bg-black/40 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors resize-none"
                   placeholder="Escreva sua mensagem aqui..."
                   required
@@ -469,31 +486,37 @@ export default function DivulgarPage() {
 
               <button
                 type="submit"
-                className="w-full px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-lg"
+                className="w-full px-6 py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-lg"
               >
                 📨 Enviar Mensagem
               </button>
             </form>
           </div>
 
-          {/* GitHub - Card Expandido */}
-          <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-gray-500/30">
-            <div className="text-center mb-6">
+          {/* GitHub - Card de Contribuição */}
+          <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-500/30">
+            <div className="text-center mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">⚙️</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-400 mb-2">Contribuir</h3>
+              <h3 className="text-xl font-bold text-gray-400 mb-2">
+                Contribuir
+              </h3>
               <p className="text-neutral-300 text-sm">
                 Ka&apos;aguy é open-source! Ajude no desenvolvimento
               </p>
             </div>
 
             {/* Estatísticas do Projeto */}
-            <div className="space-y-4 mb-6">
+            <div className="space-y-3 mb-4">
               <div className="bg-black/40 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">📊 Linguagem Principal</span>
-                  <span className="text-yellow-400 font-semibold">JavaScript</span>
+                  <span className="text-gray-400 text-sm">
+                    📊 Linguagem Principal
+                  </span>
+                  <span className="text-yellow-400 font-semibold">
+                    JavaScript
+                  </span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-gray-400 text-sm">🚀 Framework</span>
@@ -501,12 +524,16 @@ export default function DivulgarPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400 text-sm">📦 Estado</span>
-                  <span className="text-green-400 font-semibold">Em Desenvolvimento</span>
+                  <span className="text-green-400 font-semibold">
+                    Em Desenvolvimento
+                  </span>
                 </div>
               </div>
 
               <div className="bg-black/40 p-4 rounded-lg">
-                <h4 className="text-gray-300 font-semibold mb-3">🛠️ Como Contribuir:</h4>
+                <h4 className="text-gray-300 font-semibold mb-3">
+                  🛠️ Como Contribuir:
+                </h4>
                 <ul className="space-y-2 text-sm text-neutral-300">
                   <li className="flex items-start gap-2">
                     <span className="text-green-400">•</span>
@@ -518,11 +545,7 @@ export default function DivulgarPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-400">•</span>
-                    <span>Melhore a documentação</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400">•</span>
-                    <span>Contribua com código</span>
+                    <span>Envie pull requests com melhorias</span>
                   </li>
                 </ul>
               </div>
@@ -545,14 +568,6 @@ export default function DivulgarPage() {
                 className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors"
               >
                 <span>🐛</span> Reportar Bug
-              </a>
-              <a
-                href="https://github.com/briwno/mitologia-brasileira-next/fork"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-700 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors"
-              >
-                <span>🍴</span> Fork & Contribuir
               </a>
             </div>
           </div>
