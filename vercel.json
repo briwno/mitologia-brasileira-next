@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source": "/((?!divulgar|_next|static).*)",
+      "source": "/((?!divulgar|_next|static|public).*)",
       "destination": "/divulgar",
       "permanent": false
     }
