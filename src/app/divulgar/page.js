@@ -3,7 +3,25 @@
 
 /**
  * COMO ATUALIZAR PATCH NOTES:
- * 1. Adicione uma nova entrada no início do array 'patchNotes'
+ * 1. Adicione uma               <Image
+                <Image
+                src="/images/cards/portraits/mula.jpg"
+                alt=""
+                fill
+                aria-hidden
+                className="object-cover blur-sm scale-110 opacity-40"
+              />
+              <Image
+                src="/images/cards/portraits/mula.jpg"
+                alt="Ka'aguy — Mula Sem Cabeça"    src="/images/cards/portraits/curupira.jpg"
+                alt=""
+                fill
+                aria-hidden
+                className="object-cover blur-sm scale-110 opacity-40"
+              />
+              <Image
+                src="/images/cards/portraits/curupira.jpg"
+                alt="Ka'aguy — Curupira"da no início do array 'patchNotes'
  * 2. Use o formato: { version, date, icon, color, changes: [] }
  * 3. Cores disponíveis: 'cyan', 'green', 'purple', 'orange'
  * 4. A primeira entrada sempre terá a badge "Atual"
@@ -142,14 +160,14 @@ export default function DivulgarPage() {
             </div>
             <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
               <Image
-                src="/images/cards/portraits/curupira.jpg"
+                src="/images/cards/portraits/boto.jpg"
                 alt=""
                 fill
                 aria-hidden
                 className="object-cover blur-sm scale-110 opacity-40"
               />
               <Image
-                src="/images/cards/portraits/curupira.jpg"
+                src="/images/cards/portraits/boto.jpg"
                 alt="Ka’aguy — Curupira"
                 fill
                 className="object-contain"
@@ -183,12 +201,12 @@ export default function DivulgarPage() {
           {
             title: "Batalhas Rápidas",
             desc: "Partidas de turno com habilidades e campos que mudam o ritmo.",
-            img: "/images/banners/menubatalha.png",
+            img: "/images/banners/menuranking.png",
           },
           {
             title: "Explore Regiões",
             desc: "Amazônia, Pantanal, Sertão e mais — cada uma com sua própria identidade.",
-            img: "/images/banners/menumuseu.png",
+            img: "/images/banners/menuperfil.png",
           },
         ].map((f) => (
           <div
@@ -580,9 +598,9 @@ export default function DivulgarPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             "/images/banners/menubatalha.png",
-            "/images/banners/menuranking.png",
+            "/images/cards/portraits/boto.jpg",
             "/images/banners/menumuseu.png",
-            "/images/banners/menuperfil.png",
+            "/images/cards/portraits/tupa.png",
             "/images/cards/portraits/encourado.jpg",
             "/images/cards/portraits/cuca.jpg",
           ].map((src, i) => (
