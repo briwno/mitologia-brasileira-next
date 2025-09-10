@@ -5,7 +5,16 @@ import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
-import { bancoDeCartas, RARIDADES_CARTAS, REGIOES, CATEGORIAS_CARTAS } from '@/data/cardsDatabase';
+import { RARIDADES_CARTAS } from '@/data/cardsDatabase';
+
+// Mapas de tradução (API -> PT-BR)
+const MAP_RARITY = { EPIC: 'Épico', LEGENDARY: 'Lendário', MYTHIC: 'Mítico' };
+const MAP_REGION = { AMAZONIA: 'Amazônia', NORTHEAST: 'Nordeste', SOUTHEAST: 'Sudeste', SOUTH: 'Sul', MIDWEST: 'Centro-Oeste', NATIONAL: 'Nacional' };
+const MAP_CATEGORY = { GUARDIANS: 'Guardiões da Floresta', SPIRITS: 'Espíritos das Águas', HAUNTS: 'Assombrações', PROTECTORS: 'Protetores Humanos', MYSTICAL: 'Entidades Místicas' };
+const MAP_ELEMENT = { EARTH: 'Terra', WATER: 'Água', FIRE: 'Fogo', AIR: 'Ar', SPIRIT: 'Espírito' };
+const MAP_SEASON = { CARNIVAL: 'Carnaval', SAO_JOAO: 'São João', FESTA_JUNINA: 'Festa Junina', CHRISTMAS: 'Natal' };
+const translate = (val, map) => map?.[val] || val;
+const formatEnumLabel = (val) => (typeof val === 'string' ? val.toLowerCase().split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ') : val);
 import CardDetail from '@/components/Card/CardDetail';
 import CardImage from '@/components/Card/CardImage';
 
@@ -79,17 +88,69 @@ export default function PaginaInventarioDeCartas() {
 		window.location.href = '/shop';
 	};
 
-	// Mapear coleção real
-	const byId = useMemo(() => new Map(bancoDeCartas.map(c => [c.id, c])), []);
+	// Carregar cartas via API
+	const [allCards, setAllCards] = useState([]);
+	const [loadingCards, setLoadingCards] = useState(true);
+	const [cardsError, setCardsError] = useState(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				setLoadingCards(true);
+				const res = await fetch('/api/cards');
+				if (!res.ok) throw new Error('Falha ao carregar cartas');
+				const data = await res.json();
+								const mapped = (data.cards || []).map(c => {
+									const sb = c.seasonalBonus || c.seasonal_bonus;
+									const seasonKey = sb?.season || sb?.estacao;
+									const bonusSazonal = sb ? {
+										estacao: translate(seasonKey, MAP_SEASON) || formatEnumLabel(seasonKey),
+										descricao: sb.description || sb.descricao || sb.text || '',
+										multiplicador: sb.multiplier || sb.multiplicador || sb.bonus || null
+									} : null;
+									return {
+							id: c.id,
+							nome: c.name,
+							regiao: translate(c.region, MAP_REGION),
+							categoria: translate(c.category, MAP_CATEGORY),
+							ataque: c.attack,
+							defesa: c.defense,
+							vida: c.life,
+							custo: c.cost,
+							raridade: translate(c.rarity, MAP_RARITY),
+							historia: c.history,
+							elemento: translate(c.element, MAP_ELEMENT),
+							imagem: c.image,
+							imagens: c.images,
+							tags: c.tags,
+							tipo: c.cardType,
+							habilidades: c.abilities || {},
+							condicaoDesbloqueio: c.unlockCondition,
+									bonusSazonal,
+							  // descoberta removido: controle agora unicamente por posse no banco
+								};});
+				if (!cancelled) setAllCards(mapped);
+			} catch (e) {
+				if (!cancelled) setCardsError(e.message);
+			} finally {
+				if (!cancelled) setLoadingCards(false);
+			}
+		})();
+		return () => { cancelled = true; };
+	}, []);
+
+	// Mapear coleção real a partir dos IDs possuídos
+	const byId = useMemo(() => new Map(allCards.map(c => [c.id, c])), [allCards]);
 	const ownedCards = useMemo(() => {
 		if (!isAuthenticated() || !ownedIds?.length) return [];
 		return ownedIds.map(id => byId.get(id)).filter(Boolean);
 	}, [ownedIds, isAuthenticated, byId]);
 
-	// Filtros derivados
-	const allRegions = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.regiao).filter(Boolean)))], []);
-	const allCategories = useMemo(() => ['all', ...Array.from(new Set(bancoDeCartas.map(c => c.categoria).filter(Boolean)))], []);
-	const allRarities = useMemo(() => ['all', RARIDADES_CARTAS.EPIC, RARIDADES_CARTAS.LEGENDARY, RARIDADES_CARTAS.MYTHIC], []);
+	// Filtros derivados dinamicamente das cartas carregadas
+	const allRegions = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.regiao).filter(Boolean)))], [allCards]);
+	const allCategories = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.categoria).filter(Boolean)))], [allCards]);
+	const allRarities = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.raridade).filter(Boolean)))], [allCards]);
 
 	const filteredCards = useMemo(() => {
 		const pool = ownedCards;
@@ -103,7 +164,7 @@ export default function PaginaInventarioDeCartas() {
 		});
 	}, [ownedCards, region, category, rarity, search]);
 
-	const totalAvailable = useMemo(() => bancoDeCartas.length, []);
+	const totalAvailable = allCards.length;
 	const totalOwned = ownedCards.length;
 
 	const [selectedCard, setSelectedCard] = useState(null);
@@ -196,8 +257,10 @@ export default function PaginaInventarioDeCartas() {
 											</select>
 										</div>
 
-										{loadingCollection ? (
-											<div className="text-center text-gray-400">Carregando sua coleção...</div>
+										{(loadingCards || loadingCollection) ? (
+											<div className="text-center text-gray-400">Carregando cartas e coleção...</div>
+										) : (cardsError) ? (
+											<div className="text-center py-12 text-red-400">Erro ao carregar cartas: {cardsError}</div>
 										) : collectionError ? (
 											<div className="text-center py-12">
 												<div className="text-red-400 mb-4">Erro ao carregar coleção: {collectionError}</div>

@@ -42,9 +42,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
   <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-gray-600/30 w-full max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto">
       {/* Header com botão de fechar */}
       <div className="flex justify-between items-start mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white pr-2">
-          {card.descoberta ? card.nome : '???'}
-        </h2>
+  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white pr-2">{card.nome}</h2>
         {onClose && (
           <button
             onClick={onClose}
@@ -55,7 +53,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
         )}
       </div>
 
-  {card.descoberta ? (
+  {true ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Coluna Esquerda: Habilidades */}
           <aside className="order-2 lg:order-1 lg:col-span-3 space-y-3">
@@ -256,15 +254,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
             )}
           </aside>
         </div>
-      ) : (
-        <div className="text-center text-gray-500 py-8">
-          <div className="text-4xl mb-4">🔒</div>
-          <div className="font-semibold mb-2">Carta Não Descoberta</div>
-          <div className="text-sm">
-            Complete desafios no museu ou encontre em batalhas para desbloquear esta carta.
-          </div>
-        </div>
-      )}
+  ) : null}
     </div>
   );
 }

@@ -1,275 +1,255 @@
--- Enhanced schema for Ka'aguy Card Game
--- Note: enable Realtime on public.matches
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
 
-create table if not exists public.players (
-  id bigserial primary key,
-  uid text unique not null,
-  name text not null unique,
-  email text,
-  password text,
-  avatar_url text,
-  mmr integer default 1000,
-  level integer default 1,
-  xp integer default 0,
-  title text default 'Novato',
-  banned boolean default false,
-  last_login_at timestamptz,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+CREATE TABLE public.achievements (
+  id text NOT NULL,
+  name text NOT NULL,
+  description text NOT NULL,
+  icon text,
+  category text NOT NULL,
+  rarity text NOT NULL,
+  criteria jsonb NOT NULL,
+  rewards jsonb DEFAULT '{}'::jsonb,
+  is_hidden boolean DEFAULT false,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT achievements_pkey PRIMARY KEY (id)
 );
-
--- username must be unique for login by username
-create unique index if not exists players_name_unique on public.players(name);
-
-create table if not exists public.collections (
-  player_id bigint primary key references public.players(id) on delete cascade,
-  cards jsonb not null default '[]'::jsonb,
-  updated_at timestamptz default now()
-);
-create index if not exists collections_player_id_idx on public.collections(player_id);
-
-create table if not exists public.decks (
-  id bigserial primary key,
-  owner_id bigint not null references public.players(id) on delete cascade,
-  name text not null,
-  cards jsonb not null,
-  is_active boolean default false,
-  format text default 'standard',
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-create index if not exists decks_owner_id_idx on public.decks(owner_id);
-
-create table if not exists public.matches (
-  id bigserial primary key,
-  room_id text unique not null,
-  player_a_id bigint not null references public.players(id) on delete cascade,
-  player_b_id bigint not null references public.players(id) on delete cascade,
-  winner_id bigint references public.players(id),
-  match_type text not null default 'casual',
-  status text not null default 'active',
-  version integer not null default 0,
-  state jsonb not null,
-  snapshot jsonb,
-  duration_seconds integer,
-  started_at timestamptz default now(),
-  finished_at timestamptz
-);
-create index if not exists matches_room_id_idx on public.matches(room_id);
-create index if not exists matches_status_idx on public.matches(status);
-
--- Recommended RLS policies (adjust as needed)
-alter table public.players enable row level security;
-create policy players_read on public.players for select using (true);
-create policy players_write on public.players for update using (true);
-create policy players_insert on public.players for insert with check (true);
-
-alter table public.collections enable row level security;
-create policy collections_read on public.collections for select using (true);
-create policy collections_write on public.collections for insert with check (true);
-create policy collections_update on public.collections for update using (true);
-
-alter table public.decks enable row level security;
-create policy decks_read on public.decks for select using (true);
-create policy decks_write on public.decks for insert with check (true);
-create policy decks_update on public.decks for update using (true);
-create policy decks_delete on public.decks for delete using (true);
-
-alter table public.matches enable row level security;
-create policy matches_read on public.matches for select using (true);
-create policy matches_write on public.matches for insert with check (true);
-create policy matches_update on public.matches for update using (true);
-
--- ============================================================================
--- NEW TABLES FOR COMPLETE GAME SYSTEM
--- ============================================================================
-
--- Master cards catalog
-create table if not exists public.cards (
-  id text primary key,
-  name text not null,
-  region text not null,
-  category text not null,
-  card_type text not null,
-  cost integer not null,
+CREATE TABLE public.cards (
+  id text NOT NULL,
+  name text NOT NULL,
+  region text NOT NULL,
+  category text NOT NULL,
+  card_type text NOT NULL,
+  cost integer NOT NULL,
   attack integer,
   defense integer,
   health integer,
-  rarity text not null,
+  rarity text NOT NULL,
   element text,
-  abilities jsonb not null default '{}'::jsonb,
+  abilities jsonb NOT NULL DEFAULT '{}'::jsonb,
   lore text,
-  discovered boolean default false,
-  images jsonb not null default '{}'::jsonb,
-  tags text[] default array[]::text[],
+  images jsonb NOT NULL DEFAULT '{}'::jsonb,
+  tags ARRAY DEFAULT ARRAY[]::text[],
   unlock_condition text,
   seasonal_bonus jsonb,
-  is_starter boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  is_starter boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT cards_pkey PRIMARY KEY (id)
 );
-
--- Player economy
-create table if not exists public.player_currencies (
-  player_id bigint primary key references public.players(id) on delete cascade,
-  gold integer default 1000,
-  gems integer default 0,
-  dust integer default 0,
-  tokens integer default 0,
-  updated_at timestamptz default now()
+CREATE TABLE public.collections (
+  player_id bigint NOT NULL,
+  cards jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT collections_pkey PRIMARY KEY (player_id),
+  CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
-
--- Transaction history
-create table if not exists public.transactions (
-  id bigserial primary key,
-  player_id bigint not null references public.players(id) on delete cascade,
-  transaction_type text not null,
-  currency_type text not null,
-  amount integer not null,
-  reason text not null,
-  metadata jsonb default '{}'::jsonb,
-  created_at timestamptz default now()
+CREATE TABLE public.contos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  slug text NOT NULL UNIQUE,
+  card_id text,
+  author_id bigint,
+  titulo text NOT NULL,
+  subtitulo text,
+  resumo text,
+  corpo text NOT NULL,
+  regiao text,
+  categoria text,
+  tags ARRAY DEFAULT ARRAY[]::text[],
+  tema text,
+  fonte text,
+  fonte_url text,
+  imagem_capa text,
+  estimated_read_time integer,
+  versao integer DEFAULT 1,
+  is_active boolean DEFAULT true,
+  is_featured boolean DEFAULT false,
+  published_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT contos_pkey PRIMARY KEY (id),
+  CONSTRAINT contos_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
+  CONSTRAINT contos_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.players(id)
 );
-
--- Player statistics
-create table if not exists public.player_stats (
-  player_id bigint primary key references public.players(id) on delete cascade,
-  total_matches integer default 0,
-  wins integer default 0,
-  losses integer default 0,
-  draws integer default 0,
-  ranked_matches integer default 0,
-  ranked_wins integer default 0,
-  win_streak integer default 0,
-  best_win_streak integer default 0,
-  total_damage_dealt bigint default 0,
-  total_damage_taken bigint default 0,
-  favorite_card_id text,
-  most_used_cards jsonb default '{}'::jsonb,
-  achievements_unlocked text[] default array[]::text[],
-  last_match_at timestamptz,
-  updated_at timestamptz default now()
+CREATE TABLE public.contos_cards (
+  conto_id bigint NOT NULL,
+  card_id text NOT NULL,
+  rel_type text DEFAULT 'mention'::text,
+  CONSTRAINT contos_cards_pkey PRIMARY KEY (conto_id, card_id),
+  CONSTRAINT contos_cards_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
+  CONSTRAINT contos_cards_conto_id_fkey FOREIGN KEY (conto_id) REFERENCES public.contos(id)
 );
-
--- Achievements
-create table if not exists public.achievements (
-  id text primary key,
-  name text not null,
-  description text not null,
-  icon text,
-  category text not null,
-  rarity text not null,
-  criteria jsonb not null,
-  rewards jsonb default '{}'::jsonb,
-  is_hidden boolean default false,
-  is_active boolean default true,
-  created_at timestamptz default now()
+CREATE TABLE public.decks (
+  id bigint NOT NULL DEFAULT nextval('decks_id_seq'::regclass),
+  owner_id bigint NOT NULL,
+  name text NOT NULL,
+  cards jsonb NOT NULL,
+  is_active boolean DEFAULT false,
+  format text DEFAULT 'standard'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT decks_pkey PRIMARY KEY (id),
+  CONSTRAINT decks_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.players(id)
 );
-
-create table if not exists public.player_achievements (
-  player_id bigint not null references public.players(id) on delete cascade,
-  achievement_id text not null references public.achievements(id) on delete cascade,
-  unlocked_at timestamptz default now(),
-  progress jsonb default '{}'::jsonb,
-  primary key (player_id, achievement_id)
+CREATE TABLE public.friendships (
+  id bigint NOT NULL DEFAULT nextval('friendships_id_seq'::regclass),
+  requester_id bigint NOT NULL,
+  addressee_id bigint NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT friendships_pkey PRIMARY KEY (id),
+  CONSTRAINT friendships_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES public.players(id),
+  CONSTRAINT friendships_addressee_id_fkey FOREIGN KEY (addressee_id) REFERENCES public.players(id)
 );
-
--- Quests system
-create table if not exists public.quests (
-  id text primary key,
-  name text not null,
-  description text not null,
-  quest_type text not null,
-  category text not null,
-  objectives jsonb not null,
-  rewards jsonb not null,
-  duration_hours integer default 24,
-  requirements jsonb default '{}'::jsonb,
-  is_active boolean default true,
-  created_at timestamptz default now()
-);
-
-create table if not exists public.player_quests (
-  player_id bigint not null references public.players(id) on delete cascade,
-  quest_id text not null references public.quests(id) on delete cascade,
-  assigned_at timestamptz default now(),
-  progress jsonb default '{}'::jsonb,
-  completed_at timestamptz,
-  claimed_at timestamptz,
-  expires_at timestamptz,
-  primary key (player_id, quest_id)
-);
-
--- Match history
-create table if not exists public.match_history (
-  id bigserial primary key,
-  match_id bigint not null references public.matches(id) on delete cascade,
-  player_id bigint not null references public.players(id) on delete cascade,
-  opponent_id bigint not null references public.players(id) on delete cascade,
-  deck_used jsonb not null,
-  result text not null,
-  mmr_before integer not null,
-  mmr_after integer not null,
-  mmr_change integer not null,
+CREATE TABLE public.match_history (
+  id bigint NOT NULL DEFAULT nextval('match_history_id_seq'::regclass),
+  match_id bigint NOT NULL,
+  player_id bigint NOT NULL,
+  opponent_id bigint NOT NULL,
+  deck_used jsonb NOT NULL,
+  result text NOT NULL,
+  mmr_before integer NOT NULL,
+  mmr_after integer NOT NULL,
+  mmr_change integer NOT NULL,
   duration_seconds integer,
-  cards_played text[] default array[]::text[],
-  damage_dealt integer default 0,
-  damage_taken integer default 0,
-  turns_taken integer default 0,
-  special_achievements text[] default array[]::text[],
+  cards_played ARRAY DEFAULT ARRAY[]::text[],
+  damage_dealt integer DEFAULT 0,
+  damage_taken integer DEFAULT 0,
+  turns_taken integer DEFAULT 0,
+  special_achievements ARRAY DEFAULT ARRAY[]::text[],
   replay_data jsonb,
-  created_at timestamptz default now()
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT match_history_pkey PRIMARY KEY (id),
+  CONSTRAINT match_history_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT match_history_opponent_id_fkey FOREIGN KEY (opponent_id) REFERENCES public.players(id),
+  CONSTRAINT match_history_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
-
--- Social system
-create table if not exists public.friendships (
-  id bigserial primary key,
-  requester_id bigint not null references public.players(id) on delete cascade,
-  addressee_id bigint not null references public.players(id) on delete cascade,
-  status text not null default 'pending',
-  created_at timestamptz default now(),
-  updated_at timestamptz default now(),
-  unique(requester_id, addressee_id),
-  check (requester_id != addressee_id)
+CREATE TABLE public.matches (
+  id bigint NOT NULL DEFAULT nextval('matches_id_seq'::regclass),
+  room_id text NOT NULL UNIQUE,
+  player_a_id bigint NOT NULL,
+  player_b_id bigint NOT NULL,
+  winner_id bigint,
+  match_type text NOT NULL DEFAULT 'casual'::text,
+  status text NOT NULL DEFAULT 'active'::text,
+  version integer NOT NULL DEFAULT 0,
+  state jsonb NOT NULL,
+  snapshot jsonb,
+  duration_seconds integer,
+  started_at timestamp with time zone DEFAULT now(),
+  finished_at timestamp with time zone,
+  CONSTRAINT matches_pkey PRIMARY KEY (id),
+  CONSTRAINT matches_player_a_id_fkey FOREIGN KEY (player_a_id) REFERENCES public.players(id),
+  CONSTRAINT matches_player_b_id_fkey FOREIGN KEY (player_b_id) REFERENCES public.players(id),
+  CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id)
 );
-
--- Seasons
-create table if not exists public.seasons (
-  id bigserial primary key,
-  name text not null,
+CREATE TABLE public.player_achievements (
+  player_id bigint NOT NULL,
+  achievement_id text NOT NULL,
+  unlocked_at timestamp with time zone DEFAULT now(),
+  progress jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT player_achievements_pkey PRIMARY KEY (player_id, achievement_id),
+  CONSTRAINT player_achievements_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT player_achievements_achievement_id_fkey FOREIGN KEY (achievement_id) REFERENCES public.achievements(id)
+);
+CREATE TABLE public.player_currencies (
+  player_id bigint NOT NULL,
+  gold integer DEFAULT 1000,
+  gems integer DEFAULT 0,
+  dust integer DEFAULT 0,
+  tokens integer DEFAULT 0,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT player_currencies_pkey PRIMARY KEY (player_id),
+  CONSTRAINT player_currencies_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.player_quests (
+  player_id bigint NOT NULL,
+  quest_id text NOT NULL,
+  assigned_at timestamp with time zone DEFAULT now(),
+  progress jsonb DEFAULT '{}'::jsonb,
+  completed_at timestamp with time zone,
+  claimed_at timestamp with time zone,
+  expires_at timestamp with time zone,
+  CONSTRAINT player_quests_pkey PRIMARY KEY (player_id, quest_id),
+  CONSTRAINT player_quests_quest_id_fkey FOREIGN KEY (quest_id) REFERENCES public.quests(id),
+  CONSTRAINT player_quests_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.player_stats (
+  player_id bigint NOT NULL,
+  total_matches integer DEFAULT 0,
+  wins integer DEFAULT 0,
+  losses integer DEFAULT 0,
+  draws integer DEFAULT 0,
+  ranked_matches integer DEFAULT 0,
+  ranked_wins integer DEFAULT 0,
+  win_streak integer DEFAULT 0,
+  best_win_streak integer DEFAULT 0,
+  total_damage_dealt bigint DEFAULT 0,
+  total_damage_taken bigint DEFAULT 0,
+  favorite_card_id text,
+  most_used_cards jsonb DEFAULT '{}'::jsonb,
+  achievements_unlocked ARRAY DEFAULT ARRAY[]::text[],
+  last_match_at timestamp with time zone,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT player_stats_pkey PRIMARY KEY (player_id),
+  CONSTRAINT player_stats_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.players (
+  id bigint NOT NULL DEFAULT nextval('players_id_seq'::regclass),
+  uid text NOT NULL UNIQUE,
+  name text NOT NULL UNIQUE,
+  email text,
+  password text,
+  avatar_url text,
+  mmr integer DEFAULT 1000,
+  level integer DEFAULT 1,
+  xp integer DEFAULT 0,
+  title text DEFAULT 'Novato'::text,
+  banned boolean DEFAULT false,
+  last_login_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT players_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.quests (
+  id text NOT NULL,
+  name text NOT NULL,
+  description text NOT NULL,
+  quest_type text NOT NULL,
+  category text NOT NULL,
+  objectives jsonb NOT NULL,
+  rewards jsonb NOT NULL,
+  duration_hours integer DEFAULT 24,
+  requirements jsonb DEFAULT '{}'::jsonb,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT quests_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.seasons (
+  id bigint NOT NULL DEFAULT nextval('seasons_id_seq'::regclass),
+  name text NOT NULL,
   description text,
-  start_date timestamptz not null,
-  end_date timestamptz not null,
+  start_date timestamp with time zone NOT NULL,
+  end_date timestamp with time zone NOT NULL,
   theme text,
-  rewards jsonb default '{}'::jsonb,
-  special_rules jsonb default '{}'::jsonb,
-  is_active boolean default false,
-  created_at timestamptz default now()
+  rewards jsonb DEFAULT '{}'::jsonb,
+  special_rules jsonb DEFAULT '{}'::jsonb,
+  is_active boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT seasons_pkey PRIMARY KEY (id)
 );
-
--- Performance indexes
-create index if not exists cards_region_idx on public.cards(region);
-create index if not exists cards_rarity_idx on public.cards(rarity);
-create index if not exists cards_discovered_idx on public.cards(discovered);
-create index if not exists transactions_player_id_idx on public.transactions(player_id);
-create index if not exists match_history_player_id_idx on public.match_history(player_id);
-create index if not exists player_quests_assigned_at_idx on public.player_quests(assigned_at desc);
-create index if not exists friendships_status_idx on public.friendships(status);
-
--- Initialize player data function
-create or replace function initialize_player_data()
-returns trigger as $$
-begin
-    insert into public.player_currencies (player_id, gold, gems, dust, tokens)
-    values (new.id, 1000, 50, 0, 0);
-    
-    insert into public.player_stats (player_id)
-    values (new.id);
-    
-    return new;
-end;
-$$ language plpgsql;
-
-create trigger if not exists initialize_player_data_trigger 
-    after insert on public.players
-    for each row execute function initialize_player_data();
+CREATE TABLE public.transactions (
+  id bigint NOT NULL DEFAULT nextval('transactions_id_seq'::regclass),
+  player_id bigint NOT NULL,
+  transaction_type text NOT NULL,
+  currency_type text NOT NULL,
+  amount integer NOT NULL,
+  reason text NOT NULL,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT transactions_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);

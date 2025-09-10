@@ -36,16 +36,7 @@ export default function ImagemDaCarta({
 
   // Conteúdo de placeholder quando não há imagem disponível
   const obterConteudoDoPlaceholder = () => {
-    const descoberta = card.descoberta ?? card.discovered;
-    // Para cartas não descobertas, mantém o bloco de mistério
-    if (!descoberta) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-gray-400">
-          <div className="text-4xl mb-2">❓</div>
-          <div className="text-xs text-center">Não descoberto</div>
-        </div>
-      );
-    }
+  // Sempre mostra placeholder padrão (removida lógica de descoberta)
     // Placeholder genérico
     return (
       <Image
@@ -60,7 +51,7 @@ export default function ImagemDaCarta({
 
   return (
     <div
-      className={`${classesDeTamanho[size]} ${className} relative overflow-hidden rounded-lg bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer transition-all hover:scale-105`}
+  className={`${classesDeTamanho[size]} ${className} relative overflow-hidden rounded-lg bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer`}
       onClick={onClick}
     >
       {/* Spinner de carregamento */}
@@ -71,12 +62,14 @@ export default function ImagemDaCarta({
       )}
 
       {/* Imagem da carta ou placeholder */}
-    {(card.descoberta ?? card.discovered) && (card.imagens?.retrato || card.images?.portrait) && !erroNaImagem ? (
+    {(card.imagens?.retrato || card.images?.portrait) && !erroNaImagem ? (
         <Image
-      src={card.imagens?.retrato || card.images?.portrait}
-      alt={card.nome || card.name}
+          src={card.imagens?.retrato || card.images?.portrait}
+          alt={card.nome || card.name}
           fill
           className="object-cover"
+          sizes={size === 'small' ? '80px' : size === 'medium' ? '160px' : size === 'large' ? '220px' : '320px'}
+          quality={90}
           onError={lidarComErroDaImagem}
           onLoad={lidarComCarregamentoDaImagem}
           style={{ opacity: carregandoImagem ? 0 : 1 }}
@@ -86,7 +79,7 @@ export default function ImagemDaCarta({
       )}
 
       {/* Overlay de raridade */}
-      {(card.descoberta ?? card.discovered) && (
+  {(
         <div className="absolute top-1 right-1">
           <div
             className={`text-xs px-1 rounded ${
@@ -103,7 +96,7 @@ export default function ImagemDaCarta({
       )}
 
       {/* Overlay de tipo de carta */}
-  {(card.descoberta ?? card.discovered) && ((card.tipo || card.type) !== 'creature') && (
+  {((card.tipo || card.type) !== 'creature') && (
         <div className="absolute bottom-1 left-1">
           <div className="text-xs bg-black/70 px-1 rounded">
     {(card.tipo || card.type) === 'spell' ? '✨' : '⚱️'}
