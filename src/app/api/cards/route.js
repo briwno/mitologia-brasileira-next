@@ -105,93 +105,103 @@ export async function GET(request) {
   }
 }
 
+// POST: create card OR unlock (legacy action)
 export async function POST(request) {
   try {
-    const { action, cardId, userId } = await request.json();
+    const payload = await request.json();
+    const { action } = payload || {};
     const supabase = requireSupabaseAdmin();
 
     if (action === 'unlock') {
-      // Buscar carta
-      const { data: card, error: cardError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('id', cardId)
-        .single();
-      
-      if (cardError || !card) {
-        return NextResponse.json(
-          { error: 'Carta não encontrada' },
-          { status: 404 }
-        );
-      }
+      const { cardId, userId } = payload;
+      if (!cardId) return NextResponse.json({ error: 'cardId obrigatório' }, { status: 400 });
+      const { data: card, error: cardError } = await supabase.from('cards').select('*').eq('id', cardId).single();
+      if (cardError || !card) return NextResponse.json({ error: 'Carta não encontrada' }, { status: 404 });
 
-      // Verificar se o usuário existe
       if (userId) {
-        const { data: player, error: playerError } = await supabase
-          .from('players')
-          .select('id')
-          .eq('id', userId)
-          .single();
-        
-        if (playerError || !player) {
-          return NextResponse.json(
-            { error: 'Usuário não encontrado' },
-            { status: 404 }
-          );
-        }
-
-        // Adicionar carta à coleção do usuário
-        const { data: collection, error: collectionError } = await supabase
-          .from('collections')
-          .select('cards')
-          .eq('player_id', userId)
-          .single();
-        
-        if (collectionError && collectionError.code !== 'PGRST116') {
-          throw collectionError;
-        }
-        
+        const { data: player, error: playerError } = await supabase.from('players').select('id').eq('id', userId).single();
+        if (playerError || !player) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+        const { data: collection, error: collectionError } = await supabase.from('collections').select('cards').eq('player_id', userId).single();
+        if (collectionError && collectionError.code !== 'PGRST116') throw collectionError;
         const currentCards = collection?.cards || [];
-        
-        // Verificar se a carta já está na coleção
         if (currentCards.includes(cardId)) {
-          return NextResponse.json({
-            message: 'Carta já desbloqueada',
-            card: formatCardForAPI(card)
-          });
+          return NextResponse.json({ message: 'Carta já desbloqueada', card: formatCardForAPI(card) });
         }
-        
-        // Adicionar carta à coleção
         const newCards = [...currentCards, cardId];
-        
-        const { error: updateError } = await supabase
-          .from('collections')
-          .upsert({
-            player_id: userId,
-            cards: newCards
-          }, { onConflict: 'player_id' });
-        
-        if (updateError) {
-          throw updateError;
-        }
+        const { error: updateError } = await supabase.from('collections').upsert({ player_id: userId, cards: newCards }, { onConflict: 'player_id' });
+        if (updateError) throw updateError;
       }
-
-      return NextResponse.json({
-        message: `Carta ${card.name} desbloqueada!`,
-        card: formatCardForAPI(card)
-      });
+      return NextResponse.json({ message: `Carta ${card.name} desbloqueada!`, card: formatCardForAPI(card) });
     }
 
-    return NextResponse.json(
-      { error: 'Ação inválida' },
-      { status: 400 }
-    );
-
+    // Create card
+    const required = ['id', 'name'];
+    for (const f of required) if (!payload[f]) return NextResponse.json({ error: `Campo obrigatório: ${f}` }, { status: 400 });
+    const insert = {
+      id: payload.id,
+      name: payload.name,
+      region: payload.region || null,
+      category: payload.category || null,
+      attack: payload.attack ?? 0,
+      defense: payload.defense ?? 0,
+      health: payload.life ?? payload.health ?? 1,
+      cost: payload.cost ?? 0,
+      rarity: payload.rarity || 'comum',
+      lore: payload.history || payload.lore || null,
+      element: payload.element || null,
+      images: payload.images || null,
+      tags: payload.tags || [],
+      card_type: payload.cardType || payload.card_type || null,
+      abilities: payload.abilities || null,
+      unlock_condition: payload.unlockCondition || null,
+      seasonal_bonus: payload.seasonalBonus || null,
+      is_starter: payload.isStarter ?? false
+    };
+    const { data, error } = await supabase.from('cards').insert(insert).select('*').single();
+    if (error) throw error;
+    return NextResponse.json({ card: formatCardForAPI(data) }, { status: 201 });
   } catch (error) {
     console.error('Cards POST error:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erro ao criar carta' }, { status: 500 });
+  }
+}
+
+// PUT: update card by id
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { id, ...updates } = body || {};
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+    const supabase = requireSupabaseAdmin();
+    if (updates.life && !updates.health) updates.health = updates.life; // alias
+    if (updates.history && !updates.lore) updates.lore = updates.history;
+    const map = { life: 'health', history: 'lore', cardType: 'card_type', unlockCondition: 'unlock_condition', seasonalBonus: 'seasonal_bonus', isStarter: 'is_starter' };
+    const dbUpdates = {};
+    for (const k of Object.keys(updates)) {
+      const target = map[k] || k;
+      dbUpdates[target] = updates[k];
+    }
+    const { data, error } = await supabase.from('cards').update(dbUpdates).eq('id', id).select('*').single();
+    if (error) return NextResponse.json({ error: 'Carta não encontrada ou erro ao atualizar' }, { status: 400 });
+    return NextResponse.json({ card: formatCardForAPI(data) });
+  } catch (e) {
+    console.error('Cards PUT error', e);
+    return NextResponse.json({ error: 'Erro ao atualizar carta' }, { status: 500 });
+  }
+}
+
+// DELETE: delete card by id
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+    const supabase = requireSupabaseAdmin();
+    const { error } = await supabase.from('cards').delete().eq('id', id);
+    if (error) throw error;
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('Cards DELETE error', e);
+    return NextResponse.json({ error: 'Erro ao deletar carta' }, { status: 500 });
   }
 }

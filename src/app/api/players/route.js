@@ -103,3 +103,18 @@ export async function PUT(req) {
     return NextResponse.json({ error: 'internal' }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const uid = searchParams.get('uid');
+    if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
+    const supabase = requireSupabaseAdmin();
+    const { error } = await supabase.from('players').delete().eq('uid', uid);
+    if (error) throw error;
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('players DELETE', e);
+    return NextResponse.json({ error: 'internal' }, { status: 500 });
+  }
+}

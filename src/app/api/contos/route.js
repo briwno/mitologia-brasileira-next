@@ -160,3 +160,41 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Erro ao criar conto' }, { status: 500 });
   }
 }
+
+export async function PUT(request) {
+  try {
+    const supabase = requireSupabaseAdmin();
+    const body = await request.json();
+    const { id } = body || {};
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+    // Map keys back to db columns
+    const map = { cardId: 'card_id', titulo: 'titulo', subtitulo: 'subtitulo', resumo: 'resumo', corpo: 'corpo', regiao: 'regiao', categoria: 'categoria', tags: 'tags', tema: 'tema', fonte: 'fonte', fonteUrl: 'fonte_url', imagemCapa: 'imagem_capa', readTime: 'estimated_read_time', versao: 'versao', isActive: 'is_active', isFeatured: 'is_featured', publishedAt: 'published_at' };
+    const updates = {};
+    for (const k of Object.keys(body)) {
+      if (k === 'id') continue;
+      const target = map[k] || k;
+      updates[target] = body[k];
+    }
+    const { data, error } = await supabase.from('contos').update(updates).eq('id', id).select('*').single();
+    if (error) throw error;
+    return NextResponse.json({ story: formatStory(data) });
+  } catch (e) {
+    console.error('Contos PUT error', e);
+    return NextResponse.json({ error: 'Erro ao atualizar conto' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const supabase = requireSupabaseAdmin();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+    const { error } = await supabase.from('contos').delete().eq('id', id);
+    if (error) throw error;
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error('Contos DELETE error', e);
+    return NextResponse.json({ error: 'Erro ao deletar conto' }, { status: 500 });
+  }
+}
