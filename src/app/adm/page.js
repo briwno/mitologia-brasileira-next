@@ -44,11 +44,13 @@ function CardsSection() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const [formOpen, setFormOpen] = useState(false);
-	const emptyForm = { id: '', name: '', region: '', category: '', attack: 0, defense: 0, cost: 0, rarity: 'EPIC', element: '', life: 1, lore: '', cardType: '', unlockCondition: '', isStarter: false, portrait: '', full: '', tags: '', abilitiesJson: '' };
+	const emptyForm = { id: '', name: '', region: '', category: '', attack: 0, defense: 0, cost: 0, rarity: 'EPIC', element: '', life: 1, lore: '', cardType: '', unlockCondition: '', isStarter: false, portrait: '', full: '', tags: '' };
 	const [editingId, setEditingId] = useState(null);
 	const [form, setForm] = useState(emptyForm);
 	const [saving, setSaving] = useState(false);
 	const [advanced, setAdvanced] = useState(false);
+	// Abilities managed as a friendly list instead of raw JSON
+	const [abilities, setAbilities] = useState([]); // each item: { key, nome, descricao, poder }
 
 		const load = useCallback(async () => {
 		setLoading(true); setError(null);
@@ -83,7 +85,7 @@ function CardsSection() {
 
 	const rarityOptions = ['EPIC','LEGENDARY','MYTHIC','COMMON','RARE'];
 
-	const startCreate = () => { setEditingId(null); setForm(emptyForm); setFormOpen(true); };
+	const startCreate = () => { setEditingId(null); setForm(emptyForm); setAbilities([]); setFormOpen(true); };
 	const startEdit = (c) => { setEditingId(c.id); setForm({
 		id: c.id,
 		name: c.name || '',
@@ -101,15 +103,36 @@ function CardsSection() {
 		isStarter: !!(c.isStarter || c.is_starter),
 		portrait: c.images?.retrato || '',
 		full: c.images?.completa || '',
-		tags: (c.tags || []).join(','),
-		abilitiesJson: c.abilities ? JSON.stringify(c.abilities, null, 2) : ''
-	}); setFormOpen(true); };
+		tags: (c.tags || []).join(',')
+	});
+	// Convert existing abilities object into list form
+	if (c.abilities && typeof c.abilities === 'object') {
+		const list = Object.entries(c.abilities).map(([k, v]) => ({
+			key: k,
+			nome: v?.nome || v?.name || '',
+			descricao: v?.descricao || v?.description || '',
+			poder: v?.poder ?? v?.power ?? ''
+		}));
+		setAbilities(list);
+	} else {
+		setAbilities([]);
+	}
+	setFormOpen(true); };
 	const remove = async (id) => { if (!confirm('Deletar carta?')) return; try { await jsonFetch(`/api/cards?id=${id}`, { method: 'DELETE' }); await load(); } catch (e) { setError(e.message); } };
 	const submit = async (e) => { e.preventDefault(); setSaving(true); setError(null); try {
-		// Build payload
-		let abilities = undefined;
-		if (form.abilitiesJson) {
-			try { abilities = JSON.parse(form.abilitiesJson); } catch { throw new Error('JSON de habilidades inválido'); }
+		// Build abilities object from structured list
+		let abilitiesObj = undefined;
+		if (abilities.length) {
+			abilitiesObj = {};
+			abilities.forEach((a) => {
+				if (!a.key) return;
+				const payload = {};
+				if (a.nome) payload.nome = a.nome;
+				if (a.descricao) payload.descricao = a.descricao;
+				if (a.poder !== '' && a.poder !== undefined) payload.poder = Number(a.poder) || 0;
+				abilitiesObj[a.key] = payload;
+			});
+			if (Object.keys(abilitiesObj).length === 0) abilitiesObj = undefined;
 		}
 		const body = {
 			id: form.id,
@@ -128,7 +151,7 @@ function CardsSection() {
 			isStarter: !!form.isStarter,
 			images: (form.portrait || form.full) ? { retrato: form.portrait || null, completa: form.full || null } : null,
 			tags: form.tags ? form.tags.split(',').map(t=>t.trim()).filter(Boolean) : [],
-			abilities
+			abilities: abilitiesObj
 		};
 		if (editingId) {
 			await jsonFetch('/api/cards', { method: 'PUT', body: { ...body, id: editingId } });
@@ -137,6 +160,18 @@ function CardsSection() {
 		}
 		setFormOpen(false); await load();
 	} catch (er) { setError(er.message); } finally { setSaving(false); } };
+
+	// Ability form helpers
+	const addAbility = () => {
+		setAbilities(list => [...list, { key: `habilidade${list.length + 1}`, nome: '', descricao: '', poder: '' }]);
+	};
+	const updateAbility = (index, field, value) => {
+		setAbilities(list => list.map((a,i)=> i===index ? { ...a, [field]: value } : a));
+	};
+	const removeAbility = (index) => {
+		if (!confirm('Remover habilidade?')) return;
+		setAbilities(list => list.filter((_,i)=> i!==index));
+	};
 
 	return (
 		<SectionContainer>
@@ -179,7 +214,38 @@ function CardsSection() {
 							<div className="flex flex-col"> <label>Portrait URL</label> <input value={form.portrait} onChange={e=>setForm(f=>({...f,portrait:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 							<div className="flex flex-col"> <label>Full URL</label> <input value={form.full} onChange={e=>setForm(f=>({...f,full:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 							<div className="flex flex-col md:col-span-2"> <label>Tags (csv)</label> <input value={form.tags} onChange={e=>setForm(f=>({...f,tags:e.target.value}))} className="border rounded px-2 py-1" /> </div>
-							<div className="flex flex-col md:col-span-4"> <label>Abilities JSON</label> <textarea rows={6} value={form.abilitiesJson} onChange={e=>setForm(f=>({...f,abilitiesJson:e.target.value}))} className="border rounded px-2 py-1 font-mono" placeholder='{"skill1": {...}}' /> </div>
+							<div className="md:col-span-4 flex flex-col gap-2">
+								<label className="font-medium">Habilidades</label>
+								{abilities.length === 0 && <p className="text-[11px] text-gray-500">Nenhuma habilidade. Clique em &quot;Adicionar habilidade&quot;.</p>}
+								<div className="flex flex-col gap-3">
+									{abilities.map((ab, idx) => (
+										<div key={idx} className="border rounded p-2 bg-white shadow-sm flex flex-col gap-2">
+											<div className="grid grid-cols-6 gap-2 items-start">
+												<div className="col-span-2 flex flex-col">
+													<label className="text-[10px] uppercase tracking-wide text-gray-500">Chave</label>
+													<input value={ab.key} onChange={e=>updateAbility(idx,'key',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+												</div>
+												<div className="col-span-2 flex flex-col">
+													<label className="text-[10px] uppercase tracking-wide text-gray-500">Nome</label>
+													<input value={ab.nome} onChange={e=>updateAbility(idx,'nome',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+												</div>
+												<div className="col-span-1 flex flex-col">
+													<label className="text-[10px] uppercase tracking-wide text-gray-500">Poder</label>
+													<input type="number" value={ab.poder} onChange={e=>updateAbility(idx,'poder',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+												</div>
+												<div className="col-span-1 flex items-end">
+													<button type="button" onClick={()=>removeAbility(idx)} className="text-red-600 text-[11px] underline">Remover</button>
+												</div>
+											</div>
+											<div className="flex flex-col">
+												<label className="text-[10px] uppercase tracking-wide text-gray-500">Descrição</label>
+												<textarea rows={2} value={ab.descricao} onChange={e=>updateAbility(idx,'descricao',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+											</div>
+										</div>
+									))}
+								</div>
+								<button type="button" onClick={addAbility} className="self-start mt-1 px-2 py-1 rounded bg-indigo-600 text-white text-[11px] hover:bg-indigo-500">Adicionar habilidade</button>
+							</div>
 						</>)}
 						<div className="flex items-end gap-2 col-span-6 mt-1">
 							<button disabled={saving} className="px-3 py-1 rounded bg-indigo-600 text-white text-xs">{editingId ? 'Salvar alterações' : 'Criar carta'}</button>
