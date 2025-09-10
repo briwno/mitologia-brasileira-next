@@ -17,7 +17,7 @@ export default function Museum() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <Link href="/museum/cards">
             <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-blue-500/30 hover:border-blue-400 transition-all cursor-pointer group">
               <div className="text-center">
@@ -30,6 +30,23 @@ export default function Museum() {
                 </p>
                 <div className="text-sm text-blue-300">
                   📊 12/30 cartas descobertas
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/museum/stories">
+            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer group">
+              <div className="text-center">
+                <div className="text-4xl mb-4">📖</div>
+                <h3 className="text-2xl font-bold mb-3 text-rose-400 group-hover:text-rose-300">
+                  Contos de Ka’aguy
+                </h3>
+                <p className="text-gray-300 mb-4">
+                  Leia narrativas curtas sobre as lendas por trás das cartas
+                </p>
+                <div className="text-sm text-rose-300">
+                  ✨ Novo modo
                 </div>
               </div>
             </div>

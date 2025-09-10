@@ -1,179 +1,146 @@
 // src/app/museum/cards/page.js
 "use client";
 
+import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 import LayoutDePagina from '../../../components/UI/PageLayout';
-import { bancoDeCartas, CATEGORIAS_CARTAS, REGIOES, getCardStats } from '../../../data/cardsDatabase';
-import CardImage from '../../../components/Card/CardImage';
+import { bancoDeCartas } from '../../../data/cardsDatabase';
 import CardDetail from '../../../components/Card/CardDetail';
-import EventBanner from '../../../components/UI/EventBanner';
 
-// Catálogo de cartas do Museu
-export default function CatalogoDeCartas() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [selectedCard, setSelectedCard] = useState(null);
-
-  const cards = bancoDeCartas;
-  const stats = getCardStats();
-
-  const categories = ['all', ...Object.values(CATEGORIAS_CARTAS)];
-  const regions = ['all', ...Object.values(REGIOES)];
-
-  const filteredCards = cards.filter(card => {
-    const categoryMatch = selectedCategory === 'all' || card.categoria === selectedCategory;
-    const regionMatch = selectedRegion === 'all' || card.regiao === selectedRegion;
-    return categoryMatch && regionMatch;
-  });
-
-  const getRarityColor = (rarity) => {
-    switch (rarity) {
-      case 'Épico': return 'border-purple-500 text-purple-400';
-      case 'Lendário': return 'border-yellow-500 text-yellow-400';
-      case 'Mítico': return 'border-red-500 text-red-400';
-      default: return 'border-gray-500 text-gray-400';
-    }
+// Card estilo "story quest"
+function StoryCard({ card, onClick }) {
+  const portrait = card.imagens?.retrato || card.imagem || '/images/placeholder.svg';
+  const rarityStyles = {
+    'Épico': 'from-purple-500/50 to-purple-900/60 border-purple-400/40',
+    'Lendário': 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
+    'Mítico': 'from-rose-500/60 to-rose-900/60 border-rose-400/40'
   };
-
-  const handleCardClick = (card) => {
-    setSelectedCard(card);
-  };
+  const style = rarityStyles[card.raridade] || 'from-slate-400/30 to-slate-800/60 border-slate-400/30';
 
   return (
+    <button
+      onClick={onClick}
+      className={`relative w-full aspect-[7/11] rounded-xl overflow-hidden border backdrop-blur-sm bg-gradient-to-b ${style} shadow-lg hover:shadow-2xl focus:outline-none ring-0 hover:ring-2 ring-white/40 transition-all group`}
+    >
+      <Image
+        src={portrait}
+        alt={card.nome}
+        fill
+        className="object-cover object-center scale-105 group-hover:scale-110 transition-transform duration-500"
+        sizes="(max-width:768px) 40vw, (max-width:1200px) 20vw, 15vw"
+        priority={false}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/85" />
+      <div className="absolute bottom-0 inset-x-0 p-3 flex flex-col gap-1 text-left">
+        <span className="text-[10px] tracking-wide font-semibold text-white/60 uppercase line-clamp-1">{card.regiao || '—'}</span>
+        <h3 className="text-sm font-bold leading-snug drop-shadow-sm line-clamp-2">{card.nome}</h3>
+        <span className="text-[10px] font-semibold text-white/70 tracking-wide">{card.raridade}</span>
+      </div>
+      {card.novo && (
+        <div className="absolute top-2 right-2 bg-orange-600 text-[10px] px-2 py-1 rounded-full font-bold shadow">NOVO</div>
+      )}
+    </button>
+  );
+}
+
+// Modal com abas
+function StoryModal({ card, onClose }) {
+  const [tab, setTab] = useState('detalhes'); // 'detalhes' | 'historia'
+  if (!card) return null;
+  const full = card.imagens?.completa || card.imagens?.retrato || '/images/placeholder.svg';
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="relative w-full max-w-7xl bg-[#101b28] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              📜 <span className="text-cyan-300">{card.nome}</span>
+            </h2>
+            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 text-xs">
+              <button
+                onClick={() => setTab('detalhes')}
+                className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'detalhes' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
+              >Detalhes</button>
+              <button
+                onClick={() => setTab('historia')}
+                className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'historia' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
+              >História</button>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/70 hover:text-white text-xl leading-none px-3 py-1 rounded"
+            aria-label="Fechar"
+          >×</button>
+        </div>
+
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          {tab === 'detalhes' ? (
+            <CardDetail card={card} onClose={null} />
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                <Image
+                  src={full}
+                  alt={`Arte completa de ${card.nome}`}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width:768px) 100vw, 40vw"
+                />
+              </div>
+              <div className="space-y-5 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-1">
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">História / Conto</h3>
+                  <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+                    {card.historia || 'Ainda não há uma história cadastrada para esta carta.'}
+                  </p>
+                </div>
+                <div className="bg-black/40 rounded-lg p-4 border border-white/10 text-xs text-gray-400 leading-relaxed">
+                  Esta história faz parte do acervo educativo de Ka’aguy, promovendo o folclore brasileiro.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CatalogoComContos() {
+  const [selected, setSelected] = useState(null);
+  const storyCards = useMemo(() => bancoDeCartas.filter(c => c.descoberta).map((c, idx) => ({ ...c, novo: idx < 3 })), []);
+  return (
     <LayoutDePagina>
-      {/* Banner de eventos */}
-      <EventBanner />
-      
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
-        <div className="text-center mb-6 sm:mb-8 px-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            🃏 Catálogo de Cartas
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-green-300">
-            Descubra todas as criaturas da mitologia brasileira
+      <div className="container mx-auto px-4 py-8">
+        {/* Heading */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-extrabold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500">🃏 Cartas & Contos</h1>
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+            Selecione uma carta para ver os detalhes de jogo ou ler o conto folclórico associado.
           </p>
         </div>
 
-        {/* Filtros */}
-        <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-600/30">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                Categoria
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'Todas as Categorias' : category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                Região
-              </label>
-              <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none"
-              >
-                {regions.map(region => (
-                  <option key={region} value={region}>
-                    {region === 'all' ? 'Todas as Regiões' : region}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid de Cartas */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          {filteredCards.map(card => (
-            <div
-              key={card.id}
-              onClick={() => handleCardClick(card)}
-              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 border-2 transition-all hover:scale-105 cursor-pointer ${getRarityColor(card.raridade)}`}
-            >
-              <div className="text-center">
-                <div className="mb-3 sm:mb-4">
-                  <CardImage card={{ ...card, discovered: true }} size="medium" className="mx-auto" />
-                </div>
-                <h3 className="text-sm sm:text-base lg:text-lg font-bold mb-2">{card.nome}</h3>
-                <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                  {card.regiao} • {card.categoria}
-                </div>
-                <div className={`text-xs font-semibold mb-2 sm:mb-3 ${getRarityColor(card.raridade).split(' ')[1]}`}>
-                  {card.raridade}
-                </div>
-                {card.tipo === 'creature' && (
-                  <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs mb-2 sm:mb-3">
-                    <div className="bg-red-900/50 p-1 rounded text-xs">ATQ: {card.ataque}</div>
-                    <div className="bg-blue-900/50 p-1 rounded text-xs">DEF: {card.defesa}</div>
-                    <div className="bg-green-900/50 p-1 rounded text-xs">VIDA: {card.vida}</div>
-                  </div>
-                )}
-                {card.elemento && (
-                  <div className="text-xs text-yellow-400 line-clamp-2">{card.elemento}</div>
-                )}
-              </div>
-            </div>
+        {/* Lista estilo "story quests" - grid 4 colunas */}
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {storyCards.map(card => (
+            <StoryCard key={card.id} card={card} onClick={() => setSelected(card)} />
           ))}
         </div>
 
-        {/* Estatísticas */}
-        <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-600/30">
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-center">📊 Progresso da Coleção</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
-            <div>
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">{stats.discovered}</div>
-              <div className="text-xs sm:text-sm text-gray-400">Cartas Descobertas</div>
-            </div>
-            <div>
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-400">{stats.total}</div>
-              <div className="text-xs sm:text-sm text-gray-400">Total de Cartas</div>
-            </div>
-            <div>
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-400">{stats.progress}%</div>
-              <div className="text-xs sm:text-sm text-gray-400">Progresso</div>
-            </div>
-            <div>
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-400">{stats.byRarity['Lendário'] || 0}</div>
-              <div className="text-xs sm:text-sm text-gray-400">Cartas Lendárias</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal de Detalhes da Carta */}
-        {selectedCard && (
-          <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setSelectedCard(null)}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <CardDetail 
-                card={selectedCard} 
-                onClose={() => setSelectedCard(null)} 
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="text-center pb-4">
-          <Link
-            href="/museum"
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold text-sm sm:text-base"
-          >
-            ← Voltar ao Museu
-          </Link>
+        <div className="text-center mt-10">
+          <Link href="/museum" className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-colors">← Voltar ao Museu</Link>
         </div>
       </div>
+
+      <StoryModal card={selected} onClose={() => setSelected(null)} />
     </LayoutDePagina>
   );
 }
