@@ -67,7 +67,7 @@ export default function DivulgarPage() {
           </p>
           <div className="mt-6">
             <a
-              href="https://www.instagram.com/mitologia.brasileira.jogo/"
+              href="https://www.instagram.com/kaaguygame/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-pink-600 hover:bg-pink-500 text-white font-bold border border-pink-400 shadow transition"
