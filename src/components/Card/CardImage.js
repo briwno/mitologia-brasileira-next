@@ -11,6 +11,7 @@ export default function ImagemDaCarta({
   showPlaceholder = true,
   className = '',
   onClick = null,
+  preferFull = false,
 }) {
   // Estados locais: erro na imagem e carregamento
   const [erroNaImagem, definirErroNaImagem] = useState(false);
@@ -49,6 +50,20 @@ export default function ImagemDaCarta({
     );
   };
 
+  // Escolha da melhor fonte de imagem
+  const fullSrc = card.imagens?.completa || card.images?.full;
+  const portraitSrc = card.imagens?.retrato || card.images?.portrait;
+  const chosenSrc = (!erroNaImagem && (preferFull && fullSrc ? fullSrc : portraitSrc)) || null;
+
+  // Sizes responsivos por tamanho (evitar subentrega e upscaling)
+  const sizesStr = size === 'small'
+    ? '(max-width:640px) 80px, 120px'
+    : size === 'medium'
+      ? '(max-width:640px) 160px, (max-width:1024px) 200px, 240px'
+      : size === 'large'
+        ? '(max-width:640px) 220px, (max-width:1024px) 320px, 380px'
+        : '(max-width:768px) 90vw, (max-width:1280px) 60vw, 900px';
+
   return (
     <div
   className={`${classesDeTamanho[size]} ${className} relative overflow-hidden rounded-lg bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer`}
@@ -62,14 +77,14 @@ export default function ImagemDaCarta({
       )}
 
       {/* Imagem da carta ou placeholder */}
-    {(card.imagens?.retrato || card.images?.portrait) && !erroNaImagem ? (
+      {chosenSrc ? (
         <Image
-          src={card.imagens?.retrato || card.images?.portrait}
+          src={chosenSrc}
           alt={card.nome || card.name}
           fill
           className="object-cover"
-          sizes={size === 'small' ? '80px' : size === 'medium' ? '160px' : size === 'large' ? '220px' : '320px'}
-          quality={90}
+          sizes={sizesStr}
+          quality={95}
           onError={lidarComErroDaImagem}
           onLoad={lidarComCarregamentoDaImagem}
           style={{ opacity: carregandoImagem ? 0 : 1 }}
@@ -95,14 +110,18 @@ export default function ImagemDaCarta({
         </div>
       )}
 
-      {/* Overlay de tipo de carta */}
-  {((card.tipo || card.type) !== 'creature') && (
+    {/* Overlay de tipo de carta */}
+  {(() => {
+    const t = (card.tipo || card.type || '').toString().toLowerCase();
+    if (!t || t === 'creature') return null;
+    return (
         <div className="absolute bottom-1 left-1">
           <div className="text-xs bg-black/70 px-1 rounded">
-    {(card.tipo || card.type) === 'spell' ? '✨' : '⚱️'}
+  {t === 'spell' ? '✨' : '⚱️'}
           </div>
         </div>
-      )}
+    );
+    })()}
     </div>
   );
 }

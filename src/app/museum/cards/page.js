@@ -20,32 +20,72 @@ import LayoutDePagina from '../../../components/UI/PageLayout';
 import CardDetail from '../../../components/Card/CardDetail';
 
 // Card estilo "story quest"
-function StoryCard({ card, onClick }) {
-  // Sempre usar somente a imagem de retrato (portrait). Ignora 'completa' até existir.
-  const portrait = card.images?.retrato || card.imagens?.retrato || card.image || card.imagem || '/images/placeholder.svg';
+function StoryCard({ card, onClick, idx = 0 }) {
+  // Escolhe a melhor fonte disponível: preferir a imagem completa se existir (maior resolução), senão retrato
+  const fullSrc = card.images?.completa || card.imagens?.completa || card.images?.full || card.imagens?.full;
+  const portrait = card.images?.retrato || card.imagens?.retrato || card.images?.portrait || card.imagens?.portrait || card.image || card.imagem;
+  const imgSrc = fullSrc || portrait || '/images/placeholder.svg';
   const rarityStyles = {
-    'Épico': 'from-purple-500/50 to-purple-900/60 border-purple-400/40',
+    'Épico': 'from-purple-500/50 to-purple-900/60 border-purple-400/40' ,
     'Lendário': 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
     'Mítico': 'from-rose-500/60 to-rose-900/60 border-rose-400/40'
   };
   const rare = card.raridade || card.rarity;
   const style = rarityStyles[rare] || 'from-slate-400/30 to-slate-800/60 border-slate-400/30';
+  const isMythic = rare === 'Mítico' || rare === 'MYTHIC';
+
+  // Build a CSS gradient matching rarityStyles colors for the OUTER animated border
+  const getRarityGradient = (r) => {
+    if (r === 'Mítico' || r === 'MYTHIC') {
+      return 'linear-gradient(135deg, rgba(244,63,94,0.6), rgba(255, 0, 0, 0.6))'; 
+    }
+    if (r === 'Lendário' || r === 'LEGENDARY') {
+      return 'linear-gradient(135deg, rgba(231, 178, 2, 0.97), rgba(255, 180, 67, 0.6))'; 
+    }
+    if (r === 'Épico' || r === 'EPIC') {
+      return 'linear-gradient(135deg, rgba(168,85,247,0.5), rgba(144, 0, 255, 0.6))'; 
+    }
+    return 'linear-gradient(135deg, rgba(148,163,184,0.3), rgba(51,65,85,0.6))'; 
+  };
+  const borderStyle = {
+    backgroundImage: getRarityGradient(rare),
+    backgroundSize: isMythic ? '200% 200%' : undefined,
+    animation: isMythic ? 'mb-gradient-shift 6s linear infinite' : undefined,
+  };
 
   return (
-    <button
+    <div
+      className={`relative rounded-xl p-[2px] transition-all group transform duration-200 will-change-transform hover:scale-[1.03]`}
+      style={borderStyle}
       onClick={onClick}
-      className={`relative w-full aspect-[7/11] rounded-xl overflow-hidden border backdrop-blur-sm bg-gradient-to-b ${style} shadow-lg hover:shadow-2xl focus:outline-none ring-0 hover:ring-2 ring-white/40 transition-all group`}
+      role="button"
+      tabIndex={0}
     >
+      <style jsx>{`
+        @keyframes mb-gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+      <div className={`relative w-full aspect-[7/11] rounded-xl overflow-hidden backdrop-blur-sm bg-gradient-to-b ${style} shadow-lg focus:outline-none ring-0`}>
+      {/* Glow on hover */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300">
+        <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-white/10 via-white/5 to-white/10 blur-xl" />
+      </div>
       <Image
-        src={portrait}
+        src={imgSrc}
         alt={card.nome || card.name}
         fill
-        className="object-cover object-center transition-transform duration-300" /* removido scale para evitar upscaling */
-        sizes="(max-width:640px) 50vw, (max-width:1024px) 28vw, 260px" /* requisita um pouco mais de largura base */
-        quality={90}
-        priority={false}
+        className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
+        sizes="(min-width:1536px) 22vw, (min-width:1280px) 24vw, (min-width:1024px) 28vw, (min-width:640px) 44vw, 92vw"
+        quality={100}
+        priority={idx < 8}
+        loading={idx < 8 ? 'eager' : 'lazy'}
+        fetchPriority={idx < 8 ? 'high' : 'auto'}
+        unoptimized={typeof imgSrc === 'string' && imgSrc.startsWith('http')}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/85" />
+  <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/75" />
       <div className="absolute bottom-0 inset-x-0 p-3 flex flex-col gap-1 text-left">
   <span className="text-[10px] tracking-wide font-semibold text-white/60 uppercase line-clamp-1">{card.regiao || card.region || '—'}</span>
   <h3 className="text-sm font-bold leading-snug drop-shadow-sm line-clamp-2">{card.nome || card.name}</h3>
@@ -54,7 +94,8 @@ function StoryCard({ card, onClick }) {
       {card.novo && (
         <div className="absolute top-2 right-2 bg-orange-600 text-[10px] px-2 py-1 rounded-full font-bold shadow">NOVO</div>
       )}
-    </button>
+      </div>
+    </div>
   );
 }
 
@@ -136,14 +177,14 @@ function StoryModal({ card, onClose }) {
             <CardDetail card={card} onClose={null} />
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
+        <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
                 <Image
                   src={portrait}
                   alt={`Retrato de ${card.nome || card.name}`}
                   fill
-                  className="object-contain"
-                  sizes="(max-width:768px) 90vw, 480px"
-                  quality={95}
+          className="object-contain"
+          sizes="(max-width:768px) 95vw, (max-width:1280px) 640px, 800px"
+          quality={98}
                   priority
                 />
               </div>
@@ -216,8 +257,8 @@ export default function CatalogoComContos() {
             imagem: c.image,
             elemento: translate(c.element, MAP_ELEMENT),
             habilidades: c.abilities || {},
-            // descoberta removido: não usamos mais estado de descoberta,
-            novo: idx < 3,
+            tipo: (c.cardType || c.card_type || 'CREATURE').toString().toLowerCase(),
+            novo: idx == 5,
             tags: c.tags,
             bonusSazonal
           };
@@ -232,7 +273,12 @@ export default function CatalogoComContos() {
     return () => { cancelled = true; };
   }, []);
 
-  const storyCards = useMemo(() => cards, [cards]);
+  const storyCards = useMemo(() => {
+    // Coloca cartas marcadas como "novo" no topo; mantém ordem relativa para o restante
+    const arr = [...cards];
+    arr.sort((a, b) => (b.novo === true) - (a.novo === true));
+    return arr;
+  }, [cards]);
   return (
     <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
@@ -251,10 +297,15 @@ export default function CatalogoComContos() {
           <div className="text-center text-red-400 py-20">Erro: {error}</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {storyCards.map(card => (
-              <StoryCard key={card.id} card={card} onClick={() => {
-                setSelected(card);
-              }} />
+            {storyCards.map((card, i) => (
+              <StoryCard
+                key={card.id}
+                card={card}
+                idx={i}
+                onClick={() => {
+                  setSelected(card);
+                }}
+              />
             ))}
           </div>
         )}

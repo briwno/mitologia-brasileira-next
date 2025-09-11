@@ -29,12 +29,13 @@ export default function DetalheDaCarta({ card, onClose = null }) {
     }
   };
 
-  const obterIconeDoTipo = (type) => {
+  const obterIconeDoTipo = (raw) => {
+    const type = (raw || '').toString().toLowerCase();
     switch (type) {
       case 'creature': return '👾';
       case 'spell': return '✨';
       case 'artifact': return '⚱️';
-      default: return '🎭';
+      default: return '👾';
     }
   };
 
@@ -143,8 +144,8 @@ export default function DetalheDaCarta({ card, onClose = null }) {
 
           {/* Coluna Central: Imagem */}
           <section className="order-1 lg:order-2 lg:col-span-6 flex items-center justify-center">
-            <div className="w-full max-w-[820px] rounded-2xl border border-white/10 bg-black/20 p-3 shadow-xl">
-              <CardImage card={card} size="xl" className="w-full h-[32rem] md:h-[36rem] xl:h-[40rem]" />
+            <div className="w-full max-w-[960px] rounded-2xl border border-white/10 bg-black/20 p-3 shadow-xl">
+              <CardImage card={card} size="xl" preferFull className="w-full h-[34rem] md:h-[38rem] xl:h-[42rem]" />
             </div>
           </section>
 
@@ -167,7 +168,7 @@ export default function DetalheDaCarta({ card, onClose = null }) {
               <div>
                 <div className="text-xs sm:text-sm text-gray-400">Tipo</div>
                 <div className="font-semibold text-sm sm:text-base">
-                  {obterIconeDoTipo(card.tipo)} {card.tipo === 'creature' ? 'Criatura' : card.tipo === 'spell' ? 'Feitiço' : 'Artefato'}
+                  {obterIconeDoTipo(card.tipo || card.type)} {(card.tipo || card.type || 'creature') === 'creature' ? 'Criatura' : (card.tipo || card.type) === 'spell' ? 'Feitiço' : 'Artefato'} 
                 </div>
               </div>
               <div>

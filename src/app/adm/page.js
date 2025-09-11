@@ -44,13 +44,15 @@ function CardsSection() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const [formOpen, setFormOpen] = useState(false);
-	const emptyForm = { id: '', name: '', region: '', category: '', attack: 0, defense: 0, cost: 0, rarity: 'EPIC', element: '', life: 1, lore: '', cardType: '', unlockCondition: '', isStarter: false, portrait: '', full: '', tags: '' };
+	const emptyForm = { id: '', name: '', region: 'AMAZONIA', category: 'GUARDIANS', attack: 0, defense: 0, cost: 0, rarity: 'EPIC', element: 'EARTH', life: 1, lore: '', cardType: 'CREATURE', unlockCondition: '', isStarter: false, portrait: '', full: '', tags: '' };
 	const [editingId, setEditingId] = useState(null);
 	const [form, setForm] = useState(emptyForm);
 	const [saving, setSaving] = useState(false);
 	const [advanced, setAdvanced] = useState(false);
-	// Abilities managed as a friendly list instead of raw JSON
-	const [abilities, setAbilities] = useState([]); // each item: { key, nome, descricao, poder }
+	// Abilities fixed editor: skill1..skill5 + passive
+	const emptySkill = { name: '', description: '', cost: '', kind: '', base: '', ppMax: '', stun: '', chance: '', heal: '' };
+	const [skills, setSkills] = useState([emptySkill, emptySkill, emptySkill, emptySkill, emptySkill]);
+	const [passive, setPassive] = useState({ name: '', description: '' });
 
 		const load = useCallback(async () => {
 		setLoading(true); setError(null);
@@ -83,9 +85,13 @@ function CardsSection() {
 		}[key]) || 'bg-neutral-100 text-neutral-800 border border-neutral-300';
 	};
 
-	const rarityOptions = ['EPIC','LEGENDARY','MYTHIC','COMMON','RARE'];
+	const rarityOptions = ['EPIC','LEGENDARY','MYTHIC'];
+	const regionOptions = ['AMAZONIA','NORTHEAST','SOUTHEAST','SOUTH','MIDWEST','NATIONAL'];
+	const categoryOptions = ['GUARDIANS','SPIRITS','HAUNTS','PROTECTORS','MYSTICAL'];
+	const elementOptions = ['EARTH','WATER','FIRE','AIR','SPIRIT'];
+	const cardTypeOptions = ['CREATURE','SPELL','ARTIFACT'];
 
-	const startCreate = () => { setEditingId(null); setForm(emptyForm); setAbilities([]); setFormOpen(true); };
+	const startCreate = () => { setEditingId(null); setForm(emptyForm); setSkills([emptySkill, emptySkill, emptySkill, emptySkill, emptySkill]); setPassive({ name: '', description: '' }); setFormOpen(true); };
 	const startEdit = (c) => { setEditingId(c.id); setForm({
 		id: c.id,
 		name: c.name || '',
@@ -105,33 +111,51 @@ function CardsSection() {
 		full: c.images?.completa || '',
 		tags: (c.tags || []).join(',')
 	});
-	// Convert existing abilities object into list form
+	// Preencher habilidades estruturadas
 	if (c.abilities && typeof c.abilities === 'object') {
-		const list = Object.entries(c.abilities).map(([k, v]) => ({
-			key: k,
-			nome: v?.nome || v?.name || '',
-			descricao: v?.descricao || v?.description || '',
-			poder: v?.poder ?? v?.power ?? ''
-		}));
-		setAbilities(list);
+		const s = [1,2,3,4,5].map(i => {
+			const v = c.abilities[`skill${i}`] || {};
+			return {
+				name: v.name || '',
+				description: v.description || '',
+				cost: v.cost ?? '',
+				kind: v.kind || '',
+				base: v.base ?? '',
+				ppMax: v.ppMax ?? '',
+				stun: v.stun ?? '',
+				chance: v.chance ?? '',
+				heal: v.heal ?? ''
+			};
+		});
+		setSkills(s);
+		const p = c.abilities.passive || {};
+		setPassive({ name: p.name || '', description: p.description || '' });
 	} else {
-		setAbilities([]);
+		setSkills([emptySkill, emptySkill, emptySkill, emptySkill, emptySkill]);
+		setPassive({ name: '', description: '' });
 	}
 	setFormOpen(true); };
 	const remove = async (id) => { if (!confirm('Deletar carta?')) return; try { await jsonFetch(`/api/cards?id=${id}`, { method: 'DELETE' }); await load(); } catch (e) { setError(e.message); } };
 	const submit = async (e) => { e.preventDefault(); setSaving(true); setError(null); try {
-		// Build abilities object from structured list
+		// Build abilities object skill1..skill5 + passive
 		let abilitiesObj = undefined;
-		if (abilities.length) {
+		const hasAnySkill = skills.some(s => (s.name || s.description || s.cost || s.kind || s.base || s.ppMax || s.stun || s.chance || s.heal));
+		if (hasAnySkill || passive.name || passive.description) {
 			abilitiesObj = {};
-			abilities.forEach((a) => {
-				if (!a.key) return;
-				const payload = {};
-				if (a.nome) payload.nome = a.nome;
-				if (a.descricao) payload.descricao = a.descricao;
-				if (a.poder !== '' && a.poder !== undefined) payload.poder = Number(a.poder) || 0;
-				abilitiesObj[a.key] = payload;
+			skills.forEach((s, idx) => {
+				const obj = {};
+				if (s.name) obj.name = s.name;
+				if (s.description) obj.description = s.description;
+				if (s.kind) obj.kind = s.kind;
+				if (s.cost !== '' && s.cost !== undefined) obj.cost = Number(s.cost) || 0;
+				if (s.base !== '' && s.base !== undefined) obj.base = Number(s.base) || 0;
+				if (s.ppMax !== '' && s.ppMax !== undefined) obj.ppMax = Number(s.ppMax) || 0;
+				if (s.stun !== '' && s.stun !== undefined) obj.stun = Number(s.stun) || 0;
+				if (s.chance !== '' && s.chance !== undefined) obj.chance = Number(s.chance);
+				if (s.heal !== '' && s.heal !== undefined) obj.heal = Number(s.heal) || 0;
+				if (Object.keys(obj).length) abilitiesObj[`skill${idx+1}`] = obj;
 			});
+			if (passive.name || passive.description) abilitiesObj.passive = { name: passive.name || '', description: passive.description || '' };
 			if (Object.keys(abilitiesObj).length === 0) abilitiesObj = undefined;
 		}
 		const body = {
@@ -145,7 +169,7 @@ function CardsSection() {
 			rarity: form.rarity,
 			element: form.element || null,
 			life: Number(form.life) || 1,
-			history: form.lore || null,
+			lore: form.lore || null,
 			cardType: form.cardType || null,
 			unlockCondition: form.unlockCondition || null,
 			isStarter: !!form.isStarter,
@@ -162,15 +186,8 @@ function CardsSection() {
 	} catch (er) { setError(er.message); } finally { setSaving(false); } };
 
 	// Ability form helpers
-	const addAbility = () => {
-		setAbilities(list => [...list, { key: `habilidade${list.length + 1}`, nome: '', descricao: '', poder: '' }]);
-	};
-	const updateAbility = (index, field, value) => {
-		setAbilities(list => list.map((a,i)=> i===index ? { ...a, [field]: value } : a));
-	};
-	const removeAbility = (index) => {
-		if (!confirm('Remover habilidade?')) return;
-		setAbilities(list => list.filter((_,i)=> i!==index));
+	const updateSkill = (index, field, value) => {
+		setSkills(arr => arr.map((s,i)=> i===index ? { ...s, [field]: value } : s));
 	};
 
 	return (
@@ -198,14 +215,14 @@ function CardsSection() {
 						<div className="flex flex-col"> <label>ID</label> <input disabled={!!editingId} required value={form.id} onChange={e=>setForm(f=>({...f,id:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col md:col-span-2"> <label>Nome</label> <input required value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col"> <label>Raridade</label> <select value={form.rarity} onChange={e=>setForm(f=>({...f,rarity:e.target.value}))} className="border rounded px-2 py-1">{rarityOptions.map(o=> <option key={o} value={o}>{rarityLabel(o)}</option>)}</select> </div>
-						<div className="flex flex-col"> <label>Região</label> <input value={form.region} onChange={e=>setForm(f=>({...f,region:e.target.value}))} className="border rounded px-2 py-1" /> </div>
-						<div className="flex flex-col"> <label>Categoria</label> <input value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} className="border rounded px-2 py-1" /> </div>
-						<div className="flex flex-col"> <label>Elemento</label> <input value={form.element} onChange={e=>setForm(f=>({...f,element:e.target.value}))} className="border rounded px-2 py-1" /> </div>
+						<div className="flex flex-col"> <label>Região</label> <select value={form.region} onChange={e=>setForm(f=>({...f,region:e.target.value}))} className="border rounded px-2 py-1">{regionOptions.map(o=> <option key={o} value={o}>{o}</option>)}</select> </div>
+						<div className="flex flex-col"> <label>Categoria</label> <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} className="border rounded px-2 py-1">{categoryOptions.map(o=> <option key={o} value={o}>{o}</option>)}</select> </div>
+						<div className="flex flex-col"> <label>Elemento</label> <select value={form.element} onChange={e=>setForm(f=>({...f,element:e.target.value}))} className="border rounded px-2 py-1">{elementOptions.map(o=> <option key={o} value={o}>{o}</option>)}</select> </div>
 						<div className="flex flex-col"> <label>Ataque</label> <input type="number" value={form.attack} onChange={e=>setForm(f=>({...f,attack:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col"> <label>Defesa</label> <input type="number" value={form.defense} onChange={e=>setForm(f=>({...f,defense:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col"> <label>Custo</label> <input type="number" value={form.cost} onChange={e=>setForm(f=>({...f,cost:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col"> <label>Vida</label> <input type="number" value={form.life} onChange={e=>setForm(f=>({...f,life:e.target.value}))} className="border rounded px-2 py-1" /> </div>
-						<div className="flex flex-col"> <label>Card Type</label> <input value={form.cardType} onChange={e=>setForm(f=>({...f,cardType:e.target.value}))} className="border rounded px-2 py-1" /> </div>
+						<div className="flex flex-col"> <label>Card Type</label> <select value={form.cardType} onChange={e=>setForm(f=>({...f,cardType:e.target.value}))} className="border rounded px-2 py-1">{cardTypeOptions.map(o=> <option key={o} value={o}>{o}</option>)}</select> </div>
 						<div className="flex flex-col"> <label>Starter?</label> <select value={form.isStarter? 'yes':'no'} onChange={e=>setForm(f=>({...f,isStarter:e.target.value==='yes'}))} className="border rounded px-2 py-1"><option value="no">Não</option><option value="yes">Sim</option></select> </div>
 						<div className="flex flex-col md:col-span-3"> <label>Lore / História</label> <textarea rows={3} value={form.lore} onChange={e=>setForm(f=>({...f,lore:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 						<div className="flex flex-col md:col-span-3"> <label>Condição Desbloqueio</label> <input value={form.unlockCondition} onChange={e=>setForm(f=>({...f,unlockCondition:e.target.value}))} className="border rounded px-2 py-1" /> </div>
@@ -215,36 +232,32 @@ function CardsSection() {
 							<div className="flex flex-col"> <label>Full URL</label> <input value={form.full} onChange={e=>setForm(f=>({...f,full:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 							<div className="flex flex-col md:col-span-2"> <label>Tags (csv)</label> <input value={form.tags} onChange={e=>setForm(f=>({...f,tags:e.target.value}))} className="border rounded px-2 py-1" /> </div>
 							<div className="md:col-span-4 flex flex-col gap-2">
-								<label className="font-medium">Habilidades</label>
-								{abilities.length === 0 && <p className="text-[11px] text-gray-500">Nenhuma habilidade. Clique em &quot;Adicionar habilidade&quot;.</p>}
+								<label className="font-medium">Habilidades (skill1..skill5 + passiva)</label>
 								<div className="flex flex-col gap-3">
-									{abilities.map((ab, idx) => (
+									{skills.map((s, idx) => (
 										<div key={idx} className="border rounded p-2 bg-white shadow-sm flex flex-col gap-2">
-											<div className="grid grid-cols-6 gap-2 items-start">
-												<div className="col-span-2 flex flex-col">
-													<label className="text-[10px] uppercase tracking-wide text-gray-500">Chave</label>
-													<input value={ab.key} onChange={e=>updateAbility(idx,'key',e.target.value)} className="border rounded px-2 py-1 text-xs" />
-												</div>
-												<div className="col-span-2 flex flex-col">
-													<label className="text-[10px] uppercase tracking-wide text-gray-500">Nome</label>
-													<input value={ab.nome} onChange={e=>updateAbility(idx,'nome',e.target.value)} className="border rounded px-2 py-1 text-xs" />
-												</div>
-												<div className="col-span-1 flex flex-col">
-													<label className="text-[10px] uppercase tracking-wide text-gray-500">Poder</label>
-													<input type="number" value={ab.poder} onChange={e=>updateAbility(idx,'poder',e.target.value)} className="border rounded px-2 py-1 text-xs" />
-												</div>
-												<div className="col-span-1 flex items-end">
-													<button type="button" onClick={()=>removeAbility(idx)} className="text-red-600 text-[11px] underline">Remover</button>
-												</div>
-											</div>
-											<div className="flex flex-col">
-												<label className="text-[10px] uppercase tracking-wide text-gray-500">Descrição</label>
-												<textarea rows={2} value={ab.descricao} onChange={e=>updateAbility(idx,'descricao',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+											<div className="text-[11px] font-semibold">Habilidade {idx+1}</div>
+											<div className="grid grid-cols-6 gap-2">
+												<div className="col-span-3 flex flex-col"><label className="text-[10px] text-gray-500">Nome</label><input value={s.name} onChange={e=>updateSkill(idx,'name',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-3 flex flex-col"><label className="text-[10px] text-gray-500">Descrição</label><input value={s.description} onChange={e=>updateSkill(idx,'description',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-2 flex flex-col"><label className="text-[10px] text-gray-500">Kind</label><select value={s.kind} onChange={e=>updateSkill(idx,'kind',e.target.value)} className="border rounded px-2 py-1 text-xs"><option value="">—</option><option value="damage">damage</option><option value="debuff">debuff</option><option value="stun">stun</option><option value="buff">buff</option></select></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">Custo</label><input type="number" value={s.cost} onChange={e=>updateSkill(idx,'cost',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">Base</label><input type="number" value={s.base} onChange={e=>updateSkill(idx,'base',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">PP Max</label><input type="number" value={s.ppMax} onChange={e=>updateSkill(idx,'ppMax',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">Stun</label><input type="number" value={s.stun} onChange={e=>updateSkill(idx,'stun',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">Chance</label><input type="number" step="0.01" value={s.chance} onChange={e=>updateSkill(idx,'chance',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
+												<div className="col-span-1 flex flex-col"><label className="text-[10px] text-gray-500">Heal</label><input type="number" value={s.heal} onChange={e=>updateSkill(idx,'heal',e.target.value)} className="border rounded px-2 py-1 text-xs" /></div>
 											</div>
 										</div>
 									))}
+									<div className="border rounded p-2 bg-white shadow-sm flex flex-col gap-2">
+										<div className="text-[11px] font-semibold">Passiva</div>
+										<div className="grid grid-cols-6 gap-2">
+											<div className="col-span-2 flex flex-col"><label className="text-[10px] text-gray-500">Nome</label><input value={passive.name} onChange={e=>setPassive(p=>({...p,name:e.target.value}))} className="border rounded px-2 py-1 text-xs" /></div>
+											<div className="col-span-4 flex flex-col"><label className="text-[10px] text-gray-500">Descrição</label><input value={passive.description} onChange={e=>setPassive(p=>({...p,description:e.target.value}))} className="border rounded px-2 py-1 text-xs" /></div>
+										</div>
+									</div>
 								</div>
-								<button type="button" onClick={addAbility} className="self-start mt-1 px-2 py-1 rounded bg-indigo-600 text-white text-[11px] hover:bg-indigo-500">Adicionar habilidade</button>
 							</div>
 						</>)}
 						<div className="flex items-end gap-2 col-span-6 mt-1">

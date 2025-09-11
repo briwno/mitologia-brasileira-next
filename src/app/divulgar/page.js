@@ -130,14 +130,14 @@ export default function DivulgarPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
               <Image
-                src="/images/cards/portraits/saci.jpg"
+                src="https://ebsjwcxutgubeligobai.supabase.co/storage/v1/object/public/images/saci.jpg"
                 alt=""
                 fill
                 aria-hidden
                 className="object-cover blur-sm scale-110 opacity-40"
               />
               <Image
-                src="/images/cards/portraits/saci.jpg"
+                src="https://ebsjwcxutgubeligobai.supabase.co/storage/v1/object/public/images/saci.jpg"
                 alt="Ka’aguy — Saci"
                 fill
                 className="object-contain"
