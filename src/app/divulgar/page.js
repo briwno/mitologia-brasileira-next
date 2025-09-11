@@ -1,32 +1,3 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
-// src/app/divulgar/page.js
-
-/**
- * COMO ATUALIZAR PATCH NOTES:
- * 1. Adicione uma               <Image
-                <Image
-                src="/images/cards/portraits/mula.jpg"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="/images/cards/portraits/mula.jpg"
-                alt="Ka'aguy — Mula Sem Cabeça"    src="/images/cards/portraits/curupira.jpg"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="/images/cards/portraits/curupira.jpg"
-                alt="Ka'aguy — Curupira"da no início do array 'patchNotes'
- * 2. Use o formato: { version, date, icon, color, changes: [] }
- * 3. Cores disponíveis: 'cyan', 'green', 'purple', 'orange'
- * 4. A primeira entrada sempre terá a badge "Atual"
- */
-
 import Image from "next/image";
 import Icon from "@/components/UI/Icon";
 
