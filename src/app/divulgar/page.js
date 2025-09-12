@@ -1,601 +1,197 @@
+"use client";
 import Image from "next/image";
+import { useRef, useState, useEffect } from "react";
 import Icon from "@/components/UI/Icon";
 
-export const metadata = {
-  title: "Ka’aguy — Descubra e Compartilhe",
-  description:
-    "Ka’aguy é um jogo de cartas colecionáveis inspirado nas lendas brasileiras. Monte seu deck, desafie amigos e explore regiões místicas.",
-  openGraph: {
-    title: "Ka’aguy — Jogo de Cartas",
-    description:
-      "Monte seu deck com Encantados como Saci, Iara e Curupira. Batalhas rápidas, coleção, museu e modos PvP.",
-    url: "https://mitologia-brasileira.example.com/divulgar",
-    type: "website",
-    images: [
-      {
-        url: "/images/banners/menubatalha.png",
-        width: 1200,
-        height: 630,
-        alt: "Ka’aguy — Batalhas entre Encantados",
-      },
-    ],
-  },
-};
+const SECTIONS = [
+  { id: 'hero', label: 'Início' },
+  { id: 'classes', label: 'Encantados' },
+  { id: 'regioes', label: 'Regiões' },
+  { id: 'modo', label: 'Modo' },
+  { id: 'roadmap', label: 'Roadmap' },
+  { id: 'download', label: 'Download' }
+];
+
+const sampleEncantados = [
+  { name: 'Saci', img: '/images/cards/portraits/saci.jpg', role: 'O Travesso' },
+  { name: 'Iara', img: '/images/cards/portraits/iara.jpg', role: 'A Rainha das Águas' },
+  { name: 'Curupira', img: '/images/cards/portraits/curupira.jpg', role: 'O Guardião da Floresta' },
+  { name: 'Boitatá', img: '/images/cards/portraits/boitata.jpg', role: 'A Serpente de Fogo' },
+  { name: 'Cuca', img: '/images/cards/portraits/cuca.jpg', role: 'A Feiticeira' },
+  { name: 'Boto', img: '/images/cards/portraits/boto.jpg', role: 'O Encantador de Mulheres' },
+];
+
+const regioes = [
+  { name: 'Amazônia', img: '/images/banners/menumuseu.png', desc: 'Selva densa, mana de vida e venenos.' },
+  { name: 'Nordeste', img: '/images/banners/menuranking.png', desc: 'Calor e persistência. Buffs de resistência.' },
+  { name: 'Centro-Oeste', img: '/images/banners/menuperfil.png', desc: 'Planícies místicas e equilíbrio.' },
+];
+
+const roadmap = [
+  { phase: 'Pré-Alfa', status: 'concluído', items: ['Protótipo de cartas', 'Sistema básico de turnos'] },
+  { phase: 'Alfa', status: 'ativo', items: ['PvP inicial', 'Museu de Lendas', 'Coleção & Decks'] },
+  { phase: 'Beta', status: 'futuro', items: ['Progressão de ranking', 'Eventos Sazonais', 'Mobile otimizado'] },
+];
 
 export default function DivulgarPage() {
-  // Patch notes - fácil de atualizar
-  const patchNotes = [
-    {
-      version: "0.1.0",
-      date: "Setembro 2025",
-      icon: "✨",
-      color: "cyan",
-      changes: ["Em Alfa", "Projeto inicial do Ka’aguy"],
-    },
-  ];
+  const [active, setActive] = useState('hero');
+  const observerRef = useRef(null);
 
-  const getColorClasses = (color) => {
-    const colors = {
-      cyan: "border-cyan-500/30 text-cyan-400",
-      green: "border-green-500/30 text-green-400",
-      purple: "border-purple-500/30 text-purple-400",
-      orange: "border-orange-500/30 text-orange-400",
+  useEffect(() => {
+    const options = { root: null, rootMargin: '0px', threshold: 0.5 };
+    const cb = (entries) => {
+      entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
     };
-    return colors[color] || colors.cyan;
-  };
+    observerRef.current = new IntersectionObserver(cb, options);
+    SECTIONS.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) observerRef.current.observe(el);
+    });
+    return () => observerRef.current?.disconnect();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0a131d] via-[#0b1c2c] to-[#0a131d] text-white">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <Image
-            src="/images/banners/menumuseu.png"
-            alt="Ka’aguy — Museu das Lendas"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-        <div className="relative max-w-6xl mx-auto px-6 py-20 sm:py-28">
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-            Ka’aguy
-          </h1>
-          <p className="mt-4 text-neutral-200 max-w-2xl">
-            Um jogo de cartas com Encantados, regiões e lendas do nosso
-            folclore. Acompanhe novidades, artes e eventos nas nossas redes.
-          </p>
-          <div className="mt-6">
-            <a
-              href="https://www.instagram.com/kaaguygame/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-pink-600 hover:bg-pink-500 text-white font-bold border border-pink-400 shadow transition"
-            >
-              <Icon name="instagram" size={24} className="text-white" />
-              Ka’aguy no Instagram
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Sobre o jogo */}
-      <section className="max-w-6xl mx-auto px-6 py-10">
-        <div className="grid md:grid-cols-2 gap-8 items-start">
-          <div>
-            <h2 className="text-2xl font-extrabold">Sobre o Ka’aguy</h2>
-            <p className="mt-3 text-neutral-200 leading-relaxed">
-              Ka’aguy é um jogo de cartas colecionáveis inspirado no nosso
-              folclore. Reúna Encantados icônicos, explore regiões como Amazônia
-              e Pantanal e batalhe em partidas rápidas e estratégicas.
-            </p>
-            <ul className="mt-4 space-y-2 text-neutral-200 list-disc list-inside">
-              <li>
-                Encantados com habilidades únicas (Saci, Iara, Curupira e mais)
-              </li>
-              <li>Modos de jogo com PvP e desafios especiais</li>
-              <li>Eventos sazonais que afetam o campo e as cartas</li>
-              <li>Museu com histórias e curiosidades das lendas</li>
-            </ul>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
-              <Image
-                src="https://ebsjwcxutgubeligobai.supabase.co/storage/v1/object/public/images/saci.jpg"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="https://ebsjwcxutgubeligobai.supabase.co/storage/v1/object/public/images/saci.jpg"
-                alt="Ka’aguy — Saci"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
-              <Image
-                src="/images/cards/portraits/iara.jpg"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="/images/cards/portraits/iara.jpg"
-                alt="Ka’aguy — Iara"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
-              <Image
-                src="/images/cards/portraits/boto.jpg"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="/images/cards/portraits/boto.jpg"
-                alt="Ka’aguy — Curupira"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative h-36 rounded-xl overflow-hidden bg-black/40">
-              <Image
-                src="/images/banners/menubatalha.png"
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src="/images/banners/menubatalha.png"
-                alt="Ka’aguy — Batalhas"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="max-w-6xl mx-auto px-6 pb-6 grid md:grid-cols-3 gap-6">
-        {[
-          {
-            title: "Colecione Encantados",
-            desc: "Descubra lendas do Brasil com efeitos especiais.",
-            img: "/images/cards/portraits/boitata.jpg",
-          },
-          {
-            title: "Batalhas Rápidas",
-            desc: "Partidas de turno com habilidades e campos que mudam o ritmo.",
-            img: "/images/banners/menuranking.png",
-          },
-          {
-            title: "Explore Regiões",
-            desc: "Amazônia, Pantanal, Sertão e mais — cada uma com sua própria identidade.",
-            img: "/images/banners/menuperfil.png",
-          },
-        ].map((f) => (
-          <div
-            key={f.title}
-            className="bg-black/30 rounded-2xl overflow-hidden"
-          >
-            <div className="relative h-40 bg-black/40">
-              <Image
-                src={f.img}
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src={f.img}
-                alt={f.title}
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="p-5">
-              <h3 className="text-lg font-bold">{f.title}</h3>
-              <p className="text-sm text-neutral-300 mt-1">{f.desc}</p>
-            </div>
-          </div>
+    <main className="relative text-white">
+      {/* Side Nav Dots */}
+      <nav className="hidden md:flex flex-col gap-3 fixed left-4 top-1/2 -translate-y-1/2 z-40">
+        {SECTIONS.map(s => (
+          <button key={s.id} onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })} aria-label={s.label}
+            className={`w-4 h-4 rounded-full border transition ${active===s.id? 'bg-emerald-400 border-emerald-300 scale-110':'border-white/40 hover:border-white/70'}`}></button>
         ))}
-      </section>
+      </nav>
 
-      {/* Botão Jogar Bem Grande (desabilitado, cinza, "Em breve") */}
-      <section className="flex justify-center py-16">
-        <button
-          disabled
-          className="group relative inline-flex items-center justify-center px-16 py-8 text-4xl font-extrabold text-white bg-gradient-to-br from-gray-500 via-gray-600 to-gray-800 rounded-3xl shadow-2xl border-2 border-gray-400/50 backdrop-blur-sm opacity-80 cursor-not-allowed"
-        >
-          {/* Efeito de brilho sutil */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-gray-400/20 to-gray-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      {/* Social Bar */}
+      <div className="hidden md:flex flex-col gap-4 fixed right-6 top-1/2 -translate-y-1/2 z-40 text-white/70">
+        <a href="https://www.instagram.com/kaaguygame/" target="_blank" className="hover:text-white transition"><Icon name="instagram" /></a>
+        <a href="https://github.com/briwno" target="_blank" className="hover:text-white transition"><Icon name="github" /></a>
+      </div>
 
-          {/* Conteúdo do botão */}
-          <div className="relative flex items-center gap-4">
-            <span className="text-5xl">🌿</span>
-            <div className="flex flex-col items-start">
-              <span className="text-4xl leading-none">Em breve</span>
-              <span className="text-2xl text-gray-200 font-normal">
-                Adentre a Ka&apos;aguy
-              </span>
+      {/* Sections Container */}
+      <div className="snap-y snap-mandatory h-screen overflow-y-scroll overflow-x-hidden no-scrollbar scroll-smooth bg-[#0a121a]">
+        {/* Hero Section */}
+        <section id="hero" className="relative h-screen w-full flex items-center justify-center snap-start">
+          <div className="absolute inset-0">
+            <Image src="/images/banners/menubatalha.png" alt="Hero BG" fill className="object-cover opacity-40" priority />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90" />
+          </div>
+          <div className="relative max-w-4xl text-center px-6">
+            <div className="mx-auto mb-8 w-[260px] md:w-[340px] select-none">
+              <Image src="/logo.svg" alt="Ka’aguy" width={340} height={120} priority className="w-full h-auto drop-shadow-[0_0_12px_rgba(16,255,200,0.25)]" />
+            </div>
+            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-300 via-cyan-300 to-emerald-400 text-transparent bg-clip-text sr-only">Ka’aguy</h1>
+            <p className="mt-6 text-lg md:text-xl text-white/80">Lendas brasileiras ganham vida em batalhas estratégicas de cartas. Construa seu deck. Domine as regiões. Torne-se uma lenda.</p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <button disabled className="px-10 py-4 rounded-xl font-bold bg-gradient-to-br from-gray-600 to-gray-800 border border-white/20 cursor-not-allowed text-white/80">Disponível em breve</button>
+              <a href="https://www.instagram.com/kaaguygame/" target="_blank" className="px-10 py-4 rounded-xl font-bold bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition shadow-lg">Seguir Atualizações</a>
             </div>
           </div>
+        </section>
 
-          {/* Partículas decorativas */}
-          <div className="absolute -inset-2 rounded-3xl opacity-30 bg-gradient-to-r from-gray-600/20 to-gray-800/20 blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-        </button>
-      </section>
-
-      {/* Patch Notes */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
-            📝 Histórico de Atualizações
-          </h2>
-          <p className="text-neutral-300 max-w-2xl mx-auto">
-            Acompanhe todas as novidades e melhorias do Ka&apos;aguy
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {patchNotes.map((patch, index) => (
-            <div
-              key={patch.version}
-              className={`bg-black/30 backdrop-blur-sm rounded-2xl p-8 border ${
-                getColorClasses(patch.color).split(" ")[0]
-              }`}
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div
-                  className={`w-14 h-14 bg-gradient-to-br from-${patch.color}-400 to-${patch.color}-600 rounded-xl flex items-center justify-center`}
-                >
-                  <span className="text-2xl">{patch.icon}</span>
-                </div>
-                <div>
-                  <h3
-                    className={`text-2xl font-bold ${
-                      getColorClasses(patch.color).split(" ")[1]
-                    }`}
-                  >
-                    Versão {patch.version}
-                  </h3>
-                  <p className="text-neutral-400">{patch.date}</p>
-                </div>
-                {index === 0 && (
-                  <div className="ml-auto">
-                    <span className="bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full text-sm font-semibold">
-                      Atual
-                    </span>
+        {/* Classes / Encantados */}
+        <section id="classes" className="relative h-screen snap-start flex flex-col">
+          <div className="absolute inset-0">
+            <Image src="/images/banners/menumuseu.png" alt="BG" fill className="object-cover opacity-20" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+          </div>
+          <div className="relative flex flex-col items-center justify-center px-6">
+            <h2 className="text-4xl font-extrabold mb-8">Encantados</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-5 w-full max-w-5xl pb-4">
+              {sampleEncantados.map(e => (
+                <div key={e.name} className="group relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 backdrop-blur-sm p-2 flex flex-col items-center text-center hover:border-emerald-400/60 transition max-w-[280px]">
+                  <div className="relative w-full rounded-xl overflow-hidden h-[clamp(180px,28vh,300px)]">
+                    <Image src={e.img} alt={e.name} fill className="object-cover group-hover:scale-100 transition duration-500" />
                   </div>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {patch.changes.map((change, changeIndex) => (
-                  <div key={changeIndex} className="flex items-start gap-3">
-                    <span
-                      className={`${
-                        getColorClasses(patch.color).split(" ")[1]
-                      } mt-1`}
-                    >
-                      •
-                    </span>
-                    <span className="text-neutral-300">{change}</span>
+                  <div className="mt-3">
+                    <h3 className="font-semibold tracking-wide">{e.name}</h3>
+                    <p className="text-xs text-white/60">{e.role}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Seção Sobre o Desenvolvedor */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-            👨‍💻 Sobre o Desenvolvedor
-          </h2>
-          <p className="text-neutral-300 max-w-2xl mx-auto">
-            Conheça quem está por trás do Ka&apos;aguy
-          </p>
-        </div>
-
-        <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/30">
-          <div className="grid md:grid-cols-3 gap-8 items-center">
-            {/* Foto/Avatar do Desenvolvedor */}
-            <div className="text-center">
-              <div className="w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full p-1 mx-auto mb-4">
-                <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center">
-                  <span className="text-4xl">👨‍💻</span>
+                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition bg-gradient-to-b from-transparent via-emerald-400/10 to-emerald-500/20" />
                 </div>
-              </div>
-              <h3 className="text-xl font-bold text-purple-400 mb-2">
-                Bruno Alves
-              </h3>
-              <p className="text-sm text-gray-400">
-                Desenvolvedor Em Aprendizado
-              </p>
-            </div>
-
-            {/* Informações sobre o projeto */}
-            <div className="md:col-span-2">
-              <h4 className="text-lg font-bold text-white mb-4">
-                Um projeto solo apaixonado
-              </h4>
-              <p className="text-neutral-300 leading-relaxed mb-4">
-                O Ka&apos;aguy é desenvolvido inteiramente por mim, Bruno, como
-                um projeto educacional da faculdade para celebrar a rica
-                mitologia brasileira através de um jogo de cartas moderno e
-                acessível.
-              </p>
-
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-black/40 p-4 rounded-lg">
-                  <h5 className="text-purple-400 font-semibold mb-2">
-                    🎯 Objetivo do projeto
-                  </h5>
-                  <p className="text-sm text-neutral-300">
-                    Criar um jogo que valorize nossa cultura folclórica de forma
-                    divertida e educativa
-                  </p>
-                </div>
-                <div className="bg-black/40 p-4 rounded-lg">
-                  <h5 className="text-purple-400 font-semibold mb-2">
-                    ⚡ Stack do projeto
-                  </h5>
-                  <p className="text-sm text-neutral-300">
-                    Next.js, Supabase, TailwindCSS, JavaScript
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href="https://github.com/briwno"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
-                >
-                  <span>🐙</span> GitHub
-                </a>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Seção de Contato */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
-            💬 Entre em Contato
-          </h2>
-          <p className="text-neutral-300 max-w-2xl mx-auto">
-            Tem sugestões, encontrou bugs ou quer colaborar? Entre em contato!
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Formulário de Email */}
-          <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 border border-orange-500/30">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-600 rounded-2xl flex items-center justify-center">
-                <span className="text-3xl">📧</span>
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-orange-400">
-                  Entre em Contato
-                </h3>
-                <p className="text-neutral-300">
-                  Envie sua mensagem, sugestão ou reporte de bug
-                </p>
-              </div>
+        {/* Regiões */}
+        <section id="regioes" className="relative h-screen snap-start flex flex-col">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#061016] via-[#0a1c25] to-[#061016]" />
+          <div className="relative flex-1 max-w-6xl w-full mx-auto flex flex-col justify-center px-6">
+            <h2 className="text-4xl font-extrabold mb-10">Regiões</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {regioes.map(r => (
+                <div key={r.name} className="relative group rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm">
+                  <Image src={r.img} alt={r.name} fill className="object-cover opacity-40 group-hover:opacity-60 transition" />
+                  <div className="relative p-6 flex flex-col h-full">
+                    <h3 className="text-xl font-bold mb-2">{r.name}</h3>
+                    <p className="text-sm text-white/70 leading-relaxed">{r.desc}</p>
+                    <div className="mt-auto pt-4 text-xs text-emerald-300/70">Bonus temáticos em desenvolvimento</div>
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
+        </section>
 
-            <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="nome"
-                    className="block text-sm font-medium text-neutral-300 mb-2"
-                  >
-                    Nome
-                  </label>
-                  <input
-                    type="text"
-                    id="nome"
-                    name="nome"
-                    className="w-full px-4 py-3 bg-black/40 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-                    placeholder="Seu nome"
-                    required
-                  />
+        {/* Modo de Jogo */}
+        <section id="modo" className="relative h-screen snap-start flex flex-col">
+          <div className="absolute inset-0">
+            <Image src="/images/banners/menuranking.png" alt="Modo" fill className="object-cover opacity-30" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90" />
+          </div>
+          <div className="relative flex-1 flex flex-col items-center justify-center px-6 max-w-5xl mx-auto">
+            <h2 className="text-4xl font-extrabold mb-6">Modo de Jogo</h2>
+            <p className="text-lg text-white/80 max-w-3xl text-center">Partidas táticas em turnos onde posicionamento, timing de habilidades e sinergias regionais definem a vitória. Planeje combos, utilize bônus sazonais e surpreenda adversários.</p>
+            <div className="mt-10 grid sm:grid-cols-3 gap-6 w-full">
+              {['Deck Building', 'PvP Rápido', 'Eventos'].map(f => (
+                <div key={f} className="p-5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm text-center">
+                  <h3 className="font-semibold mb-2 text-emerald-300">{f}</h3>
+                  <p className="text-xs text-white/60 leading-relaxed">Experiência em evolução</p>
                 </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-neutral-300 mb-2"
-                  >
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    className="w-full px-4 py-3 bg-black/40 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-                    placeholder="seu@email.com"
-                    required
-                  />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Roadmap */}
+        <section id="roadmap" className="relative h-screen snap-start flex flex-col">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#091520] via-[#0d1e2b] to-[#081118]" />
+          <div className="relative flex-1 max-w-5xl w-full mx-auto px-6 flex flex-col justify-center">
+            <h2 className="text-4xl font-extrabold mb-10">Roadmap</h2>
+            <div className="space-y-6">
+              {roadmap.map(stage => (
+                <div key={stage.phase} className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <h3 className="text-2xl font-bold">{stage.phase}</h3>
+                    <span className={`text-xs px-3 py-1 rounded-full font-semibold ${stage.status==='concluído'?'bg-emerald-600/30 text-emerald-300': stage.status==='ativo'?'bg-cyan-600/30 text-cyan-300':'bg-yellow-600/30 text-yellow-300'}`}>{stage.status}</span>
+                  </div>
+                  <ul className="grid sm:grid-cols-3 gap-3 text-sm text-white/70">
+                    {stage.items.map(it => <li key={it} className="flex items-start gap-2"><span className="text-emerald-400">•</span><span>{it}</span></li>)}
+                  </ul>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              <div>
-                <label
-                  htmlFor="assunto"
-                  className="block text-sm font-medium text-neutral-300 mb-2"
-                >
-                  Assunto
-                </label>
-                <select
-                  id="assunto"
-                  name="assunto"
-                  className="w-full px-4 py-3 bg-black/40 border border-gray-600 rounded-lg text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-                  required
-                >
-                  <option value="">Selecione um assunto</option>
-                  <option value="sugestao">💡 Sugestão</option>
-                  <option value="bug">🐛 Reportar Bug</option>
-                  <option value="parceria">🤝 Parceria</option>
-                  <option value="feedback">📝 Feedback</option>
-                  <option value="outros">❓ Outros</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="mensagem"
-                  className="block text-sm font-medium text-neutral-300 mb-2"
-                >
-                  Mensagem
-                </label>
-                <textarea
-                  id="mensagem"
-                  name="mensagem"
-                  rows={6}
-                  className="w-full px-4 py-3 bg-black/40 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors resize-none"
-                  placeholder="Escreva sua mensagem aqui..."
-                  required
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full px-6 py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-lg"
-              >
-                📨 Enviar Mensagem
-              </button>
+        {/* Download / CTA */}
+        <section id="download" className="relative h-screen snap-start flex flex-col items-center justify-center">
+          <div className="absolute inset-0">
+            <Image src="/images/banners/menuperfil.png" alt="CTA" fill className="object-cover opacity-40" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
+          </div>
+          <div className="relative text-center px-6 max-w-3xl">
+            <h2 className="text-5xl font-extrabold bg-gradient-to-r from-emerald-300 via-cyan-200 to-emerald-400 text-transparent bg-clip-text mb-6">Junte-se à Floresta</h2>
+            <p className="text-white/75 text-lg mb-10">Entre na lista para receber novidades, ver artes exclusivas e ser avisado quando o teste fechado abrir.</p>
+            <form onSubmit={(e)=>{e.preventDefault(); alert('Em breve');}} className="flex flex-col sm:flex-row gap-4 justify-center">
+              <input type="email" required placeholder="seu@email.com" className="px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:outline-none focus:border-emerald-400 placeholder-white/40 text-sm w-full sm:w-80" />
+              <button className="px-8 py-4 rounded-xl font-bold bg-gradient-to-br from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition shadow-lg">Quero Receber</button>
             </form>
-          </div>
-
-          {/* GitHub - Card de Contribuição */}
-          <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-500/30">
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">⚙️</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-400 mb-2">
-                Contribuir
-              </h3>
-              <p className="text-neutral-300 text-sm">
-                Ka&apos;aguy é open-source! Ajude no desenvolvimento
-              </p>
-            </div>
-
-            {/* Estatísticas do Projeto */}
-            <div className="space-y-3 mb-4">
-              <div className="bg-black/40 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">
-                    📊 Linguagem Principal
-                  </span>
-                  <span className="text-yellow-400 font-semibold">
-                    JavaScript
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">🚀 Framework</span>
-                  <span className="text-blue-400 font-semibold">Next.js</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">📦 Estado</span>
-                  <span className="text-green-400 font-semibold">
-                    Em Desenvolvimento
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-black/40 p-4 rounded-lg">
-                <h4 className="text-gray-300 font-semibold mb-3">
-                  🛠️ Como Contribuir:
-                </h4>
-                <ul className="space-y-2 text-sm text-neutral-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400">•</span>
-                    <span>Reporte bugs via Issues</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400">•</span>
-                    <span>Sugira novas funcionalidades</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400">•</span>
-                    <span>Envie pull requests com melhorias</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="space-y-3">
-              <a
-                href="https://github.com/briwno/mitologia-brasileira-next"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
-              >
-                <span>📂</span> Ver Repositório
-              </a>
-              <a
-                href="https://github.com/briwno/mitologia-brasileira-next/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors"
-              >
-                <span>🐛</span> Reportar Bug
-              </a>
+            <div className="mt-10 flex items-center justify-center gap-6 text-white/60 text-sm">
+              <span>Next.js</span><span>Supabase</span><span>TailwindCSS</span>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Galeria */}
-      <section className="max-w-6xl mx-auto px-6 pb-14">
-        <h2 className="text-xl font-extrabold mb-4">Galeria</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            "/images/banners/menubatalha.png",
-            "/images/cards/portraits/boto.jpg",
-            "/images/banners/menumuseu.png",
-            "/images/cards/portraits/tupa.png",
-            "/images/cards/portraits/encourado.jpg",
-            "/images/cards/portraits/cuca.jpg",
-          ].map((src, i) => (
-            <div
-              key={i}
-              className="relative h-44 bg-black/30 rounded-xl overflow-hidden"
-            >
-              <Image
-                src={src}
-                alt=""
-                fill
-                aria-hidden
-                className="object-cover blur-sm scale-110 opacity-40"
-              />
-              <Image
-                src={src}
-                alt={`Ka’aguy — Galeria ${i + 1}`}
-                fill
-                className="object-contain"
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }

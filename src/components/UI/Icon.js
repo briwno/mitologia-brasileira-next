@@ -63,6 +63,7 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'instagram': 'https://img.icons8.com/fluency/48/instagram-new.png',
     'share': 'https://img.icons8.com/fluency/48/share.png',
     'link': 'https://img.icons8.com/fluency/48/link.png',
+    'github': 'https://img.icons8.com/fluency/48/github.png',
   };
 
   const iconUrl = iconMap[name];
