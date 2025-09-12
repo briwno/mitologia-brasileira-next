@@ -87,8 +87,8 @@ export default function DivulgarPage() {
           </div>
         </section>
 
-        {/* Classes / Encantados */}
-        <section id="classes" className="relative h-screen snap-start flex flex-col">
+        {/* Encantados */}
+        <section id="encantados" className="relative h-screen snap-start flex flex-col">
           <div className="absolute inset-0">
             <Image src="/images/banners/menumuseu.png" alt="BG" fill className="object-cover opacity-20" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
@@ -152,11 +152,11 @@ export default function DivulgarPage() {
           </div>
         </section>
 
-        {/* Roadmap */}
-        <section id="roadmap" className="relative h-screen snap-start flex flex-col">
+        {/* cronograma */}
+        <section id="cronograma" className="relative h-screen snap-start flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-b from-[#091520] via-[#0d1e2b] to-[#081118]" />
           <div className="relative flex-1 max-w-5xl w-full mx-auto px-6 flex flex-col justify-center">
-            <h2 className="text-4xl font-extrabold mb-10">Roadmap</h2>
+            <h2 className="text-4xl font-extrabold mb-10">Cronograma</h2>
             <div className="space-y-6">
               {roadmap.map(stage => (
                 <div key={stage.phase} className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
@@ -173,8 +173,8 @@ export default function DivulgarPage() {
           </div>
         </section>
 
-        {/* Download / CTA */}
-        <section id="download" className="relative h-screen snap-start flex flex-col items-center justify-center">
+        {/* pré-registro */}
+        <section id="pre-registro" className="relative h-screen snap-start flex flex-col items-center justify-center">
           <div className="absolute inset-0">
             <Image src="/images/banners/menuperfil.png" alt="CTA" fill className="object-cover opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
