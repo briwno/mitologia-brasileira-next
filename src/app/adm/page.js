@@ -10,7 +10,159 @@ const TABS = [
 	{ key: 'item-cards', label: 'Item Cards' },
 	{ key: 'players', label: 'Players' },
 	{ key: 'contos', label: 'Contos' },
+	{ key: 'card-inventory', label: 'Inventário de Cartas' },
 ];
+// ------------------- CARD INVENTORY SECTION (ADMIN) -------------------
+function CardInventorySection() {
+	const [users, setUsers] = useState([]);
+	const [selectedUser, setSelectedUser] = useState(null);
+	const [cards, setCards] = useState([]);
+	const [owned, setOwned] = useState([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [saving, setSaving] = useState(false);
+
+	// Carregar usuários
+	useEffect(() => {
+		(async () => {
+			try {
+				setLoading(true);
+				setError(null);
+				const res = await fetch('/api/players');
+				const data = await res.json();
+				if (!res.ok) throw new Error(data.error || 'Falha ao carregar usuários');
+				setUsers(data.players || []);
+			} catch (e) {
+				setError(e.message);
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, []);
+
+	// Carregar cartas e inventário do usuário selecionado
+	useEffect(() => {
+		if (!selectedUser) return;
+		(async () => {
+			try {
+				setLoading(true);
+				setError(null);
+				// Carregar todas as cartas
+				const resCards = await fetch('/api/cards?limit=500');
+				const dataCards = await resCards.json();
+				if (!resCards.ok) throw new Error(dataCards.error || 'Falha ao carregar cartas');
+				setCards(dataCards.cards || []);
+				// Carregar inventário do usuário
+				const resInv = await fetch(`/api/collection?uid=${encodeURIComponent(selectedUser.uid)}`);
+				const dataInv = await resInv.json();
+				if (!resInv.ok) throw new Error(dataInv.error || 'Falha ao carregar inventário');
+				setOwned(Array.isArray(dataInv.cards) ? dataInv.cards : []);
+			} catch (e) {
+				setError(e.message);
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, [selectedUser]);
+
+	const handleToggle = (cardId) => {
+		setOwned((prev) =>
+			prev.includes(cardId)
+				? prev.filter((id) => id !== cardId)
+				: [...prev, cardId]
+		);
+	};
+
+	const handleSave = async () => {
+		if (!selectedUser) return;
+		setSaving(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/collection', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ uid: selectedUser.uid, cards: owned })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error || 'Falha ao salvar inventário');
+		} catch (e) {
+			setError(e.message);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<SectionContainer>
+			<div className="flex flex-col gap-4">
+				<h3 className="font-semibold text-indigo-900">Inventário de Cartas do Usuário</h3>
+				{error && <ErrorInline error={error} />}
+				<div className="mb-2">
+					<label className="text-sm font-medium">Selecione o usuário:</label>
+					<select
+						value={selectedUser?.uid || ''}
+						onChange={e => {
+							const uid = e.target.value;
+							setSelectedUser(users.find(u => u.uid === uid) || null);
+						}}
+						className="border rounded px-2 py-1 text-sm min-w-[200px]"
+					>
+						<option value="">—</option>
+						{users.map(u => (
+							<option key={u.uid} value={u.uid}>{u.name || u.uid}</option>
+						))}
+					</select>
+				</div>
+				{selectedUser && (
+					<>
+						<div className="mb-2 text-sm text-gray-700">Marque as cartas que o usuário possui e clique em Salvar.</div>
+						{loading ? (
+							<LoadingInline />
+						) : (
+							<div className="overflow-auto max-h-[420px] border rounded border-gray-200 bg-gray-50 p-2">
+								<table className="w-full text-xs">
+									<thead className="bg-gray-200">
+										<tr>
+											<th className="p-2">Possui</th>
+											<th className="p-2">Nome</th>
+											<th className="p-2">Região</th>
+											<th className="p-2">Categoria</th>
+											<th className="p-2">Raridade</th>
+										</tr>
+									</thead>
+									<tbody>
+										{cards.map(card => (
+											<tr key={card.id} className="odd:bg-white even:bg-gray-100">
+												<td className="p-2 text-center">
+													<input
+														type="checkbox"
+														checked={owned.includes(card.id)}
+														onChange={() => handleToggle(card.id)}
+													/>
+												</td>
+												<td className="p-2">{card.name}</td>
+												<td className="p-2">{card.region}</td>
+												<td className="p-2">{card.category}</td>
+												<td className="p-2">{card.rarity}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+						<div className="mt-3 flex gap-2">
+							<button
+								onClick={handleSave}
+								disabled={saving}
+								className="px-4 py-2 rounded bg-indigo-600 text-white text-sm font-medium disabled:opacity-50"
+							>{saving ? 'Salvando...' : 'Salvar'}</button>
+						</div>
+					</>
+				)}
+			</div>
+		</SectionContainer>
+	);
+}
 
 function SectionContainer({ children }) {
 	return (
@@ -875,6 +1027,7 @@ export default function AdminPage() {
 				{tab === 'item-cards' && <ItemCardsSection />}
 				{tab === 'players' && <PlayersSection />}
 				{tab === 'contos' && <ContosSection />}
+				{tab === 'card-inventory' && <CardInventorySection />}
 			</div>
 		</div>
 	);

@@ -11,6 +11,7 @@ const MAP_REGION = { AMAZONIA: 'Amazônia', NORTHEAST: 'Nordeste', SOUTHEAST: 'S
 const MAP_CATEGORY = { GUARDIANS: 'Guardiões da Floresta', SPIRITS: 'Espíritos das Águas', HAUNTS: 'Assombrações', PROTECTORS: 'Protetores Humanos', MYSTICAL: 'Entidades Místicas' };
 const MAP_ELEMENT = { EARTH: 'Terra', WATER: 'Água', FIRE: 'Fogo', AIR: 'Ar', SPIRIT: 'Espírito' };
 const MAP_SEASON = { CARNIVAL: 'Carnaval', SAO_JOAO: 'São João', FESTA_JUNINA: 'Festa Junina', CHRISTMAS: 'Natal' };
+const MAP_ITEM_TYPE = { CONSUMABLE: 'Consumível', EQUIPMENT: 'Equipamento', ARTIFACT: 'Artefato', RELIC: 'Relíquia', SCROLL: 'Pergaminho' };
 const translate = (val, map) => map?.[val] || val;
 const formatEnumLabel = (val) => (typeof val === 'string' ? val.toLowerCase().split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ') : val);
 import Image from 'next/image';
@@ -319,7 +320,7 @@ export default function CatalogoComContos() {
         const itemsRes = await fetch('/api/item-cards');
         if (!itemsRes.ok) throw new Error('Falha ao carregar itens');
         const itemsData = await itemsRes.json();
-        
+
         const mappedCards = (cardsData.cards || []).map((c, idx) => {
           const sb = c.seasonalBonus || c.seasonal_bonus;
           const seasonKey = sb?.season || sb?.estacao;
@@ -345,10 +346,17 @@ export default function CatalogoComContos() {
             bonusSazonal
           };
         });
-        
+
+        // Mapear os item cards para tradução
+        const mappedItems = (itemsData.itemCards || []).map((item) => ({
+          ...item,
+          itemType: translate(item.itemType, MAP_ITEM_TYPE),
+          rarity: translate(item.rarity, MAP_RARITY),
+        }));
+
         if (!cancelled) {
           setCards(mappedCards);
-          setItemCards(itemsData.itemCards || []);
+          setItemCards(mappedItems);
         }
       } catch (e) {
         if (!cancelled) setError(e.message);

@@ -1,6 +1,12 @@
 // src/app/api/item-cards/route.js
 import { NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
 // Format item card for API response
 function formatItemCardForAPI(item) {
   return {
@@ -22,7 +28,6 @@ function formatItemCardForAPI(item) {
 // GET - List item cards with optional filtering
 export async function GET(request) {
   try {
-    const supabase = await requireSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const rarity = searchParams.get('rarity');
     const itemType = searchParams.get('itemType');
