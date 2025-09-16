@@ -6,6 +6,7 @@ import LayoutDePagina from '@/components/UI/PageLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
 import { RARIDADES_CARTAS } from '@/data/cardsDatabase';
+import ItemCard from '@/components/Card/ItemCard';
 
 // Mapas de tradução (API -> PT-BR)
 const MAP_RARITY = { EPIC: 'Épico', LEGENDARY: 'Lendário', MYTHIC: 'Mítico' };
@@ -52,7 +53,7 @@ export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
 	const { cards: ownedIds, loading: loadingCollection, error: collectionError } = useCollection();
 
-	const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'boosters'
+	const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'items' | 'boosters'
 	const [search, setSearch] = useState('');
 	const [region, setRegion] = useState('all');
 	const [category, setCategory] = useState('all');
@@ -90,6 +91,7 @@ export default function PaginaInventarioDeCartas() {
 
 	// Carregar cartas via API
 	const [allCards, setAllCards] = useState([]);
+	const [allItems, setAllItems] = useState([]);
 	const [loadingCards, setLoadingCards] = useState(true);
 	const [cardsError, setCardsError] = useState(null);
 
@@ -98,39 +100,52 @@ export default function PaginaInventarioDeCartas() {
 		(async () => {
 			try {
 				setLoadingCards(true);
-				const res = await fetch('/api/cards');
-				if (!res.ok) throw new Error('Falha ao carregar cartas');
-				const data = await res.json();
-								const mapped = (data.cards || []).map(c => {
-									const sb = c.seasonalBonus || c.seasonal_bonus;
-									const seasonKey = sb?.season || sb?.estacao;
-									const bonusSazonal = sb ? {
-										estacao: translate(seasonKey, MAP_SEASON) || formatEnumLabel(seasonKey),
-										descricao: sb.description || sb.descricao || sb.text || '',
-										multiplicador: sb.multiplier || sb.multiplicador || sb.bonus || null
-									} : null;
-									return {
-							id: c.id,
-							nome: c.name,
-							regiao: translate(c.region, MAP_REGION),
-							categoria: translate(c.category, MAP_CATEGORY),
-							ataque: c.attack,
-							defesa: c.defense,
-							vida: c.life,
-							custo: c.cost,
-							raridade: translate(c.rarity, MAP_RARITY),
-							historia: c.history,
-							elemento: translate(c.element, MAP_ELEMENT),
-							imagem: c.image,
-							imagens: c.images,
-							tags: c.tags,
-							tipo: c.cardType,
-							habilidades: c.abilities || {},
-							condicaoDesbloqueio: c.unlockCondition,
-									bonusSazonal,
-							  // descoberta removido: controle agora unicamente por posse no banco
-								};});
-				if (!cancelled) setAllCards(mapped);
+				
+				// Fetch cards
+				const cardsRes = await fetch('/api/cards');
+				if (!cardsRes.ok) throw new Error('Falha ao carregar cartas');
+				const cardsData = await cardsRes.json();
+				
+				// Fetch items
+				const itemsRes = await fetch('/api/item-cards');
+				if (!itemsRes.ok) throw new Error('Falha ao carregar itens');
+				const itemsData = await itemsRes.json();
+				
+				const mappedCards = (cardsData.cards || []).map(c => {
+					const sb = c.seasonalBonus || c.seasonal_bonus;
+					const seasonKey = sb?.season || sb?.estacao;
+					const bonusSazonal = sb ? {
+						estacao: translate(seasonKey, MAP_SEASON) || formatEnumLabel(seasonKey),
+						descricao: sb.description || sb.descricao || sb.text || '',
+						multiplicador: sb.multiplier || sb.multiplicador || sb.bonus || null
+					} : null;
+					return {
+						id: c.id,
+						nome: c.name,
+						regiao: translate(c.region, MAP_REGION),
+						categoria: translate(c.category, MAP_CATEGORY),
+						ataque: c.attack,
+						defesa: c.defense,
+						vida: c.life,
+						custo: c.cost,
+						raridade: translate(c.rarity, MAP_RARITY),
+						historia: c.history,
+						elemento: translate(c.element, MAP_ELEMENT),
+						imagem: c.image,
+						imagens: c.images,
+						tags: c.tags,
+						tipo: c.cardType,
+						habilidades: c.abilities || {},
+						condicaoDesbloqueio: c.unlockCondition,
+						bonusSazonal,
+						// descoberta removido: controle agora unicamente por posse no banco
+					};
+				});
+				
+				if (!cancelled) {
+					setAllCards(mappedCards);
+					setAllItems(itemsData.itemCards || []);
+				}
 			} catch (e) {
 				if (!cancelled) setCardsError(e.message);
 			} finally {
@@ -208,7 +223,15 @@ export default function PaginaInventarioDeCartas() {
 								activeTab === 'cards' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-300'
 							}`}
 						>
-							🃏 Cartas
+							🃏 Cartas ({ownedCards.length})
+						</button>
+						<button
+							onClick={() => setActiveTab('items')}
+							className={`flex-1 p-4 font-semibold transition-colors ${
+								activeTab === 'items' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-400 hover:text-gray-300'
+							}`}
+						>
+							📦 Itens ({allItems.length})
 						</button>
 						<button
 							onClick={() => setActiveTab('boosters')}
@@ -298,6 +321,84 @@ export default function PaginaInventarioDeCartas() {
 														</div>
 													);
 												})}
+											</div>
+										)}
+									</>
+								)}
+							</>
+						)}
+
+						{activeTab === 'items' && (
+							<>
+								{!isAuthenticated() ? (
+									<div className="text-center py-16">
+										<div className="text-5xl mb-4">🔒</div>
+										<div className="text-lg mb-4 text-gray-300">Faça login para ver sua coleção de itens</div>
+										<Link href="/login" className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold">Ir para Login</Link>
+									</div>
+								) : (
+									<>
+										{/* Filtros para itens */}
+										<div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+											<input
+												type="text"
+												placeholder="Buscar itens..."
+												value={search}
+												onChange={(e) => setSearch(e.target.value)}
+												className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
+											/>
+											<select
+												value={rarity}
+												onChange={(e) => setRarity(e.target.value)}
+												className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
+											>
+												<option value="all">Todas as Raridades</option>
+												<option value="COMMON">Comum</option>
+												<option value="RARE">Raro</option>
+												<option value="EPIC">Épico</option>
+												<option value="LEGENDARY">Lendário</option>
+												<option value="MYTHIC">Mítico</option>
+											</select>
+											<select
+												onChange={(e) => {
+													const itemType = e.target.value;
+													setCategory(itemType === 'all' ? 'all' : itemType);
+												}}
+												className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
+											>
+												<option value="all">Todos os Tipos</option>
+												<option value="CONSUMABLE">Consumível</option>
+												<option value="EQUIPMENT">Equipamento</option>
+												<option value="ARTIFACT">Artefato</option>
+												<option value="RELIC">Relíquia</option>
+												<option value="SCROLL">Pergaminho</option>
+											</select>
+										</div>
+
+										{loadingCards ? (
+											<div className="text-center text-gray-400">Carregando itens...</div>
+										) : cardsError ? (
+											<div className="text-center py-12 text-red-400">Erro ao carregar itens: {cardsError}</div>
+										) : allItems.length === 0 ? (
+											<div className="text-center py-12 text-gray-400">Nenhum item encontrado.</div>
+										) : (
+											<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+												{allItems
+													.filter(item => {
+														if (search && !item.name?.toLowerCase().includes(search.toLowerCase()) && !item.description?.toLowerCase().includes(search.toLowerCase())) return false;
+														if (rarity !== 'all' && item.rarity !== rarity) return false;
+														if (category !== 'all' && item.itemType !== category) return false;
+														return true;
+													})
+													.map((item) => (
+														<ItemCard
+															key={item.id}
+															item={item}
+															onClick={() => setSelectedCard(item)}
+															className="hover:scale-105 transition-transform"
+														/>
+													))
+												}
 											</div>
 										)}
 									</>

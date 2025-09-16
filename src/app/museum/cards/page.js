@@ -18,6 +18,7 @@ import Link from 'next/link';
 import LayoutDePagina from '../../../components/UI/PageLayout';
 // Removido bancoDeCartas: agora buscando da API /api/cards
 import CardDetail from '../../../components/Card/CardDetail';
+import ItemCard from '../../../components/Card/ItemCard';
 
 // Card estilo "story quest"
 function StoryCard({ card, onClick, idx = 0 }) {
@@ -105,10 +106,13 @@ function StoryModal({ card, onClose }) {
   const [stories, setStories] = useState([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const [storiesError, setStoriesError] = useState(null);
-  const portrait = card?.images?.retrato || card?.imagens?.retrato || card?.image || card?.imagem || '/images/placeholder.svg';
+  
+  // Check if it's an item card
+  const isItemCard = card?.itemType !== undefined || card?.effects !== undefined;
+  const portrait = card?.images?.retrato || card?.imagens?.retrato || card?.images?.completa || card?.images?.full || card?.image || card?.imagem || '/images/placeholder.svg';
 
   useEffect(() => {
-    if (tab !== 'historia') {
+    if (tab !== 'historia' || isItemCard) {
       return;
     }
     
@@ -137,7 +141,7 @@ function StoryModal({ card, onClose }) {
       .finally(() => {
         setLoadingStories(false);
       });
-  }, [tab, card]);
+  }, [tab, card, isItemCard]);
 
   if (!card) return null;
 
@@ -151,18 +155,20 @@ function StoryModal({ card, onClose }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              📜 <span className="text-cyan-300">{card.nome || card.name}</span>
+              {isItemCard ? '�' : '�📜'} <span className="text-cyan-300">{card.nome || card.name}</span>
             </h2>
-            <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 text-xs">
-              <button
-                onClick={() => setTab('detalhes')}
-                className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'detalhes' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
-              >Detalhes</button>
-              <button
-                onClick={() => setTab('historia')}
-                className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'historia' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
-              >História</button>
-            </div>
+            {!isItemCard && (
+              <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 text-xs">
+                <button
+                  onClick={() => setTab('detalhes')}
+                  className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'detalhes' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
+                >Detalhes</button>
+                <button
+                  onClick={() => setTab('historia')}
+                  className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'historia' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
+                >História</button>
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -173,7 +179,73 @@ function StoryModal({ card, onClose }) {
 
         {/* Conteúdo */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          {tab === 'detalhes' ? (
+          {isItemCard ? (
+            /* Item Details */
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                <Image
+                  src={portrait}
+                  alt={`${card.name}`}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width:768px) 95vw, (max-width:1280px) 640px, 800px"
+                  quality={98}
+                  priority
+                />
+              </div>
+              <div className="space-y-5 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-1">
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-3">Detalhes do Item</h3>
+                  <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-400">Tipo:</span>
+                        <div className="text-white font-medium">{card.itemType}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Raridade:</span>
+                        <div className="text-white font-medium">{card.rarity}</div>
+                      </div>
+                    </div>
+                    
+                    {card.description && (
+                      <div>
+                        <span className="text-gray-400 text-sm">Descrição:</span>
+                        <p className="text-white text-sm mt-1 leading-relaxed">{card.description}</p>
+                      </div>
+                    )}
+                    
+                    {card.effects && Object.keys(card.effects).length > 0 && (
+                      <div>
+                        <span className="text-yellow-400 text-sm font-medium">Efeito:</span>
+                        <div className="text-white text-sm mt-1 bg-black/30 p-3 rounded border border-yellow-400/20">
+                          {card.effects.description || 
+                           `${card.effects.type || 'Efeito'} ${card.effects.value || ''} ${card.effects.duration ? `(${card.effects.duration})` : ''}`.trim()
+                          }
+                        </div>
+                      </div>
+                    )}
+                    
+                    {card.lore && (
+                      <div>
+                        <span className="text-amber-400 text-sm">História:</span>
+                        <p className="text-white/90 text-sm mt-1 leading-relaxed italic">{card.lore}</p>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                      <div className="text-xs text-gray-400">
+                        {card.isTradeable === false ? '🔒 Não Trocável' : '💱 Trocável'}
+                      </div>
+                      {card.unlockCondition && (
+                        <div className="text-xs text-yellow-300">🔓 {card.unlockCondition}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : tab === 'detalhes' ? (
             <CardDetail card={card} onClose={null} />
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
@@ -226,7 +298,9 @@ function StoryModal({ card, onClose }) {
 
 export default function CatalogoComContos() {
   const [selected, setSelected] = useState(null);
+  const [selectedTab, setSelectedTab] = useState('cards'); // 'cards' | 'items'
   const [cards, setCards] = useState([]);
+  const [itemCards, setItemCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -235,10 +309,18 @@ export default function CatalogoComContos() {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/cards');
-        if (!res.ok) throw new Error('Falha ao carregar cartas');
-        const data = await res.json();
-        const mapped = (data.cards || []).map((c, idx) => {
+        
+        // Fetch regular cards
+        const cardsRes = await fetch('/api/cards');
+        if (!cardsRes.ok) throw new Error('Falha ao carregar cartas');
+        const cardsData = await cardsRes.json();
+        
+        // Fetch item cards
+        const itemsRes = await fetch('/api/item-cards');
+        if (!itemsRes.ok) throw new Error('Falha ao carregar itens');
+        const itemsData = await itemsRes.json();
+        
+        const mappedCards = (cardsData.cards || []).map((c, idx) => {
           const sb = c.seasonalBonus || c.seasonal_bonus;
           const seasonKey = sb?.season || sb?.estacao;
           const bonusSazonal = sb ? {
@@ -263,7 +345,11 @@ export default function CatalogoComContos() {
             bonusSazonal
           };
         });
-        if (!cancelled) setCards(mapped);
+        
+        if (!cancelled) {
+          setCards(mappedCards);
+          setItemCards(itemsData.itemCards || []);
+        }
       } catch (e) {
         if (!cancelled) setError(e.message);
       } finally {
@@ -279,34 +365,76 @@ export default function CatalogoComContos() {
     arr.sort((a, b) => (b.novo === true) - (a.novo === true));
     return arr;
   }, [cards]);
+
+  const displayItems = selectedTab === 'items' ? itemCards : storyCards;
+  
   return (
     <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
         {/* Heading */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500">🃏 Cartas & Contos</h1>
+          <h1 className="text-4xl font-extrabold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500">🃏 Coleção Completa</h1>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Selecione uma carta para ver os detalhes de jogo ou ler o conto folclórico associado.
+            Explore todas as cartas de personagens e itens da mitologia brasileira.
           </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-1 flex">
+            <button
+              onClick={() => setSelectedTab('cards')}
+              className={`px-6 py-2 rounded-md font-semibold transition-all ${
+                selectedTab === 'cards'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              🃏 Cartas ({cards.length})
+            </button>
+            <button
+              onClick={() => setSelectedTab('items')}
+              className={`px-6 py-2 rounded-md font-semibold transition-all ${
+                selectedTab === 'items'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              📦 Itens ({itemCards.length})
+            </button>
+          </div>
         </div>
 
         {/* Lista estilo "story quests" - grid 4 colunas */}
         {loading ? (
-          <div className="text-center text-gray-400 py-20">Carregando cartas...</div>
+          <div className="text-center text-gray-400 py-20">Carregando coleção...</div>
         ) : error ? (
           <div className="text-center text-red-400 py-20">Erro: {error}</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {storyCards.map((card, i) => (
-              <StoryCard
-                key={card.id}
-                card={card}
-                idx={i}
-                onClick={() => {
-                  setSelected(card);
-                }}
-              />
-            ))}
+            {selectedTab === 'cards' ? (
+              storyCards.map((card, i) => (
+                <StoryCard
+                  key={card.id}
+                  card={card}
+                  idx={i}
+                  onClick={() => {
+                    setSelected(card);
+                  }}
+                />
+              ))
+            ) : (
+              itemCards.map((item, i) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => {
+                    setSelected(item);
+                  }}
+                  className="aspect-[3/4]"
+                />
+              ))
+            )}
           </div>
         )}
 

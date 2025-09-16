@@ -7,6 +7,7 @@ import Image from 'next/image';
 
 const TABS = [
 	{ key: 'cards', label: 'Cartas' },
+	{ key: 'item-cards', label: 'Item Cards' },
 	{ key: 'players', label: 'Players' },
 	{ key: 'contos', label: 'Contos' },
 ];
@@ -319,6 +320,271 @@ function CardsSection() {
 	);
 }
 
+/* ------------------------- ITEM CARDS SECTION ---------------------------- */
+function ItemCardsSection() {
+	const [items, setItems] = useState([]);
+	const [search, setSearch] = useState('');
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [formOpen, setFormOpen] = useState(false);
+	const emptyForm = { 
+		id: '', 
+		name: '', 
+		description: '', 
+		itemType: 'CONSUMABLE', 
+		rarity: 'COMMON', 
+		lore: '', 
+		unlockCondition: '', 
+		isTradeable: true, 
+		portrait: '', 
+		full: '' 
+	};
+	const [editingId, setEditingId] = useState(null);
+	const [form, setForm] = useState(emptyForm);
+	const [saving, setSaving] = useState(false);
+	const [effects, setEffects] = useState({ type: '', value: '', duration: '', description: '' });
+
+	const load = useCallback(async () => {
+		setLoading(true); setError(null);
+		try {
+			const qs = new URLSearchParams();
+			if (search) qs.set('search', search);
+			qs.set('limit', '200');
+			const data = await jsonFetch(`/api/item-cards?${qs.toString()}`);
+			setItems(data.itemCards || []);
+		} catch (e) {
+			setError(e.message);
+		} finally { setLoading(false); }
+	}, [search]);
+
+	useEffect(() => { load(); }, [load]);
+
+	const rarityOptions = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC'];
+	const itemTypeOptions = ['CONSUMABLE', 'EQUIPMENT', 'ARTIFACT', 'RELIC', 'SCROLL'];
+
+	const rarityColor = (rRaw) => {
+		const key = (rRaw || '').toString().toUpperCase();
+		return ({
+			COMMON: 'bg-gray-100 text-gray-800 border border-gray-300',
+			RARE: 'bg-blue-100 text-blue-800 border border-blue-300',
+			EPIC: 'bg-purple-100 text-purple-800 border border-purple-300',
+			LEGENDARY: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+			MYTHIC: 'bg-pink-100 text-pink-800 border border-pink-300'
+		}[key]) || 'bg-neutral-100 text-neutral-800 border border-neutral-300';
+	};
+
+	const startCreate = () => { 
+		setEditingId(null); 
+		setForm(emptyForm); 
+		setEffects({ type: '', value: '', duration: '', description: '' });
+		setFormOpen(true); 
+	};
+
+	const startEdit = (item) => { 
+		setEditingId(item.id); 
+		setForm({
+			id: item.id,
+			name: item.name || '',
+			description: item.description || '',
+			itemType: item.itemType || 'CONSUMABLE',
+			rarity: item.rarity || 'COMMON',
+			lore: item.lore || '',
+			unlockCondition: item.unlockCondition || '',
+			isTradeable: item.isTradeable !== undefined ? item.isTradeable : true,
+			portrait: item.images?.retrato || item.images?.portrait || '',
+			full: item.images?.completa || item.images?.full || ''
+		});
+		const itemEffects = item.effects || {};
+		setEffects({
+			type: itemEffects.type || '',
+			value: itemEffects.value || '',
+			duration: itemEffects.duration || '',
+			description: itemEffects.description || ''
+		});
+		setFormOpen(true); 
+	};
+
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		setSaving(true); setError(null);
+		
+		try {
+			const payload = {
+				...form,
+				effects: effects.type ? effects : {},
+				images: {
+					retrato: form.portrait,
+					completa: form.full
+				}
+			};
+
+			if (editingId) {
+				await jsonFetch('/api/item-cards', { method: 'PUT', body: payload });
+			} else {
+				await jsonFetch('/api/item-cards', { method: 'POST', body: payload });
+			}
+			
+			setFormOpen(false); 
+			load();
+		} catch (e) {
+			setError(e.message);
+		} finally { 
+			setSaving(false); 
+		}
+	};
+
+	const remove = async (id) => {
+		if (!confirm('Deletar este item card?')) return;
+		try {
+			await jsonFetch(`/api/item-cards?id=${id}`, { method: 'DELETE' });
+			load();
+		} catch (e) {
+			setError(e.message);
+		}
+	};
+
+	return (
+		<SectionContainer>
+			<div className="flex items-center justify-between mb-4">
+				<h2 className="text-lg font-semibold text-green-800">Item Cards</h2>
+				<button onClick={startCreate} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium">+ Criar Item</button>
+			</div>
+			
+			{formOpen && (
+				<div className="mb-6 p-4 border border-green-200 rounded-lg bg-green-50">
+					<h3 className="font-medium mb-3 text-green-800">{editingId ? 'Editar' : 'Criar'} Item Card</h3>
+					<form onSubmit={handleSubmit} className="space-y-4">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium mb-1">ID</label>
+								<input type="text" value={form.id} onChange={(e) => setForm(f => ({...f, id: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" required />
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Nome</label>
+								<input type="text" value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" required />
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Tipo</label>
+								<select value={form.itemType} onChange={(e) => setForm(f => ({...f, itemType: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm">
+									{itemTypeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+								</select>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Raridade</label>
+								<select value={form.rarity} onChange={(e) => setForm(f => ({...f, rarity: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm">
+									{rarityOptions.map(r => <option key={r} value={r}>{r}</option>)}
+								</select>
+							</div>
+						</div>
+						
+						<div>
+							<label className="block text-sm font-medium mb-1">Descrição</label>
+							<textarea value={form.description} onChange={(e) => setForm(f => ({...f, description: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" rows={3}></textarea>
+						</div>
+
+						<div className="border-t pt-4">
+							<h4 className="font-medium mb-2">Efeitos</h4>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium mb-1">Tipo do Efeito</label>
+									<input type="text" value={effects.type} onChange={(e) => setEffects(f => ({...f, type: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="heal, damage, buff..." />
+								</div>
+								<div>
+									<label className="block text-sm font-medium mb-1">Valor</label>
+									<input type="text" value={effects.value} onChange={(e) => setEffects(f => ({...f, value: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="50, +2, etc" />
+								</div>
+								<div>
+									<label className="block text-sm font-medium mb-1">Duração</label>
+									<input type="text" value={effects.duration} onChange={(e) => setEffects(f => ({...f, duration: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="instant, 3 turns..." />
+								</div>
+								<div>
+									<label className="block text-sm font-medium mb-1">Descrição do Efeito</label>
+									<input type="text" value={effects.description} onChange={(e) => setEffects(f => ({...f, description: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" />
+								</div>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium mb-1">Imagem Retrato (URL)</label>
+								<input type="url" value={form.portrait} onChange={(e) => setForm(f => ({...f, portrait: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" />
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Imagem Completa (URL)</label>
+								<input type="url" value={form.full} onChange={(e) => setForm(f => ({...f, full: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" />
+							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium mb-1">Condição de Unlock</label>
+								<input type="text" value={form.unlockCondition} onChange={(e) => setForm(f => ({...f, unlockCondition: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" />
+							</div>
+							<div className="flex items-center gap-2 mt-6">
+								<input type="checkbox" checked={form.isTradeable} onChange={(e) => setForm(f => ({...f, isTradeable: e.target.checked}))} />
+								<label className="text-sm">É Trocável</label>
+							</div>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium mb-1">Lore</label>
+							<textarea value={form.lore} onChange={(e) => setForm(f => ({...f, lore: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" rows={3}></textarea>
+						</div>
+
+						<div className="flex gap-2">
+							<button type="submit" disabled={saving} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50">{saving ? 'Salvando...' : (editingId ? 'Atualizar' : 'Criar')}</button>
+							<button type="button" onClick={() => setFormOpen(false)} className="border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded text-sm">Cancelar</button>
+						</div>
+					</form>
+					<ErrorInline error={error} />
+				</div>
+			)}
+
+			<div className="mb-4">
+				<input type="text" placeholder="Buscar item cards..." value={search} onChange={(e) => setSearch(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm w-full md:w-80" />
+			</div>
+
+			<div className="border border-gray-200 rounded-lg overflow-hidden">
+				<div className="overflow-x-auto">
+					<table className="w-full text-sm">
+						<thead className="bg-green-50">
+							<tr>
+								<th className="text-left p-2 font-medium">ID</th>
+								<th className="text-left p-2 font-medium">Nome</th>
+								<th className="text-left p-2 font-medium">Tipo</th>
+								<th className="text-left p-2 font-medium">Raridade</th>
+								<th className="text-left p-2 font-medium">Trocável</th>
+								<th className="text-left p-2 font-medium">Ações</th>
+							</tr>
+						</thead>
+						<tbody>
+							{loading && (
+								<tr><td className="p-4 text-center" colSpan={6}><LoadingInline /></td></tr>
+							)}
+							{items.map(item => (
+								<tr key={item.id} className="border-t hover:bg-gray-50">
+									<td className="p-2 font-mono text-xs">{item.id}</td>
+									<td className="p-2">{item.name}</td>
+									<td className="p-2">{item.itemType}</td>
+									<td className="p-2"><span className={`px-2 py-0.5 rounded-sm text-[11px] font-medium inline-block leading-tight ${rarityColor(item.rarity)}`}>{item.rarity}</span></td>
+									<td className="p-2">{item.isTradeable ? 'Sim' : 'Não'}</td>
+									<td className="p-2 flex gap-2">
+										<button onClick={()=>startEdit(item)} className="text-green-600 hover:underline">Editar</button>
+										<button onClick={()=>remove(item.id)} className="text-red-600 hover:underline">Del</button>
+									</td>
+								</tr>
+							))}
+							{!loading && items.length === 0 && (
+								<tr><td className="p-4 text-center text-gray-500" colSpan={6}>Nenhum item card encontrado</td></tr>
+							)}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</SectionContainer>
+	);
+}
+
 /* --------------------------- PLAYERS SECTION ------------------------------ */
 function PlayersSection() {
 	const [players, setPlayers] = useState([]);
@@ -606,6 +872,7 @@ export default function AdminPage() {
 			</div>
 			<div className="mt-4 space-y-6">
 				{tab === 'cards' && <CardsSection />}
+				{tab === 'item-cards' && <ItemCardsSection />}
 				{tab === 'players' && <PlayersSection />}
 				{tab === 'contos' && <ContosSection />}
 			</div>

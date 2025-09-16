@@ -20,7 +20,7 @@ export const metadata = {
 
 // Layout raiz da aplicação
 export default function LayoutRaiz({ children }) {
-  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0';
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0-alpha';
   return (
     <html lang="pt-BR">
       <body

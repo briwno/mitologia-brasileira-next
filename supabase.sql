@@ -76,9 +76,10 @@ CREATE TABLE public.contos_cards (
   conto_id bigint NOT NULL,
   card_id text NOT NULL,
   rel_type text DEFAULT 'mention'::text,
-  CONSTRAINT contos_cards_pkey PRIMARY KEY (conto_id, card_id),
+  CONSTRAINT contos_cards_pkey PRIMARY KEY (card_id, conto_id),
+  CONSTRAINT contos_cards_conto_id_fkey FOREIGN KEY (conto_id) REFERENCES public.contos(id),
   CONSTRAINT contos_cards_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
-  CONSTRAINT contos_cards_conto_id_fkey FOREIGN KEY (conto_id) REFERENCES public.contos(id)
+  CONSTRAINT contos_cards_item_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.item_cards(id)
 );
 CREATE TABLE public.decks (
   id bigint NOT NULL DEFAULT nextval('decks_id_seq'::regclass),
@@ -123,8 +124,8 @@ CREATE TABLE public.match_history (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT match_history_pkey PRIMARY KEY (id),
   CONSTRAINT match_history_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
-  CONSTRAINT match_history_opponent_id_fkey FOREIGN KEY (opponent_id) REFERENCES public.players(id),
-  CONSTRAINT match_history_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+  CONSTRAINT match_history_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT match_history_opponent_id_fkey FOREIGN KEY (opponent_id) REFERENCES public.players(id)
 );
 CREATE TABLE public.matches (
   id bigint NOT NULL DEFAULT nextval('matches_id_seq'::regclass),
@@ -173,8 +174,8 @@ CREATE TABLE public.player_quests (
   claimed_at timestamp with time zone,
   expires_at timestamp with time zone,
   CONSTRAINT player_quests_pkey PRIMARY KEY (player_id, quest_id),
-  CONSTRAINT player_quests_quest_id_fkey FOREIGN KEY (quest_id) REFERENCES public.quests(id),
-  CONSTRAINT player_quests_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+  CONSTRAINT player_quests_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT player_quests_quest_id_fkey FOREIGN KEY (quest_id) REFERENCES public.quests(id)
 );
 CREATE TABLE public.player_stats (
   player_id bigint NOT NULL,
@@ -252,4 +253,20 @@ CREATE TABLE public.transactions (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT transactions_pkey PRIMARY KEY (id),
   CONSTRAINT transactions_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+
+CREATE TABLE public.item_cards (
+  id text NOT NULL,
+  name text NOT NULL,
+  description text,
+  item_type text NOT NULL,
+  rarity text NOT NULL,
+  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
+  lore text,
+  images jsonb NOT NULL DEFAULT '{}'::jsonb,
+  unlock_condition text,
+  is_tradeable boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT item_cards_pkey PRIMARY KEY (id)
 );

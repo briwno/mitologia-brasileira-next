@@ -45,6 +45,42 @@ CREATE TABLE public.collections (
   CONSTRAINT collections_pkey PRIMARY KEY (player_id),
   CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
+CREATE TABLE public.contos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  slug text NOT NULL UNIQUE,
+  card_id text,
+  author_id bigint,
+  titulo text NOT NULL,
+  subtitulo text,
+  resumo text,
+  corpo text NOT NULL,
+  regiao text,
+  categoria text,
+  tags ARRAY DEFAULT ARRAY[]::text[],
+  tema text,
+  fonte text,
+  fonte_url text,
+  imagem_capa text,
+  estimated_read_time integer,
+  versao integer DEFAULT 1,
+  is_active boolean DEFAULT true,
+  is_featured boolean DEFAULT false,
+  published_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT contos_pkey PRIMARY KEY (id),
+  CONSTRAINT contos_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
+  CONSTRAINT contos_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.contos_cards (
+  conto_id bigint NOT NULL,
+  card_id text NOT NULL,
+  rel_type text DEFAULT 'mention'::text,
+  CONSTRAINT contos_cards_pkey PRIMARY KEY (card_id, conto_id),
+  CONSTRAINT contos_cards_conto_id_fkey FOREIGN KEY (conto_id) REFERENCES public.contos(id),
+  CONSTRAINT contos_cards_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
+  CONSTRAINT contos_cards_item_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.item_cards(id)
+);
 CREATE TABLE public.decks (
   id bigint NOT NULL DEFAULT nextval('decks_id_seq'::regclass),
   owner_id bigint NOT NULL,
@@ -65,8 +101,23 @@ CREATE TABLE public.friendships (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT friendships_pkey PRIMARY KEY (id),
-  CONSTRAINT friendships_addressee_id_fkey FOREIGN KEY (addressee_id) REFERENCES public.players(id),
-  CONSTRAINT friendships_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES public.players(id)
+  CONSTRAINT friendships_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES public.players(id),
+  CONSTRAINT friendships_addressee_id_fkey FOREIGN KEY (addressee_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.item_cards (
+  id text NOT NULL,
+  name text NOT NULL,
+  description text,
+  item_type text NOT NULL,
+  rarity text NOT NULL,
+  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
+  lore text,
+  images jsonb NOT NULL DEFAULT '{}'::jsonb,
+  unlock_condition text,
+  is_tradeable boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT item_cards_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.match_history (
   id bigint NOT NULL DEFAULT nextval('match_history_id_seq'::regclass),
@@ -106,16 +157,16 @@ CREATE TABLE public.matches (
   started_at timestamp with time zone DEFAULT now(),
   finished_at timestamp with time zone,
   CONSTRAINT matches_pkey PRIMARY KEY (id),
-  CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id),
+  CONSTRAINT matches_player_a_id_fkey FOREIGN KEY (player_a_id) REFERENCES public.players(id),
   CONSTRAINT matches_player_b_id_fkey FOREIGN KEY (player_b_id) REFERENCES public.players(id),
-  CONSTRAINT matches_player_a_id_fkey FOREIGN KEY (player_a_id) REFERENCES public.players(id)
+  CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id)
 );
 CREATE TABLE public.player_achievements (
   player_id bigint NOT NULL,
   achievement_id text NOT NULL,
   unlocked_at timestamp with time zone DEFAULT now(),
   progress jsonb DEFAULT '{}'::jsonb,
-  CONSTRAINT player_achievements_pkey PRIMARY KEY (player_id, achievement_id),
+  CONSTRAINT player_achievements_pkey PRIMARY KEY (achievement_id, player_id),
   CONSTRAINT player_achievements_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
   CONSTRAINT player_achievements_achievement_id_fkey FOREIGN KEY (achievement_id) REFERENCES public.achievements(id)
 );
