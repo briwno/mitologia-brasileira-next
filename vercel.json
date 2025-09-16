@@ -1,9 +1,3 @@
 {
-  "redirects": [
-    {
-      "source": "/((?!divulgar|images|_next|api|favicon\\.ico|.*\\..*).*)",
-      "destination": "/divulgar",
-      "permanent": false
-    }
-  ]
+  
 }
