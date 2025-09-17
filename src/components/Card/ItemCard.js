@@ -2,33 +2,34 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-export default function ItemCard({ item, onClick, className = '', showEffects = true }) {
+export default function ItemCard({ item, onClick, className = '', showEffects = true, isOwned = false }) {
   const [imageError, setImageError] = useState(false);
 
   if (!item) return null;
 
   const rarityStyles = {
-    'COMMON': 'from-gray-500/50 to-gray-800/60 border-gray-400/40',
-    'RARE': 'from-blue-500/50 to-blue-800/60 border-blue-400/40',
-    'EPIC': 'from-purple-500/50 to-purple-800/60 border-purple-400/40',
-    'LEGENDARY': 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
-    'MYTHIC': 'from-rose-500/60 to-rose-800/60 border-rose-400/40'
+    'COMUM': 'from-gray-500/50 to-gray-800/60 border-gray-400/40',
+    'INCOMUM': 'from-green-500/50 to-green-800/60 border-green-400/40',
+    'RARO': 'from-blue-500/50 to-blue-800/60 border-blue-400/40',
+    'EPICO': 'from-purple-500/50 to-purple-800/60 border-purple-400/40',
+    'LENDARIO': 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
+    'MITICO': 'from-rose-500/60 to-rose-800/60 border-rose-400/40'
   };
 
   const typeIcons = {
-    'CONSUMABLE': '🧪',
-    'EQUIPMENT': '⚔️',
-    'ARTIFACT': '🔮',
-    'RELIC': '🏺',
-    'SCROLL': '📜'
+    'ofensivo': '⚔️',
+    'defensivo': '🛡️',
+    'utilitario': '�',
+    'cura': '🧪',
+    'buff': '✨'
   };
 
-  const rarity = (item.rarity || 'COMMON').toUpperCase();
-  const style = rarityStyles[rarity] || rarityStyles['COMMON'];
-  const typeIcon = typeIcons[item.itemType] || '📦';
+  const rarity = (item.raridade || 'COMUM').toUpperCase();
+  const style = rarityStyles[rarity] || rarityStyles['COMUM'];
+  const typeIcon = typeIcons[item.tipo] || '📦';
 
-  // Get best available image
-  const imgSrc = item.images?.completa || item.images?.full || item.images?.retrato || item.images?.portrait || '/images/placeholder.svg';
+  // Get best available image or use placeholder
+  const imgSrc = item.imagem || '/images/placeholder.svg';
 
   const handleImageError = () => {
     setImageError(true);
@@ -65,13 +66,20 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
         {/* Type Badge */}
         <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 text-white text-xs font-medium flex items-center gap-1">
           <span>{typeIcon}</span>
-          <span className="hidden sm:inline">{item.itemType}</span>
+          <span className="hidden sm:inline">{item.tipo}</span>
         </div>
 
         {/* Rarity Badge */}
         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1">
           <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${style.split(' ')[0]}`} />
         </div>
+
+        {/* Owned Indicator */}
+        {isOwned && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-600/90 backdrop-blur-sm rounded-full px-2 py-1 text-white text-xs font-medium">
+            ✓ Possuído
+          </div>
+        )}
 
         {/* Tradeable Indicator */}
         {item.isTradeable === false && (
@@ -85,24 +93,22 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
       <div className="p-3 bg-black/60 backdrop-blur-sm text-white">
         {/* Name */}
         <h3 className="font-bold text-sm leading-tight mb-1 line-clamp-2">
-          {item.name}
+          {item.nome}
         </h3>
 
         {/* Description */}
-        {item.description && (
+        {item.descricao && (
           <p className="text-xs text-white/80 leading-relaxed mb-2 line-clamp-2">
-            {item.description}
+            {item.descricao}
           </p>
         )}
 
         {/* Effects */}
-        {showEffects && item.effects && Object.keys(item.effects).length > 0 && (
+        {showEffects && item.efeito && (
           <div className="text-xs">
             <div className="text-yellow-300 font-medium mb-1">Efeito:</div>
             <div className="text-white/90">
-              {item.effects.description || 
-               `${item.effects.type || 'Efeito'} ${item.effects.value || ''} ${item.effects.duration ? `(${item.effects.duration})` : ''}`.trim()
-              }
+              {item.efeito.descricao || item.efeito}
             </div>
           </div>
         )}

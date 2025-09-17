@@ -51,7 +51,7 @@ function rarityFrame(rarity) {
 
 export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
-	const { cards: ownedIds, loading: loadingCollection, error: collectionError } = useCollection();
+	const { cards: ownedIds, itemCards: ownedItemIds, loading: loadingCollection, error: collectionError } = useCollection();
 
 	const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'items' | 'boosters'
 	const [search, setSearch] = useState('');
@@ -396,6 +396,7 @@ export default function PaginaInventarioDeCartas() {
 															item={item}
 															onClick={() => setSelectedCard(item)}
 															className="hover:scale-105 transition-transform"
+															isOwned={ownedItemIds.includes(item.id)}
 														/>
 													))
 												}

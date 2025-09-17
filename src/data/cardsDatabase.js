@@ -50,7 +50,7 @@ export const bancoDeCartas = [
     nome: 'Curupira',
     regiao: REGIOES.AMAZONIA,
     categoria: CATEGORIAS_CARTAS.GUARDIANS,
-    tipo: TIPOS_CARTA.CREATURE,
+    tipo: 'lenda',
     custo: 5,
     ataque: 7,
     defesa: 8,
@@ -481,3 +481,202 @@ export const getCardStats = () => {
     byRarity: porRaridade,
   };
 };
+
+// =============================================================================
+// BANCO DE ITEM CARDS - Nova Estrutura
+// =============================================================================
+
+export const bancoDeItemCards = [
+  // ITENS OFENSIVOS
+  {
+    id: 'itm001',
+    nome: 'Lâmina Encantada',
+    tipo: 'item',
+    itemType: 'ofensivo',
+    raridade: RARIDADES_CARTAS.EPIC,
+    efeito: {
+      tipo: 'boost_ataque',
+      valor: 3,
+      duracao: 3,
+      description: 'Aumenta o ataque da lenda ativa em 3 por 3 turnos'
+    },
+    historia: 'Lâmina forjada com essência de guardiões antigos.',
+    imagens: {
+      retrato: '/images/items/lamina-encantada.jpg'
+    },
+    condicaoDesbloqueio: 'Vencer 10 batalhas',
+    descoberta: true
+  },
+  {
+    id: 'itm002',
+    nome: 'Poção Explosiva',
+    tipo: 'item',
+    itemType: 'ofensivo',
+    raridade: RARIDADES_CARTAS.EPIC,
+    efeito: {
+      tipo: 'dano_direto',
+      valor: 5,
+      description: 'Causa 5 de dano direto ao oponente'
+    },
+    historia: 'Mistura instável de ingredientes místicos.',
+    imagens: {
+      retrato: '/images/items/pocao-explosiva.jpg'
+    },
+    condicaoDesbloqueio: 'Completar quest alquimia',
+    descoberta: true
+  },
+  
+  // ITENS DEFENSIVOS
+  {
+    id: 'itm003',
+    nome: 'Escudo Sagrado',
+    tipo: 'item',
+    itemType: 'defensivo',
+    raridade: RARIDADES_CARTAS.LEGENDARY,
+    efeito: {
+      tipo: 'boost_defesa',
+      valor: 4,
+      duracao: 2,
+      description: 'Aumenta a defesa da lenda ativa em 4 por 2 turnos'
+    },
+    historia: 'Escudo abençoado pelos espíritos ancestrais.',
+    imagens: {
+      retrato: '/images/items/escudo-sagrado.jpg'
+    },
+    condicaoDesbloqueio: 'Resistir 50 pontos de dano em uma partida',
+    descoberta: true
+  },
+  {
+    id: 'itm004',
+    nome: 'Poção de Cura',
+    tipo: 'item',
+    itemType: 'defensivo',
+    raridade: RARIDADES_CARTAS.EPIC,
+    efeito: {
+      tipo: 'cura',
+      valor: 6,
+      description: 'Restaura 6 pontos de vida da lenda ativa'
+    },
+    historia: 'Elixir preparado com ervas medicinais da floresta.',
+    imagens: {
+      retrato: '/images/items/pocao-cura.jpg'
+    },
+    condicaoDesbloqueio: 'Curar 20 pontos de vida total',
+    descoberta: true
+  },
+
+  // ITENS UTILITÁRIOS
+  {
+    id: 'itm005',
+    nome: 'Amuleto de Energia',
+    tipo: 'item',
+    itemType: 'utilitario',
+    raridade: RARIDADES_CARTAS.LEGENDARY,
+    efeito: {
+      tipo: 'recuperar_pp',
+      valor: 3,
+      description: 'Restaura 3 PP de uma habilidade escolhida'
+    },
+    historia: 'Cristal que concentra energia espiritual.',
+    imagens: {
+      retrato: '/images/items/amuleto-energia.jpg'
+    },
+    condicaoDesbloqueio: 'Usar 100 habilidades',
+    descoberta: true
+  },
+  {
+    id: 'itm006',
+    nome: 'Pergaminho de Troca',
+    tipo: 'item',
+    itemType: 'utilitario',
+    raridade: RARIDADES_CARTAS.EPIC,
+    efeito: {
+      tipo: 'troca_gratuita',
+      description: 'Permite trocar de lenda sem consumir o turno'
+    },
+    historia: 'Pergaminho antigo com rituais de invocação.',
+    imagens: {
+      retrato: '/images/items/pergaminho-troca.jpg'
+    },
+    condicaoDesbloqueio: 'Trocar de lenda 25 vezes',
+    descoberta: true
+  },
+  {
+    id: 'itm007',
+    nome: 'Erva Purificadora',
+    tipo: 'item',
+    itemType: 'utilitario',
+    raridade: RARIDADES_CARTAS.EPIC,
+    efeito: {
+      tipo: 'remover_debuff',
+      description: 'Remove todos os efeitos negativos da lenda ativa'
+    },
+    historia: 'Erva rara que neutraliza maldições.',
+    imagens: {
+      retrato: '/images/items/erva-purificadora.jpg'
+    },
+    condicaoDesbloqueio: 'Sofrer 10 debuffs',
+    descoberta: true
+  },
+
+  // ITENS MÍTICOS (Mais Poderosos)
+  {
+    id: 'itm008',
+    nome: 'Fragmento do Poder Ancestral',
+    tipo: 'item',
+    itemType: 'utilitario',
+    raridade: RARIDADES_CARTAS.MYTHIC,
+    efeito: {
+      tipo: 'ultimate_instantaneo',
+      description: 'Permite usar o Ultimate imediatamente (ignora condições)'
+    },
+    historia: 'Pedaço de poder dos primeiros espíritos.',
+    imagens: {
+      retrato: '/images/items/fragmento-ancestral.jpg'
+    },
+    condicaoDesbloqueio: 'Conquistar torneio lendário',
+    descoberta: false
+  },
+  {
+    id: 'itm009',
+    nome: 'Espelho das Almas',
+    tipo: 'item',
+    itemType: 'ofensivo',
+    raridade: RARIDADES_CARTAS.MYTHIC,
+    efeito: {
+      tipo: 'copiar_habilidade',
+      description: 'Copia a última habilidade usada pelo oponente'
+    },
+    historia: 'Espelho que reflete não a imagem, mas a essência.',
+    imagens: {
+      retrato: '/images/items/espelho-almas.jpg'
+    },
+    condicaoDesbloqueio: 'Vencer sem usar habilidades ofensivas',
+    descoberta: false
+  },
+  {
+    id: 'itm010',
+    nome: 'Totem da Regeneração Eterna',
+    tipo: 'item',
+    itemType: 'defensivo',
+    raridade: RARIDADES_CARTAS.MYTHIC,
+    efeito: {
+      tipo: 'regeneracao_continua',
+      valor: 2,
+      duracao: 5,
+      description: 'Lenda ativa regenera 2 de vida por turno durante 5 turnos'
+    },
+    historia: 'Totem sagrado que canaliza a força vital da natureza.',
+    imagens: {
+      retrato: '/images/items/totem-regeneracao.jpg'
+    },
+    condicaoDesbloqueio: 'Sobreviver com 1 de vida por 3 turnos',
+    descoberta: false
+  }
+];
+
+// Função para buscar item cards
+export const getItemCards = () => bancoDeItemCards;
+export const getItemCardById = (id) => bancoDeItemCards.find(item => item.id === id);
+export const getItemCardsByType = (itemType) => bancoDeItemCards.filter(item => item.itemType === itemType);
+export const getItemCardsByRarity = (rarity) => bancoDeItemCards.filter(item => item.raridade === rarity);

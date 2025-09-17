@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { bancoDeCartas } from "../../../../data/cardsDatabase";
+import { bancoDeCartas, bancoDeItemCards } from "../../../../data/cardsDatabase";
 import {
   FieldIndicator,
   ActiveZone,
@@ -17,7 +17,131 @@ import CombatLog from "../../../../components/Game/CombatLog";
 import Mascot from "../../../../components/Game/Mascot";
 import PlayerHand from "../../../../components/Game/PlayerHand";
 import CardDetail from "../../../../components/Card/CardDetail";
+import ItemCard from "../../../../components/Card/ItemCard";
+import ItemTooltip from "../../../../components/UI/ItemTooltip";
 import Icon from "@/components/UI/Icon";
+
+// Componente para Mão de Itens
+function ItemHand({ items, onUseItem, gameState, isPlayerTurn }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="absolute bottom-6 right-6 z-50">
+      {/* Toggle Button */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mb-2 w-12 h-12 rounded-full bg-gradient-to-br from-green-800/90 to-green-900/90 border-2 border-green-600/50 flex items-center justify-center text-2xl hover:border-green-500 transition-all duration-200 backdrop-blur-sm shadow-lg"
+        title={expanded ? "Ocultar Itens" : "Mostrar Itens"}
+      >
+        <div className="relative">
+          🎒
+          {items.length > 0 && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+              {items.length}
+            </div>
+          )}
+        </div>
+      </button>
+
+      {/* Items Panel */}
+      {expanded && (
+        <div className="bg-gradient-to-br from-green-900/95 to-green-800/95 backdrop-blur-md border border-green-600/50 rounded-2xl p-4 shadow-2xl min-w-[320px] max-w-[400px]">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-sm font-bold">
+                🎒
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">
+                  Mão de Itens
+                </div>
+                <div className="text-xs text-green-300">
+                  {items.length}/3 itens
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-green-400 hover:text-white text-lg"
+            >
+              <Icon name="x" size={18} />
+            </button>
+          </div>
+
+          {/* Items Grid */}
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <ItemTooltip key={item.id || index} item={item}>
+                <div
+                  className={`
+                    relative group p-3 rounded-xl border transition-all duration-200 transform
+                    ${
+                      isPlayerTurn && !gameState.actionUsed
+                        ? "bg-gradient-to-br from-green-600/80 to-green-700/80 border-green-500/50 cursor-pointer hover:scale-105 hover:shadow-lg active:scale-95"
+                        : "bg-green-700/50 border-green-600/50 cursor-not-allowed opacity-50"
+                    }
+                  `}
+                  onClick={() => {
+                    if (isPlayerTurn && !gameState.actionUsed && onUseItem) {
+                      onUseItem(index);
+                    }
+                  }}
+                >
+                  {/* Item Icon and Name */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center text-xl">
+                      {item.tipo === 'ofensivo' ? '⚔️' : item.tipo === 'defensivo' ? '🛡️' : '🔧'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-white">
+                        {item.nome}
+                      </div>
+                      <div className="text-xs text-green-300 capitalize">
+                        {item.tipo} • {item.raridade}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Item Effect */}
+                  <div className="text-xs text-green-200 bg-black/20 rounded-lg p-2">
+                    {typeof item.efeito === 'string' ? item.efeito : item.efeito?.descricao || 'Efeito especial'}
+                  </div>
+
+                  {/* Use Button Overlay */}
+                  {isPlayerTurn && !gameState.actionUsed && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="bg-green-600 text-white text-xs px-3 py-1 rounded-full font-bold">
+                        Usar Item
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ItemTooltip>
+            ))}
+
+            {/* Empty Slots */}
+            {Array.from({length: 3 - items.length}, (_, i) => (
+              <div key={`empty-${i}`} className="p-3 border-2 border-dashed border-green-600/30 rounded-xl text-center">
+                <div className="text-green-400/50 text-2xl mb-1">📦</div>
+                <div className="text-xs text-green-400/50">Slot vazio</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Instruction */}
+          {isPlayerTurn && !gameState.actionUsed && items.length > 0 && (
+            <div className="mt-3 p-2 bg-green-800/50 rounded-lg text-xs text-green-200 text-center">
+              💡 Clique em um item para usá-lo
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Componente do Painel de Habilidades estilo Genshin TCG
 function SkillPanel({
@@ -316,7 +440,58 @@ export default function GameRoom({ params }) {
     withState(getCardData("cur001")),
   ]);
 
+  // Sistema de Itens
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const [playerItems, setPlayerItems] = useState({
+    hand: bancoDeItemCards.slice(0, 2), // Começa com 2 itens na mão
+    deck: shuffleArray(bancoDeItemCards.slice(2)), // Resto embaralhado na pilha
+    discard: []
+  });
+
+  const [opponentItems, setOpponentItems] = useState({
+    hand: bancoDeItemCards.slice(0, 2),
+    deck: shuffleArray(bancoDeItemCards.slice(2)),
+    discard: []
+  });
+
   // Deck e descarte não utilizados neste modo
+
+  // Função para comprar itens - DEVE ser definida antes dos hooks que a utilizam
+  const drawItems = useCallback((side, count = 1) => {
+    const setItems = side === 'player' ? setPlayerItems : setOpponentItems;
+    
+    setItems(prev => {
+      const newHand = [...prev.hand];
+      let newDeck = [...prev.deck];
+      let newDiscard = [...prev.discard];
+
+      for (let i = 0; i < count && newHand.length < 3; i++) {
+        if (newDeck.length === 0 && newDiscard.length > 0) {
+          // Reembaralhar descarte
+          newDeck = shuffleArray(newDiscard);
+          newDiscard = [];
+        }
+        
+        if (newDeck.length > 0) {
+          newHand.push(newDeck.shift());
+        }
+      }
+
+      return {
+        hand: newHand,
+        deck: newDeck,
+        discard: newDiscard
+      };
+    });
+  }, []);
 
   // Estados para o novo visual
   const [currentField, setCurrentField] = useState("floresta");
@@ -782,6 +957,11 @@ export default function GameRoom({ params }) {
       setSkillCooldown((prev) => Math.max(0, prev - 1));
     }
 
+    // Comprar item no final do turno (se a mão não estiver cheia)
+    if (playerItems.hand.length < 3) {
+      drawItems('player', 1);
+    }
+
     // Próximo turno (incrementa contador global)
     setGameState((prev) => ({
       ...prev,
@@ -919,6 +1099,11 @@ export default function GameRoom({ params }) {
         });
         // Após o processamento do turno do oponente, devolve o turno ao jogador
         setTimeout(() => {
+          // Comprar item para o oponente no final do turno
+          if (opponentItems.hand.length < 3) {
+            drawItems('opponent', 1);
+          }
+
           setGameState((prev) => ({
             ...prev,
             turn: "player",
@@ -961,6 +1146,9 @@ export default function GameRoom({ params }) {
     incrementOnFieldTurns,
     spendPP,
     pushLog,
+    drawItems,
+    playerItems.hand.length,
+    opponentItems.hand.length,
   ]);
 
   const castSkill = useCallback(
@@ -1032,6 +1220,64 @@ export default function GameRoom({ params }) {
     setShowSwitchModal(true);
   setShowOrbs(false);
   }, [gameState.turn, gameState.actionUsed]);
+
+  // Ação: Usar Item
+  const useItem = useCallback((itemIndex) => {
+    if (gameState.turn !== "player" || gameState.actionUsed) return;
+    if (itemIndex < 0 || itemIndex >= playerItems.hand.length) return;
+
+    const item = playerItems.hand[itemIndex];
+    
+    // Mover item para descarte
+    setPlayerItems(prev => ({
+      ...prev,
+      hand: prev.hand.filter((_, i) => i !== itemIndex),
+      discard: [...prev.discard, item]
+    }));
+
+    // Aplicar efeito do item
+    if (item.efeito) {
+      switch (item.tipo) {
+        case 'ofensivo':
+          if (item.efeito.dano) {
+            setActiveCards(prev => ({
+              ...prev,
+              opponent: prev.opponent ? {
+                ...prev.opponent,
+                vida: Math.max(0, (prev.opponent.vida || 0) - item.efeito.dano)
+              } : prev.opponent
+            }));
+          }
+          break;
+        case 'defensivo':
+          if (item.efeito.cura) {
+            setActiveCards(prev => ({
+              ...prev,
+              player: prev.player ? {
+                ...prev.player,
+                vida: Math.min(prev.player.vidaMaxima || 100, (prev.player.vida || 0) + item.efeito.cura)
+              } : prev.player
+            }));
+          }
+          break;
+        case 'utilitario':
+          if (item.efeito.comprar_cartas) {
+            drawItems('player', item.efeito.comprar_cartas);
+          }
+          break;
+      }
+    }
+
+    pushLog({
+      side: "player",
+      type: "item",
+      title: `${item.nome} usado`,
+      desc: typeof item.efeito === 'string' ? item.efeito : item.efeito?.descricao || 'Efeito aplicado'
+    });
+
+    setGameState(prev => ({ ...prev, actionUsed: true }));
+    setTimeout(() => endTurn(), 400);
+  }, [gameState.turn, gameState.actionUsed, playerItems.hand, pushLog, endTurn, drawItems]);
 
   // Ação: Passar o turno
   const passTurn = useCallback(() => {
@@ -1387,6 +1633,33 @@ export default function GameRoom({ params }) {
         {/* Menu de opções */}
         <div className="absolute top-4 right-4 z-40">
           <OptionsMenu />
+        </div>
+
+        {/* Mão de Itens do Jogador */}
+        <ItemHand 
+          items={playerItems.hand}
+          onUseItem={useItem}
+          gameState={gameState}
+          isPlayerTurn={gameState.turn === "player"}
+        />
+
+        {/* Indicador de Pilha de Itens */}
+        <div className="absolute bottom-6 left-6 z-50">
+          <div className="bg-gradient-to-br from-blue-900/95 to-blue-800/95 backdrop-blur-md border border-blue-600/50 rounded-2xl p-3 shadow-2xl">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-sm font-bold">
+                📚
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-white">
+                  Pilha: {playerItems.deck.length}
+                </div>
+                <div className="text-xs text-blue-300">
+                  Descarte: {playerItems.discard.length}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Debug Panel */}

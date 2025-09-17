@@ -10,13 +10,7 @@ export class MotorDeJogo {
     this.gameLog = [];
     this.turnPhaseData = {}; // Dados temporários da fase atual
     this.ultimateConditions = new Map(); // Condições para ultimates
-    this.gameOver = false;
-    this.vencedor = null;
   }
-
-  // =============================================================================
-  // INICIALIZAÇÃO DO JOGO
-  // =============================================================================
 
   // Inicializar jogo - Nova estrutura
   iniciarJogo() {
@@ -357,94 +351,8 @@ export class MotorDeJogo {
 
   aplicarEfeitoItem(resultado) {
     const { item, target, playerIndex } = resultado;
-    const player = this.players[playerIndex];
-    const oponente = this.players[1 - playerIndex];
-    
+    // Implementar efeitos específicos dos itens
     this.adicionarAoLog(`Aplicando efeito do item ${item.nome}`, 'item');
-    
-    // Aplicar efeitos baseados no tipo do item
-    if (item.efeito) {
-      switch (item.tipo) {
-        case 'ofensivo':
-          if (item.efeito.dano) {
-            const lendaOponente = oponente.zonas[ZONAS_CAMPO.LENDA_ATIVA];
-            if (lendaOponente) {
-              lendaOponente.vida -= item.efeito.dano;
-              this.adicionarAoLog(`${item.nome} causou ${item.efeito.dano} de dano`, 'damage');
-            }
-          }
-          break;
-          
-        case 'defensivo':
-          if (item.efeito.cura) {
-            const lendaAtiva = player.zonas[ZONAS_CAMPO.LENDA_ATIVA];
-            if (lendaAtiva) {
-              lendaAtiva.vida = Math.min(lendaAtiva.vidaMaxima || lendaAtiva.vida + 100, lendaAtiva.vida + item.efeito.cura);
-              this.adicionarAoLog(`${item.nome} curou ${item.efeito.cura} pontos`, 'heal');
-            }
-          }
-          if (item.efeito.escudo) {
-            player.efeitosAtivos.set('escudo', { valor: item.efeito.escudo, turnos: 3 });
-            this.adicionarAoLog(`${item.nome} concedeu escudo de ${item.efeito.escudo}`, 'buff');
-          }
-          break;
-          
-        case 'utilitario':
-          if (item.efeito.comprar_cartas) {
-            this.comprarItens(player, item.efeito.comprar_cartas);
-            this.adicionarAoLog(`${item.nome} permitiu comprar ${item.efeito.comprar_cartas} itens`, 'utility');
-          }
-          if (item.efeito.regenerar_pp) {
-            const lendaAtiva = player.zonas[ZONAS_CAMPO.LENDA_ATIVA];
-            if (lendaAtiva && lendaAtiva.habilidades) {
-              Object.keys(lendaAtiva.habilidades).forEach(skillId => {
-                if (skillId !== 'passive' && lendaAtiva.habilidades[skillId]) {
-                  const skill = lendaAtiva.habilidades[skillId];
-                  if (!lendaAtiva.pp) lendaAtiva.pp = {};
-                  lendaAtiva.pp[skillId] = Math.min((lendaAtiva.pp[skillId] || 0) + item.efeito.regenerar_pp, skill.ppMax);
-                }
-              });
-              this.adicionarAoLog(`${item.nome} regenerou ${item.efeito.regenerar_pp} PP`, 'utility');
-            }
-          }
-          break;
-      }
-    }
-  }
-
-  aplicarEfeitosTroca(resultado) {
-    // Efeitos que acontecem quando uma lenda entra/sai de campo
-    this.adicionarAoLog('Efeitos de troca aplicados', 'info');
-  }
-
-  aplicarEfeitoPassiva(player, passiva) {
-    // Implementar efeitos das passivas
-    this.adicionarAoLog(`Efeito passivo: ${passiva.description}`, 'passive');
-  }
-
-  aplicarEfeitoContinuo(player, efeito, dados) {
-    // Aplicar veneno, queimadura, etc
-    this.adicionarAoLog(`Efeito contínuo: ${efeito}`, 'continuous');
-  }
-
-  aplicarBuff(target, habilidade) {
-    // Aplicar buffs/debuffs
-    this.adicionarAoLog(`Aplicando ${habilidade.kind}`, 'buff');
-  }
-
-  aplicarAtordoamento(target, turnos) {
-    // Aplicar atordoamento
-    this.adicionarAoLog(`Alvo atordoado por ${turnos} turnos`, 'stun');
-  }
-
-  ativarEfeitosPosAcao(resultado) {
-    // Contra-ataques, explosões finais, etc
-    this.adicionarAoLog('Verificando efeitos pós-ação', 'info');
-  }
-
-  aplicarEfeitosFimTurno() {
-    // Regeneração, veneno, buffs que expiram
-    this.adicionarAoLog('Aplicando efeitos de fim de turno', 'info');
   }
 
   checarDerrota() {
@@ -492,29 +400,257 @@ export class MotorDeJogo {
     }
   }
 
-  // =============================================================================
-  // MÉTODOS DE UTILIDADE
-  // =============================================================================
+  case 'spell':
+        // Aplicar efeito do feitiço
+        this.aplicarEfeitoDoFeitico(card, playerIndex, target);
+        // Feitiços vão para o cemitério
+  player.cemiterio.push(card);
+        break;
 
+      default:
+        // Tratar como criatura por padrão
+        const criaturaPadrao = {
+          ...card,
+          vida: card.defense,
+          vidaMaxima: card.defense,
+          podeAtacar: false,
+          effects: []
+        };
+        player.field.push(criaturaPadrao);
+    }
+
+    return { card, target };
+  }
+
+  // Aplicar efeito de feitiço
+  aplicarEfeitoDoFeitico(spell, playerIndex, target) {
+    const player = this.players[playerIndex];
+    const opponent = this.players[1 - playerIndex];
+
+    // Implementar efeitos específicos baseados na habilidade
+    switch (spell.ability) {
+      case 'Canto Hipnótico':
+        if (Math.random() < 0.3) { // 30% de chance
+          // Pular próximo turno do oponente (simplificado)
+          this.adicionarAoLog(`${opponent.name} perdeu o próximo turno!`, 'special');
+        }
+        break;
+
+      case 'Fogo Protetor':
+        // Causar dano contínuo
+  opponent.vida -= 3;
+        this.adicionarAoLog(`${opponent.name} sofreu 3 de dano de fogo!`, 'damage');
+        break;
+
+      default:
+  this.adicionarAoLog(`Efeito de ${spell.nome || spell.name} aplicado`, 'info');
+    }
+  }
+
+  // Atacar com criatura
+  atacarComCriatura(playerIndex, creatureIndex, targetType, targetIndex = null) {
+    const player = this.players[playerIndex];
+    const opponent = this.players[1 - playerIndex];
+    const criatura = player.field[creatureIndex];
+
+    if (!this.podeAtacar(playerIndex, creatureIndex)) {
+      return { success: false, error: 'Criatura não pode atacar' };
+    }
+
+    if (targetType === 'player') {
+      // Atacar jogador diretamente
+  opponent.vida -= (criatura.ataque || criatura.attack);
+  this.adicionarAoLog(`${criatura.nome || criatura.name} atacou ${opponent.name} causando ${(criatura.ataque || criatura.attack)} de dano!`, 'damage');
+    } else if (targetType === 'creature') {
+      // Atacar criatura
+      const criaturaAlvo = opponent.field[targetIndex];
+      
+      // Aplicar dano
+  criaturaAlvo.vida -= (criatura.ataque || criatura.attack);
+  criatura.vida -= (criaturaAlvo.ataque || criaturaAlvo.attack);
+
+  this.adicionarAoLog(`${criatura.nome || criatura.name} atacou ${criaturaAlvo.nome || criaturaAlvo.name}!`, 'combat');
+
+      // Remover criaturas mortas
+      if (criaturaAlvo.vida <= 0) {
+        opponent.field.splice(targetIndex, 1);
+        opponent.cemiterio.push(criaturaAlvo);
+  this.adicionarAoLog(`${criaturaAlvo.nome || criaturaAlvo.name} foi destruída!`, 'death');
+      }
+
+      if (criatura.vida <= 0) {
+        player.field.splice(creatureIndex, 1);
+        player.cemiterio.push(criatura);
+  this.adicionarAoLog(`${criatura.nome || criatura.name} foi destruída!`, 'death');
+      }
+    }
+
+    // Marcar criatura como tendo atacado
+    if (criatura.vida > 0) {
+      criatura.podeAtacar = false;
+    }
+
+    return { success: true };
+  }
+
+  // Verificar se criatura pode atacar
+  podeAtacar(playerIndex, creatureIndex) {
+    const player = this.players[playerIndex];
+  const criaturaRef = player.field[creatureIndex];
+
+    // Verificar turno
+  if (playerIndex !== this.indiceJogadorAtual) {
+      return false;
+    }
+
+    // Verificar fase
+  if (this.fase !== FASES_DO_JOGO.COMBATE) {
+      return false;
+    }
+
+    // Verificar se pode atacar
+  if (!criaturaRef.podeAtacar) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Finalizar turno
+  finalizarTurno() {
+  const jogadorAtual = this.players[this.indiceJogadorAtual];
+
+    // Reset de criaturas
+    jogadorAtual.field.forEach(creature => {
+      creature.podeAtacar = true;
+    });
+
+    // Próximo jogador
+  this.indiceJogadorAtual = (this.indiceJogadorAtual + 1) % this.players.length;
+    
+  if (this.indiceJogadorAtual === 0) {
+      this.turn++;
+    }
+
+    // Novo turno
+    this.iniciarTurno();
+
+    return this.obterEstadoDoJogo();
+  }
+
+  // Iniciar turno
+  iniciarTurno() {
+  const jogadorAtual = this.players[this.indiceJogadorAtual];
+
+    // Aumentar mana
+  jogadorAtual.mana = Math.min(CONSTANTES_DO_JOGO.MANA_MAXIMA, this.turn);
+
+    // Comprar carta
+  this.comprarCarta(this.indiceJogadorAtual);
+
+    // Mudar para fase de compra
+  this.fase = FASES_DO_JOGO.COMPRA;
+
+  this.adicionarAoLog(`Turno ${this.turn} - ${jogadorAtual.name}`, 'turn');
+  }
+
+  // Verificar condições de vitória
+  verificarCondicaoDeVitoria() {
+    for (let i = 0; i < this.players.length; i++) {
+  if (this.players[i].vida <= 0) {
+  const winner = this.players[1 - i];
+  return { gameEnded: true, winner, reason: 'vida' };
+      }
+    }
+
+    return { gameEnded: false };
+  }
+
+  // Obter estado do jogo
   obterEstadoDoJogo() {
     return {
-      players: this.players,
-      currentPlayer: this.indiceJogadorAtual,
+      players: this.players.map(p => ({ ...p })),
+  indiceJogadorAtual: this.indiceJogadorAtual,
       turn: this.turn,
-      phase: this.fase,
-      gameOver: this.gameOver,
-      winner: this.vencedor,
-      log: this.gameLog
+  fase: this.fase,
+      gameLog: [...this.gameLog],
+      winCondition: this.verificarCondicaoDeVitoria()
     };
   }
 
+  // Adicionar ao log
   adicionarAoLog(message, type = 'info') {
     this.gameLog.push({
-      turn: this.turn,
-      phase: this.fase,
       message,
       type,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      turn: this.turn
     });
+
+    // Manter apenas últimas 50 entradas
+    if (this.gameLog.length > 50) {
+      this.gameLog = this.gameLog.slice(-50);
+    }
   }
 }
+
+// Utilitários de deck
+export const UtilitariosDeck = {
+  // Validar deck
+  validarDeck(cards) {
+    const errors = [];
+
+    if (cards.length < CONSTANTES_DO_JOGO.TAMANHO_MINIMO_DECK) {
+      errors.push(`Deck deve ter pelo menos ${CONSTANTES_DO_JOGO.TAMANHO_MINIMO_DECK} cartas`);
+    }
+
+    if (cards.length > CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_DECK) {
+      errors.push(`Deck não pode ter mais de ${CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_DECK} cartas`);
+    }
+
+    // Verificar limite de cópias
+    const cardCounts = {};
+    cards.forEach(card => {
+      cardCounts[card.id] = (cardCounts[card.id] || 0) + 1;
+    });
+
+    for (const [cardId, count] of Object.entries(cardCounts)) {
+      if (count > CONSTANTES_DO_JOGO.COPIAS_MAXIMAS_POR_CARTA) {
+        errors.push(`Máximo ${CONSTANTES_DO_JOGO.COPIAS_MAXIMAS_POR_CARTA} cópias da mesma carta`);
+        break;
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  },
+
+  // Calcular estatísticas do deck
+  calcularEstatisticasDoDeck(cards) {
+    // Compat: sem custo por carta, agregados baseados em ataque
+  const totalCost = cards.reduce((sum, card) => sum + (card.custo || card.cost || 0), 0);
+    const averageCost = cards.length ? (totalCost / cards.length) : 0;
+
+    const costDistribution = {};
+    cards.forEach(card => {
+  const c = card.custo || card.cost || 0;
+      costDistribution[c] = (costDistribution[c] || 0) + 1;
+    });
+
+    const categoryDistribution = {};
+    cards.forEach(card => {
+  const cat = card.categoria || card.category;
+  categoryDistribution[cat] = (categoryDistribution[cat] || 0) + 1;
+    });
+
+    return {
+      totalCards: cards.length,
+      averageCost: Math.round(averageCost * 10) / 10,
+      costDistribution,
+      categoryDistribution,
+      uniqueCards: new Set(cards.map(c => c.id)).size
+    };
+  }
+};

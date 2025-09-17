@@ -6,6 +6,7 @@ import { requireSupabaseAdmin } from '@/lib/supabase';
 const UpsertSchema = z.object({
   uid: z.string().min(1),
   cards: z.array(z.string().min(1)).default([]),
+  itemCards: z.array(z.string().min(1)).default([]),
 });
 
 export async function GET(req) {
@@ -19,7 +20,7 @@ export async function GET(req) {
   if (uerr) throw uerr;
   if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
-  const { data: row, error } = await supabase.from('collections').select('cards').eq('player_id', user.id).maybeSingle();
+  const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', user.id).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   
   // Converter formato: [{ id: 'cur001' }] -> ['cur001']
@@ -28,7 +29,12 @@ export async function GET(req) {
     cards = cards.map(c => c.id);
   }
   
-  return NextResponse.json({ cards });
+  let itemCards = row?.item_cards || [];
+  if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
+    itemCards = itemCards.map(c => c.id);
+  }
+  
+  return NextResponse.json({ cards, itemCards });
   } catch (e) {
     console.error('collection GET', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
@@ -46,10 +52,15 @@ export async function POST(req) {
     if (uerr) throw uerr;
     if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
+    const upsertData = { player_id: user.id, cards: parsed.data.cards };
+    if (parsed.data.itemCards && parsed.data.itemCards.length > 0) {
+      upsertData.item_cards = parsed.data.itemCards;
+    }
+    
     const { data, error } = await supabase
       .from('collections')
-      .upsert({ player_id: user.id, cards: parsed.data.cards }, { onConflict: 'player_id' })
-      .select('cards')
+      .upsert(upsertData, { onConflict: 'player_id' })
+      .select('cards, item_cards')
       .single();
     if (error) throw error;
     
@@ -59,7 +70,12 @@ export async function POST(req) {
       cards = cards.map(c => c.id);
     }
     
-    return NextResponse.json({ cards, created: false });
+    let itemCards = data.item_cards || [];
+    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
+      itemCards = itemCards.map(c => c.id);
+    }
+    
+    return NextResponse.json({ cards, itemCards, created: false });
   } catch (e) {
     console.error('collection POST', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
@@ -68,7 +84,7 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    const { uid, add, remove } = await req.json();
+    const { uid, add, remove, addItemCard, removeItemCard } = await req.json();
     if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
     const supabase = requireSupabaseAdmin();
     const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
@@ -79,24 +95,45 @@ export async function PATCH(req) {
     if (exErr && exErr.code !== 'PGRST116') throw exErr;
     
     // Converter formato existente: [{ id: 'cur001' }] -> ['cur001']
-    let next = existing?.cards || [];
-    if (Array.isArray(next) && next.length > 0 && typeof next[0] === 'object' && next[0].id) {
-      next = next.map(c => c.id);
+    let nextCards = existing?.cards || [];
+    if (Array.isArray(nextCards) && nextCards.length > 0 && typeof nextCards[0] === 'object' && nextCards[0].id) {
+      nextCards = nextCards.map(c => c.id);
     }
 
+    let nextItemCards = existing?.item_cards || [];
+    if (Array.isArray(nextItemCards) && nextItemCards.length > 0 && typeof nextItemCards[0] === 'object' && nextItemCards[0].id) {
+      nextItemCards = nextItemCards.map(c => c.id);
+    }
+
+    // Operações com cards normais
     if (add) {
-      const set = new Set(next);
+      const set = new Set(nextCards);
       set.add(String(add));
-      next = Array.from(set);
+      nextCards = Array.from(set);
     }
     if (remove) {
-      next = next.filter((c) => c !== String(remove));
+      nextCards = nextCards.filter((c) => c !== String(remove));
+    }
+
+    // Operações com item cards
+    if (addItemCard) {
+      const set = new Set(nextItemCards);
+      set.add(String(addItemCard));
+      nextItemCards = Array.from(set);
+    }
+    if (removeItemCard) {
+      nextItemCards = nextItemCards.filter((c) => c !== String(removeItemCard));
+    }
+
+    const upsertData = { player_id: user.id, cards: nextCards };
+    if (nextItemCards.length > 0 || existing?.item_cards) {
+      upsertData.item_cards = nextItemCards;
     }
 
     const { data, error } = await supabase
       .from('collections')
-      .upsert({ player_id: user.id, cards: next }, { onConflict: 'player_id' })
-      .select('cards')
+      .upsert(upsertData, { onConflict: 'player_id' })
+      .select('cards, item_cards')
       .single();
     if (error) throw error;
     
@@ -106,7 +143,12 @@ export async function PATCH(req) {
       cards = cards.map(c => c.id);
     }
     
-    return NextResponse.json({ cards, created: !existing });
+    let itemCards = data.item_cards || [];
+    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
+      itemCards = itemCards.map(c => c.id);
+    }
+    
+    return NextResponse.json({ cards, itemCards, created: !existing });
   } catch (e) {
     console.error('collection PATCH', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });

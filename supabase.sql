@@ -41,6 +41,7 @@ CREATE TABLE public.cards (
 CREATE TABLE public.collections (
   player_id bigint NOT NULL,
   cards jsonb NOT NULL DEFAULT '[]'::jsonb,
+  item_cards jsonb NOT NULL DEFAULT '[]'::jsonb,
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT collections_pkey PRIMARY KEY (player_id),
   CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)

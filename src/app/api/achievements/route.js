@@ -321,6 +321,15 @@ export async function checkAndUnlockAchievements(supabase, playerId, actionType,
             .single();
           shouldUnlock = (collection?.cards || []).length >= criteria.target;
           break;
+        case 'item_cards_collected':
+          // Need to check item cards collection
+          const { data: itemCollection } = await supabase
+            .from('collections')
+            .select('item_cards')
+            .eq('player_id', playerId)
+            .single();
+          shouldUnlock = (itemCollection?.item_cards || []).length >= criteria.target;
+          break;
         // Add more criteria types as needed
       }
 

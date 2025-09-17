@@ -55,13 +55,26 @@ export async function POST(req) {
 
   const allIds = bancoDeCartas.map((c) => c.id).filter(Boolean);
 
+    // Buscar todos os item_cards disponíveis
+    const { data: allItemCards, error: itemCardsError } = await supabase
+      .from('item_cards')
+      .select('id');
+    if (itemCardsError) console.warn('Erro ao buscar item_cards:', itemCardsError);
+    
+    const allItemIds = (allItemCards || []).map((i) => i.id).filter(Boolean);
+
     // upsert coleção
+    const upsertData = { player_id: row.id, cards: allIds };
+    if (allItemIds.length > 0) {
+      upsertData.item_cards = allItemIds;
+    }
+    
     const up = await supabase
       .from('collections')
-      .upsert({ player_id: row.id, cards: allIds }, { onConflict: 'player_id' });
+      .upsert(upsertData, { onConflict: 'player_id' });
     if (up.error) throw up.error;
 
-    return NextResponse.json({ ok: true, player: { id: row.id, username: row.name, email: row.uid }, totalCards: allIds.length });
+    return NextResponse.json({ ok: true, player: { id: row.id, username: row.name, email: row.uid }, totalCards: allIds.length, totalItemCards: allItemIds.length });
   } catch (e) {
     console.error('admin seed error', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });

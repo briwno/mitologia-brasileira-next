@@ -1,21 +1,25 @@
 // src/utils/constants.js
 
 export const CONSTANTES_DO_JOGO = {
-  // Configurações de jogo
-  TAMANHO_MAXIMO_MAO: 7,
-  TAMANHO_MAXIMO_DECK: 30,
-  TAMANHO_MINIMO_DECK: 20,
-  COPIAS_MAXIMAS_POR_CARTA: 3,
-  VIDA_INICIAL: 20,
-  MANA_INICIAL: 1,
-  MANA_MAXIMA: 10,
-  LIMITE_TEMPO_TURNO: 300, // 5 minutos
+  // Configurações de jogo - Nova estrutura
+  TAMANHO_DECK_LENDAS: 5,      // 5 Lendas únicas no deck
+  TAMANHO_DECK_ITENS: 10,      // 10 Itens no deck  
+  TAMANHO_MAXIMO_MAO_ITENS: 3, // Máximo 3 itens na mão
+  BANCO_LENDAS: 4,              // 4 lendas no banco (reserva)
+  LENDA_ATIVA: 1,               // 1 lenda ativa em campo
+  LIMITE_TEMPO_TURNO: 300,      // 5 minutos
 
-  // Tipos de carta
+  // Tipos de carta - Nova estrutura
   CARD_TYPES: {
-    CREATURE: 'creature',
-    SPELL: 'spell',
-    ARTIFACT: 'artifact'
+    LENDA: 'lenda',     // Cartas de lenda (personagens jogáveis)
+    ITEM: 'item'        // Cartas de item (equipamentos, consumíveis, etc.)
+  },
+
+  // Tipos de Item
+  ITEM_TYPES: {
+    OFENSIVO: 'ofensivo',
+    DEFENSIVO: 'defensivo',
+    UTILITARIO: 'utilitario'
   },
 
   // Elementos
@@ -99,11 +103,26 @@ export const MODOS_DE_JOGO = {
   TUTORIAL: 'tutorial'
 };
 
+export const ZONAS_CAMPO = {
+  LENDA_ATIVA: 'lenda_ativa',     // 1 carta em combate
+  BANCO_LENDAS: 'banco_lendas',   // 4 cartas de reserva
+  MAO_ITENS: 'mao_itens',         // até 3 cartas na mão
+  PILHA_ITENS: 'pilha_itens',     // cartas restantes para compra
+  DESCARTE_ITENS: 'descarte_itens' // para reciclagem/habilidades
+};
+
+export const ACOES_TURNO = {
+  USAR_HABILIDADE: 'usar_habilidade',
+  TROCAR_LENDA: 'trocar_lenda', 
+  USAR_ITEM: 'usar_item',
+  ACAO_ESPECIAL: 'acao_especial'  // carregar energia, preparar defesa
+};
+
 export const FASES_DO_JOGO = {
-  COMPRA: 'compra',
-  PRINCIPAL: 'principal',
-  COMBATE: 'combate',
-  FIM: 'fim'
+  INICIO: 'inicio',           // Ativar passivas, resolver efeitos contínuos
+  ACAO: 'acao',               // Escolher ação: habilidade, trocar lenda, usar item
+  RESOLUCAO: 'resolucao',     // Calcular dano, aplicar efeitos, checar derrotas
+  FIM_TURNO: 'fim_turno'      // Comprar item, aplicar efeitos de fim de turno
 };
 
 export const TIPOS_DE_NOTIFICACAO = {
