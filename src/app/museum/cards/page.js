@@ -305,6 +305,17 @@ export default function CatalogoComContos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Estados dos filtros
+  const [filters, setFilters] = useState({
+    search: '',
+    rarity: 'todas',
+    region: 'todas',
+    category: 'todas',
+    itemType: 'todos',
+    element: 'todos'
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -367,14 +378,86 @@ export default function CatalogoComContos() {
     return () => { cancelled = true; };
   }, []);
 
-  const storyCards = useMemo(() => {
+  // Filtrar cartas baseado nos filtros selecionados
+  const filteredCards = useMemo(() => {
+    let filtered = [...cards];
+    
+    // Filtro de busca por nome
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(card => 
+        (card.nome || '').toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Filtro por raridade
+    if (filters.rarity !== 'todas') {
+      filtered = filtered.filter(card => card.raridade === filters.rarity);
+    }
+    
+    // Filtro por região
+    if (filters.region !== 'todas') {
+      filtered = filtered.filter(card => card.regiao === filters.region);
+    }
+    
+    // Filtro por categoria
+    if (filters.category !== 'todas') {
+      filtered = filtered.filter(card => card.categoria === filters.category);
+    }
+    
+    // Filtro por elemento
+    if (filters.element !== 'todos') {
+      filtered = filtered.filter(card => card.elemento === filters.element);
+    }
+    
     // Coloca cartas marcadas como "novo" no topo; mantém ordem relativa para o restante
-    const arr = [...cards];
-    arr.sort((a, b) => (b.novo === true) - (a.novo === true));
-    return arr;
-  }, [cards]);
+    filtered.sort((a, b) => (b.novo === true) - (a.novo === true));
+    return filtered;
+  }, [cards, filters]);
 
-  const displayItems = selectedTab === 'items' ? itemCards : storyCards;
+  // Filtrar itens baseado nos filtros selecionados
+  const filteredItems = useMemo(() => {
+    let filtered = [...itemCards];
+    
+    // Filtro de busca por nome
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(item => 
+        (item.name || item.nome || '').toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Filtro por raridade
+    if (filters.rarity !== 'todas') {
+      filtered = filtered.filter(item => item.rarity === filters.rarity);
+    }
+    
+    // Filtro por tipo de item
+    if (filters.itemType !== 'todos') {
+      filtered = filtered.filter(item => item.itemType === filters.itemType);
+    }
+    
+    return filtered;
+  }, [itemCards, filters]);
+
+  const displayItems = selectedTab === 'items' ? filteredItems : filteredCards;
+
+  // Função para limpar filtros
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      rarity: 'todas',
+      region: 'todas',
+      category: 'todas',
+      itemType: 'todos',
+      element: 'todos'
+    });
+  };
+
+  // Contar itens ativos após filtros
+  const activeFiltersCount = Object.values(filters).filter(val => 
+    val !== 'todas' && val !== 'todos' && val !== ''
+  ).length;
   
   return (
     <LayoutDePagina>
@@ -387,8 +470,9 @@ export default function CatalogoComContos() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex justify-center mb-8">
+        {/* Tabs e Controles */}
+        <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
+          {/* Tabs */}
           <div className="bg-black/30 backdrop-blur-sm rounded-lg p-1 flex">
             <button
               onClick={() => setSelectedTab('cards')}
@@ -398,7 +482,7 @@ export default function CatalogoComContos() {
                   : 'text-gray-300 hover:text-white hover:bg-white/10'
               }`}
             >
-              🃏 Cartas ({cards.length})
+              🃏 Cartas ({filteredCards.length}/{cards.length})
             </button>
             <button
               onClick={() => setSelectedTab('items')}
@@ -408,42 +492,264 @@ export default function CatalogoComContos() {
                   : 'text-gray-300 hover:text-white hover:bg-white/10'
               }`}
             >
-              📦 Itens ({itemCards.length})
+              📦 Itens ({filteredItems.length}/{itemCards.length})
+            </button>
+          </div>
+
+          {/* Controles de Filtro */}
+          <div className="flex items-center gap-3">
+            {/* Busca */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="🔍 Buscar..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({...prev, search: e.target.value}))}
+                className="bg-black/30 border border-white/20 rounded-lg px-4 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 w-64"
+              />
+              {filters.search && (
+                <button
+                  onClick={() => setFilters(prev => ({...prev, search: ''}))}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            {/* Botão de Filtros */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`relative px-4 py-2 rounded-lg font-semibold transition-all ${
+                showFilters
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-black/30 border border-white/20 text-gray-300 hover:text-white hover:border-white/40'
+              }`}
+            >
+              🔧 Filtros
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Painel de Filtros */}
+        {showFilters && (
+          <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">🔧 Filtros Avançados</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={clearFilters}
+                  className="text-sm px-3 py-1 bg-red-600/20 border border-red-500/50 text-red-400 hover:text-red-300 rounded"
+                >
+                  Limpar Todos
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-sm px-3 py-1 bg-gray-600/20 border border-gray-500/50 text-gray-400 hover:text-gray-300 rounded"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {/* Filtro por Raridade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Raridade</label>
+                <select
+                  value={filters.rarity}
+                  onChange={(e) => setFilters(prev => ({...prev, rarity: e.target.value}))}
+                  className="w-full bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todas">Todas as Raridades</option>
+                  <option value="Épico">💜 Épico</option>
+                  <option value="Lendário">🟡 Lendário</option>
+                  <option value="Mítico">🔴 Mítico</option>
+                </select>
+              </div>
+
+              {/* Filtros específicos para cartas */}
+              {selectedTab === 'cards' && (
+                <>
+                  {/* Filtro por Região */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Região</label>
+                    <select
+                      value={filters.region}
+                      onChange={(e) => setFilters(prev => ({...prev, region: e.target.value}))}
+                      className="w-full bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="todas">Todas as Regiões</option>
+                      <option value="Amazônia">🌳 Amazônia</option>
+                      <option value="Nordeste">☀️ Nordeste</option>
+                      <option value="Sudeste">🏙️ Sudeste</option>
+                      <option value="Sul">❄️ Sul</option>
+                      <option value="Centro-Oeste">🌾 Centro-Oeste</option>
+                      <option value="Nacional">🇧🇷 Nacional</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro por Categoria */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
+                    <select
+                      value={filters.category}
+                      onChange={(e) => setFilters(prev => ({...prev, category: e.target.value}))}
+                      className="w-full bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="todas">Todas as Categorias</option>
+                      <option value="Guardiões da Floresta">🌲 Guardiões da Floresta</option>
+                      <option value="Espíritos das Águas">🌊 Espíritos das Águas</option>
+                      <option value="Assombrações">👻 Assombrações</option>
+                      <option value="Protetores Humanos">🛡️ Protetores Humanos</option>
+                      <option value="Entidades Místicas">✨ Entidades Místicas</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro por Elemento */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Elemento</label>
+                    <select
+                      value={filters.element}
+                      onChange={(e) => setFilters(prev => ({...prev, element: e.target.value}))}
+                      className="w-full bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="todos">Todos os Elementos</option>
+                      <option value="Terra">🟫 Terra</option>
+                      <option value="Água">🔵 Água</option>
+                      <option value="Fogo">🔴 Fogo</option>
+                      <option value="Ar">⚪ Ar</option>
+                      <option value="Espírito">🟣 Espírito</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Filtros específicos para itens */}
+              {selectedTab === 'items' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Item</label>
+                  <select
+                    value={filters.itemType}
+                    onChange={(e) => setFilters(prev => ({...prev, itemType: e.target.value}))}
+                    className="w-full bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="todos">Todos os Tipos</option>
+                    <option value="Consumível">🧪 Consumível</option>
+                    <option value="Equipamento">⚔️ Equipamento</option>
+                    <option value="Artefato">🔮 Artefato</option>
+                    <option value="Relíquia">🏺 Relíquia</option>
+                    <option value="Pergaminho">📜 Pergaminho</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Resumo dos Filtros Ativos */}
+            {activeFiltersCount > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="text-sm text-gray-300 mb-2">Filtros ativos:</div>
+                <div className="flex flex-wrap gap-2">
+                  {filters.search && (
+                    <span className="bg-blue-600/20 border border-blue-500/50 text-blue-300 px-2 py-1 rounded text-xs">
+                      Busca: &quot;{filters.search}&quot;
+                    </span>
+                  )}
+                  {filters.rarity !== 'todas' && (
+                    <span className="bg-purple-600/20 border border-purple-500/50 text-purple-300 px-2 py-1 rounded text-xs">
+                      Raridade: {filters.rarity}
+                    </span>
+                  )}
+                  {filters.region !== 'todas' && (
+                    <span className="bg-green-600/20 border border-green-500/50 text-green-300 px-2 py-1 rounded text-xs">
+                      Região: {filters.region}
+                    </span>
+                  )}
+                  {filters.category !== 'todas' && (
+                    <span className="bg-yellow-600/20 border border-yellow-500/50 text-yellow-300 px-2 py-1 rounded text-xs">
+                      Categoria: {filters.category}
+                    </span>
+                  )}
+                  {filters.element !== 'todos' && (
+                    <span className="bg-cyan-600/20 border border-cyan-500/50 text-cyan-300 px-2 py-1 rounded text-xs">
+                      Elemento: {filters.element}
+                    </span>
+                  )}
+                  {filters.itemType !== 'todos' && (
+                    <span className="bg-orange-600/20 border border-orange-500/50 text-orange-300 px-2 py-1 rounded text-xs">
+                      Tipo: {filters.itemType}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Lista estilo "story quests" - grid 4 colunas */}
         {loading ? (
           <div className="text-center text-gray-400 py-20">Carregando coleção...</div>
         ) : error ? (
           <div className="text-center text-red-400 py-20">Erro: {error}</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {selectedTab === 'cards' ? (
-              storyCards.map((card, i) => (
-                <StoryCard
-                  key={card.id}
-                  card={card}
-                  idx={i}
-                  onClick={() => {
-                    setSelected(card);
-                  }}
-                />
-              ))
-            ) : (
-              itemCards.map((item, i) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  onClick={() => {
-                    setSelected(item);
-                  }}
-                  className="aspect-[3/4]"
-                />
-              ))
+        ) : displayItems.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold text-gray-300 mb-2">
+              Nenhum {selectedTab === 'cards' ? 'carta' : 'item'} encontrado
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Tente ajustar os filtros para encontrar o que você procura.
+            </p>
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Limpar Filtros
+              </button>
             )}
           </div>
+        ) : (
+          <>
+            {/* Informações de Resultados */}
+            <div className="text-center mb-6">
+              <p className="text-sm text-gray-400">
+                Mostrando {displayItems.length} de {selectedTab === 'cards' ? cards.length : itemCards.length} {selectedTab === 'cards' ? 'cartas' : 'itens'}
+                {activeFiltersCount > 0 && ` (${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} ativo${activeFiltersCount > 1 ? 's' : ''})`}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {selectedTab === 'cards' ? (
+                filteredCards.map((card, i) => (
+                  <StoryCard
+                    key={card.id}
+                    card={card}
+                    idx={i}
+                    onClick={() => {
+                      setSelected(card);
+                    }}
+                  />
+                ))
+              ) : (
+                filteredItems.map((item, i) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => {
+                      setSelected(item);
+                    }}
+                    className="aspect-[3/4]"
+                  />
+                ))
+              )}
+            </div>
+          </>
         )}
 
         <div className="text-center mt-10">

@@ -110,7 +110,7 @@ export default function RankingModal({ onClose }) {
               title="Seu Ranque"
               iconName="medal"
               subtitle="Veja sua posição atual"
-              href="/ranking/your-rank"
+              href="/ranking"
               imageSrc="/images/backgrounds/ranque-background.jpg"
               simboloRanque="🥉"
             />
@@ -118,7 +118,7 @@ export default function RankingModal({ onClose }) {
               title="Top Jogadores"
               iconName="calendar"
               subtitle="Melhores jogadores por pontuação"
-              href="/ranking/weekly"
+              href="/ranking/"
               imageSrc="/images/backgrounds/semanal-background.jpg"
             />
             <CartaoDeModo

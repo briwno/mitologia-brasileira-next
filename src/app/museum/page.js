@@ -3,131 +3,123 @@
 
 import Link from 'next/link';
 import LayoutDePagina from '../../components/UI/PageLayout';
+import Image from 'next/image';
+import { useState } from 'react';
 
-export default function Museum() {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
+    const [hover, setHover] = useState(false);
   return (
-    <LayoutDePagina>
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            🏛️ Modo Museu
-          </h1>
-          <p className="text-xl text-green-300 mb-8">
-            Explore a rica mitologia brasileira e desbloqueie cartas
-          </p>
+    <Link
+      href={href}
+      className="block"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <div
+        className={`group relative h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-visible transition-all select-none w-full text-left ${
+          hover
+            ? 'shadow-[0_20px_60px_-20px_rgba(40, 71, 21, 0.35)]'
+            : 'hover:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.3)]'
+        }`}
+      >
+  {/* imagem de fundo */}
+        <div className="absolute inset-0 rounded-xl overflow-hidden">
+          <Image
+            src={imageSrc || '/images/placeholder.svg'}
+            alt={`${title} background`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/80 z-10" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          <Link href="/museum/cards">
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-blue-500/30 hover:border-blue-400 transition-all cursor-pointer group">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🃏</div>
-                <h3 className="text-2xl font-bold mb-3 text-blue-400 group-hover:text-blue-300">
-                  Catálogo de Cartas
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  Explore todas as cartas do jogo e aprenda sobre cada criatura folclórica
-                </p>
-                <div className="text-sm text-blue-300">
-                  📊 12/30 cartas descobertas
-                </div>
-              </div>
-            </div>
-          </Link>
+  {/* moldura verde */}
+        <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${hover ? 'ring-2 ring-green-400' : 'ring-1 ring-green-600/60 group-hover:ring-green-400'}`} />
+        <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-green-300/10 via-transparent to-green-300/0 z-10" />
 
-          <Link href="/museum/stories">
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer group">
-              <div className="text-center">
-                <div className="text-4xl mb-4">📖</div>
-                <h3 className="text-2xl font-bold mb-3 text-rose-400 group-hover:text-rose-300">
-                  Contos de Ka’aguy
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  Leia narrativas curtas sobre as lendas por trás das cartas
-                </p>
-                <div className="text-sm text-rose-300">
-                  ✨ Novo modo
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/museum/quiz">
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-green-500/30 hover:border-green-400 transition-all cursor-pointer group">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🧠</div>
-                <h3 className="text-2xl font-bold mb-3 text-green-400 group-hover:text-green-300">
-                  Quiz Cultural
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  Teste seus conhecimentos sobre folclore brasileiro e ganhe recompensas
-                </p>
-                <div className="text-sm text-green-300">
-                  🏆 Nível 3 - 850 pontos
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/museum/map">
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-yellow-500/30 hover:border-yellow-400 transition-all cursor-pointer group">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🗺️</div>
-                <h3 className="text-2xl font-bold mb-3 text-yellow-400 group-hover:text-yellow-300">
-                  Mapa das Lendas
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  Descubra a origem geográfica de cada mito e lenda brasileira
-                </p>
-                <div className="text-sm text-yellow-300">
-                  🌎 5/7 regiões exploradas
-                </div>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        <div className="bg-black/20 backdrop-blur-sm rounded-lg p-8 border border-purple-500/30">
-          <h2 className="text-3xl font-bold mb-6 text-purple-400">📚 Biblioteca do Folclore</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-green-400">Últimas Descobertas</h3>
-              <div className="space-y-2">
-                <div className="bg-black/30 p-3 rounded border-l-4 border-green-500">
-                  <p className="font-medium">Curupira desbloqueado!</p>
-                  <p className="text-sm text-gray-400">Protetor da floresta amazônica</p>
-                </div>
-                <div className="bg-black/30 p-3 rounded border-l-4 border-blue-500">
-                  <p className="font-medium">Iara descoberta!</p>
-                  <p className="text-sm text-gray-400">Sereia dos rios brasileiros</p>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-yellow-400">Conquistas Recentes</h3>
-              <div className="space-y-2">
-                <div className="bg-black/30 p-3 rounded">
-                  <p className="font-medium">🏆 Explorador da Amazônia</p>
-                  <p className="text-sm text-gray-400">Complete todas as lendas amazônicas</p>
-                </div>
-                <div className="bg-black/30 p-3 rounded">
-                  <p className="font-medium">🎓 Mestre do Quiz</p>
-                  <p className="text-sm text-gray-400">Acerte 10 perguntas seguidas</p>
-                </div>
-              </div>
-            </div>
+  {/* conteúdo */}
+        <div className="relative z-20 h-full flex flex-col justify-end p-5">
+          <div className="mb-4 text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{emoji}</div>
+          <div className="pb-3">
+            <div className="text-white font-extrabold text-2xl md:text-3xl tracking-wide">{title.toUpperCase()}</div>
+            {subtitle && <div className="text-neutral-200 text-xs md:text-sm mt-1">{subtitle}</div>}
           </div>
         </div>
 
-        <div className="text-center mt-8">
-          <Link
-            href="/"
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold"
-          >
-            ← Voltar ao Menu Principal
-          </Link>
+  {/* emblema verde em losango (acima da moldura) */}
+        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+          <div className="w-10 h-10 rotate-45 bg-green-500/90 border-2 border-green-300 shadow-lg flex items-center justify-center">
+            <div className="-rotate-45">{emoji}</div>
+          </div>
         </div>
       </div>
-  </LayoutDePagina>
+    </Link>
+  );
+}
+
+export default function Museum() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={href => window.location.href = '/'}>
+      <div
+        className="relative bg-[#0e1a28] rounded-2xl border border-white/10 shadow-2xl w-full max-w-5xl max-h-[88vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+  {/* Cabeçalho */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
+          <div>
+            <h2 className="text-xl font-bold tracking-wide">🏛️ Museu</h2>
+            <p className="text-xs text-white/70">Explore as lendas em diferentes modos</p>
+          </div>
+          <button
+            type="button"
+            className="text-white/80 hover:text-white text-2xl leading-none"
+            onClick={href => window.location.href = '/'}
+            aria-label="Fechar"
+            title="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+    {/* Conteúdo */}
+        <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <CartaoDeModo
+              title="Catálogo"
+              emoji="🃏"
+              subtitle="Todas as cartas e suas histórias"
+              href="/museum/cards"
+              imageSrc="/images/banners/menumuseu.png"
+            />
+      <CartaoDeModo
+              title="Quiz Cultural"
+              emoji="🧠"
+              subtitle="Teste seus conhecimentos"
+              href="/museum/quiz"
+              imageSrc="/images/banners/museu.jpg"
+            />
+      <CartaoDeModo
+              title="Mapa das Lendas"
+              emoji="🗺️"
+              subtitle="Origem geográfica dos mitos"
+              href="/museum/map"
+              imageSrc="/images/banners/batalha.jpg"
+            />
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 text-neutral-200 hover:text-white bg-black/30"
+              onClick={href => window.location.href = '/'}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
