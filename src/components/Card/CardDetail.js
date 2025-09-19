@@ -3,19 +3,14 @@
 
 import CardImage from './CardImage';
 import Icon from '@/components/UI/Icon';
+import { getRarityFrameClasses, getCardTypeIcon } from '@/utils/cardUtils';
 
-// Detalhe da Carta
-export default function DetalheDaCarta({ card, onClose = null }) {
+// Detalhe da Carta com diferentes modos de exibição
+export default function DetalheDaCarta({ card, onClose = null, mode = 'battle' }) {
   if (!card) return null;
 
-  const obterCorDeRaridade = (rarity) => {
-    switch (rarity) {
-      case 'Épico': return 'border-purple-500 text-purple-400 bg-purple-900/20';
-      case 'Lendário': return 'border-yellow-500 text-yellow-400 bg-yellow-900/20';
-      case 'Mítico': return 'border-red-500 text-red-400 bg-red-900/20';
-      default: return 'border-gray-500 text-gray-400 bg-gray-900/20';
-    }
-  };
+  // Usar função utilitária para cores de raridade
+  const obterCorDeRaridade = getRarityFrameClasses;
 
   const obterPPMaximoPadrao = (indice) => {
     // índice começa em 0 para skill1..skill5
@@ -29,15 +24,8 @@ export default function DetalheDaCarta({ card, onClose = null }) {
     }
   };
 
-  const obterIconeDoTipo = (raw) => {
-    const type = (raw || '').toString().toLowerCase();
-    switch (type) {
-      case 'creature': return '👾';
-      case 'spell': return '✨';
-      case 'artifact': return '⚱️';
-      default: return '👾';
-    }
-  };
+  // Usar função utilitária para ícones de tipo
+  const obterIconeDoTipo = getCardTypeIcon;
 
   return (
   <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-gray-600/30 w-full max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto">

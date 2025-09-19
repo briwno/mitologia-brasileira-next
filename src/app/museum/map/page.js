@@ -4,15 +4,16 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import LayoutDePagina from '../../../components/UI/PageLayout';
-import CardDetail from '../../../components/Card/CardDetail';
+import CardModal from '../../../components/Card/CardModal';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCollection } from '../../../hooks/useCollection';
-
-// Mapas de tradução (API -> PT-BR)
-const MAP_RARITY = { EPIC: 'Épico', LEGENDARY: 'Lendário', MYTHIC: 'Mítico' };
-const MAP_REGION = { AMAZONIA: 'Amazônia', NORTHEAST: 'Nordeste', SOUTHEAST: 'Sudeste', SOUTH: 'Sul', MIDWEST: 'Centro-Oeste', NATIONAL: 'Nacional' };
-const MAP_ELEMENT = { EARTH: 'Terra', WATER: 'Água', FIRE: 'Fogo', AIR: 'Ar', SPIRIT: 'Espírito' };
-const translate = (val, map) => map?.[val] || val;
+import { cardsAPI } from '../../../utils/api';
+import { 
+  TRANSLATION_MAPS, 
+  translate, 
+  mapApiCardToLocal, 
+  getRarityGradient 
+} from '../../../utils/cardUtils';
 
 export default function MapaInterativo() {
   const { user, isAuthenticated } = useAuth();
@@ -28,23 +29,10 @@ export default function MapaInterativo() {
     
     const loadCards = async () => {
       try {
-        const cardsRes = await fetch('/api/cards');
-        if (!cardsRes.ok) throw new Error('Falha ao carregar cartas');
-        const cardsData = await cardsRes.json();
+        const cardsData = await cardsAPI.getAll();
 
-        // Mapear cartas da API para o formato local
-        const mappedCards = (cardsData.cards || []).map(c => ({
-          id: c.id,
-          nome: c.name,
-          regiao: translate(c.region, MAP_REGION),
-          raridade: translate(c.rarity, MAP_RARITY),
-          elemento: translate(c.element, MAP_ELEMENT),
-          ataque: c.attack || 0,
-          defesa: c.defense || 0,
-          descricao: c.description || c.history,
-          imagens: c.images,
-          habilidades: c.abilities || {}
-        }));
+        // Usar função utilitária para mapear cartas
+        const mappedCards = (cardsData.cards || []).map(mapApiCardToLocal);
 
         if (!cancelled) {
           setCards(mappedCards);
@@ -123,6 +111,9 @@ export default function MapaInterativo() {
     }
   ];
 
+  // Se não estiver autenticado, usar dados mock para demonstração
+  const effectiveCollection = isAuthenticated() ? playerCollection : ['cur001', 'iar001', 'bot001'];
+
   // Funções auxiliares
   const getCardsFromRegion = (regionKey) => {
     return cards.filter(card => card.regiao === regionKey);
@@ -164,14 +155,8 @@ export default function MapaInterativo() {
     const portrait = card.imagens?.retrato || card.imagens?.portrait;
     const imgSrc = fullSrc || portrait || '/images/placeholder.svg';
 
-    const rarityColors = {
-      'Lendário': 'from-yellow-400/20 to-yellow-600/30 border-yellow-400/50',
-      'Épico': 'from-purple-400/20 to-purple-600/30 border-purple-400/50',
-      'Mítico': 'from-pink-400/20 to-pink-600/30 border-pink-400/50'
-    };
-
     const bgColor = isCollected 
-      ? rarityColors[card.raridade] || 'from-gray-400/20 to-gray-600/30 border-gray-400/50'
+      ? getRarityGradient(card.raridade)
       : 'from-gray-600/10 to-gray-800/20 border-gray-600/30';
 
     return (
@@ -233,9 +218,6 @@ export default function MapaInterativo() {
   const closeCardModal = () => {
     setSelectedCard(null);
   };
-
-  // Se não estiver autenticado, usar dados mock para demonstração
-  const effectiveCollection = isAuthenticated ? playerCollection : ['cur001', 'iar001', 'bot001'];
 
   if (isLoading) {
     return (
@@ -382,11 +364,11 @@ export default function MapaInterativo() {
         )}
 
         {/* Modal de detalhes da carta */}
-        {selectedCard && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <CardDetail card={selectedCard} onClose={closeCardModal} />
-          </div>
-        )}
+        <CardModal 
+          card={selectedCard}
+          onClose={closeCardModal}
+          mode="lore"
+        />
       </div>
     </LayoutDePagina>
   );

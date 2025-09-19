@@ -95,11 +95,11 @@ export default function PvPModal({ onClose }) {
   }, []);
 
   const startMatch = useCallback((mode) => {
-    const id = createRoomId();
+    // Redireciona para seleção de deck antes de iniciar o jogo
     const m = mode ? `?mode=${encodeURIComponent(mode)}` : '';
-    router.push(`/pvp/game/${id}${m}`);
+    router.push(`/pvp/deck${m}`);
     onClose?.();
-  }, [createRoomId, router, onClose]);
+  }, [router, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => onClose?.()}>
@@ -131,14 +131,14 @@ export default function PvPModal({ onClose }) {
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
-              title="Normal"
+              title="Bots"
               iconName="target"
-              subtitle="Partida casual rápida"
-              onClick={() => startMatch('normal')}
+              subtitle="Partida casual contra IA"
+              onClick={() => startMatch('bot')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
-              title="Ranqueada"
+              title="PVP"
               iconName="trophy"
               subtitle="Valendo pontos de ranking"
               onClick={() => startMatch('ranked')}

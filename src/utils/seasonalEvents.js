@@ -1,15 +1,30 @@
 // src/utils/seasonalEvents.js
-import { ESTACOES } from '../data/cardsDatabase';
+import { getEstacoes } from './constantsAPI';
 
 export class SeasonalEventSystem {
   constructor() {
-  this.currentEvents = [];
-  this.eventHistory = [];
-  this.eventMultipliers = new Map();
+    this.currentEvents = [];
+    this.eventHistory = [];
+    this.eventMultipliers = new Map();
+    this.ESTACOES = null;
+  }
+
+  // Inicializar com as constantes da API
+  async initialize() {
+    this.ESTACOES = await getEstacoes();
+  }
+
+  // Garantir que está inicializado
+  async ensureInitialized() {
+    if (!this.ESTACOES) {
+      await this.initialize();
+    }
   }
 
   // Verificar eventos ativos baseados na data
-  getCurrentActiveEvents() {
+  async getCurrentActiveEvents() {
+    await this.ensureInitialized();
+    
     const agora = new Date();
     const eventosAtivos = [];
 
@@ -17,7 +32,7 @@ export class SeasonalEventSystem {
     if (this.isCarnavalSeason(agora)) {
       eventosAtivos.push({
         id: 'carnival_2025',
-  name: ESTACOES.CARNIVAL,
+        name: this.ESTACOES.CARNIVAL,
         description: 'Celebre o Carnaval! Cartas folclóricas ganham bônus especiais',
         multiplier: 1.75,
         duration: this.getCarnavalDuration(agora),
@@ -30,7 +45,7 @@ export class SeasonalEventSystem {
     if (this.isSaoJoaoSeason(agora)) {
       eventosAtivos.push({
         id: 'sao_joao_2025',
-  name: ESTACOES.SAO_JOAO,
+        name: this.ESTACOES.SAO_JOAO,
         description: 'Festa Junina! Criaturas aquáticas e do folclore nordestino brilham',
         multiplier: 1.5,
         duration: this.getSaoJoaoDuration(agora),
@@ -214,11 +229,11 @@ export class SeasonalEventSystem {
   cardMatchesEventCriteria(card, event) {
     // Verificações específicas por evento
     switch (event.name) {
-  case ESTACOES.CARNIVAL:
+      case this.ESTACOES?.CARNIVAL:
         return card.tags?.includes('travessura') || 
                (card.categoria || card.category) === 'Assombrações';
       
-  case ESTACOES.SAO_JOAO:
+      case this.ESTACOES?.SAO_JOAO:
         return (card.regiao || card.region) === 'Nordeste' || 
                (card.categoria || card.category) === 'Espíritos das Águas';
       

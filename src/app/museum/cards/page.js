@@ -5,21 +5,21 @@
 
 import { useState, useMemo, useEffect } from 'react';
 
-// Mapas de tradução (API -> PT-BR)
-const MAP_RARITY = { EPIC: 'Épico', LEGENDARY: 'Lendário', MYTHIC: 'Mítico' };
-const MAP_REGION = { AMAZONIA: 'Amazônia', NORTHEAST: 'Nordeste', SOUTHEAST: 'Sudeste', SOUTH: 'Sul', MIDWEST: 'Centro-Oeste', NATIONAL: 'Nacional' };
-const MAP_CATEGORY = { GUARDIANS: 'Guardiões da Floresta', SPIRITS: 'Espíritos das Águas', HAUNTS: 'Assombrações', PROTECTORS: 'Protetores Humanos', MYSTICAL: 'Entidades Místicas' };
-const MAP_ELEMENT = { EARTH: 'Terra', WATER: 'Água', FIRE: 'Fogo', AIR: 'Ar', SPIRIT: 'Espírito' };
-const MAP_SEASON = { CARNIVAL: 'Carnaval', SAO_JOAO: 'São João', FESTA_JUNINA: 'Festa Junina', CHRISTMAS: 'Natal' };
-const MAP_ITEM_TYPE = { CONSUMABLE: 'Consumível', EQUIPMENT: 'Equipamento', ARTIFACT: 'Artefato', RELIC: 'Relíquia', SCROLL: 'Pergaminho' };
-const translate = (val, map) => map?.[val] || val;
-const formatEnumLabel = (val) => (typeof val === 'string' ? val.toLowerCase().split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ') : val);
+// Agora todos os mapas estão centralizados em cardUtils.js
 import Image from 'next/image';
 import Link from 'next/link';
 import LayoutDePagina from '../../../components/UI/PageLayout';
 // Removido bancoDeCartas: agora buscando da API /api/cards
-import CardDetail from '../../../components/Card/CardDetail';
+import CardModal from '../../../components/Card/CardModal';
 import ItemCard from '../../../components/Card/ItemCard';
+import { cardsAPI } from '../../../utils/api';
+import { 
+  TRANSLATION_MAPS, 
+  translate, 
+  formatEnumLabel, 
+  mapApiCardToLocal, 
+  getRarityGradient 
+} from '../../../utils/cardUtils';
 
 // Card estilo "story quest"
 function StoryCard({ card, onClick, idx = 0 }) {
@@ -247,7 +247,7 @@ function StoryModal({ card, onClose }) {
               </div>
             </div>
           ) : tab === 'detalhes' ? (
-            <CardDetail card={card} onClose={null} />
+            <CardModal card={card} onClose={null} mode="lore" />
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
         <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
@@ -322,10 +322,8 @@ export default function CatalogoComContos() {
       try {
         setLoading(true);
         
-        // Fetch regular cards
-        const cardsRes = await fetch('/api/cards');
-        if (!cardsRes.ok) throw new Error('Falha ao carregar cartas');
-        const cardsData = await cardsRes.json();
+        // Fetch regular cards usando API client
+        const cardsData = await cardsAPI.getAll();
         
         // Fetch item cards
         const itemsRes = await fetch('/api/item-cards');
@@ -336,20 +334,20 @@ export default function CatalogoComContos() {
           const sb = c.seasonalBonus || c.seasonal_bonus;
           const seasonKey = sb?.season || sb?.estacao;
           const bonusSazonal = sb ? {
-            estacao: translate(seasonKey, MAP_SEASON) || formatEnumLabel(seasonKey),
+            estacao: translate(seasonKey, TRANSLATION_MAPS.SEASON) || formatEnumLabel(seasonKey),
             descricao: sb.description || sb.descricao || sb.text || '',
             multiplicador: sb.multiplier || sb.multiplicador || sb.bonus || null
           } : null;
           return {
             id: c.id,
             nome: c.name,
-            regiao: translate(c.region, MAP_REGION),
-            categoria: translate(c.category, MAP_CATEGORY),
-            raridade: translate(c.rarity, MAP_RARITY),
+            regiao: translate(c.region, TRANSLATION_MAPS.REGION),
+            categoria: translate(c.category, TRANSLATION_MAPS.CATEGORY),
+            raridade: translate(c.rarity, TRANSLATION_MAPS.RARITY),
             historia: c.history,
             imagens: c.images,
             imagem: c.image,
-            elemento: translate(c.element, MAP_ELEMENT),
+            elemento: translate(c.element, TRANSLATION_MAPS.ELEMENT),
             habilidades: c.abilities || {},
             tipo: (c.cardType || c.card_type || 'CREATURE').toString().toLowerCase(),
             novo: idx == 5,
@@ -361,8 +359,8 @@ export default function CatalogoComContos() {
         // Mapear os item cards para tradução
         const mappedItems = (itemsData.itemCards || []).map((item) => ({
           ...item,
-          itemType: translate(item.itemType, MAP_ITEM_TYPE),
-          rarity: translate(item.rarity, MAP_RARITY),
+          itemType: translate(item.itemType, TRANSLATION_MAPS.ITEM_TYPE),
+          rarity: translate(item.rarity, TRANSLATION_MAPS.RARITY),
         }));
 
         if (!cancelled) {

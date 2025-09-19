@@ -6,9 +6,9 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LayoutDePagina from '../../components/UI/PageLayout';
-import { bancoDeCartas } from '@/data/cardsDatabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
+import { cardsAPI } from '@/utils/api';
 
 // Cartão simples para escolher o modo de partida
 function CartaoDeModo({ title, emoji, active, onClick, subtitle, imageSrc }) {
@@ -70,23 +70,56 @@ export default function LobbyPvP() {
 
   const { user, isAuthenticated } = useAuth();
   const { cards: idsPossuidos, loading: carregandoColecao } = useCollection();
+  const [allCards, setAllCards] = useState([]);
+  const [loadingCards, setLoadingCards] = useState(true);
+
+  // Carregar todas as cartas da API
+  useEffect(() => {
+    const loadCards = async () => {
+      try {
+        const data = await cardsAPI.getAll();
+        setAllCards(data.cards || []);
+      } catch (error) {
+        console.error('Erro ao carregar cartas:', error);
+      } finally {
+        setLoadingCards(false);
+      }
+    };
+    
+    loadCards();
+  }, []);
 
   // Monta a coleção real a partir dos IDs possuídos; fallback para amostra pequena se não autenticado
   const colecaoModal = useMemo(() => {
-  const all = bancoDeCartas || [];
+    if (loadingCards) return [];
+    
     if (isAuthenticated() && !carregandoColecao && idsPossuidos?.length) {
-      const map = new Map(all.map(c => [c.id, c]));
+      const map = new Map(allCards.map(c => [c.id, c]));
       return idsPossuidos
         .map(id => map.get(id))
         .filter(Boolean)
-        .map(c => ({ id: c.id, nome: c.nome, categoria: c.categoria, ataque: c.ataque || 0, defesa: c.defesa || 0, vida: c.vida || 0 }));
+        .map(c => ({ 
+          id: c.id, 
+          nome: c.name, 
+          categoria: c.category, 
+          ataque: c.attack || 0, 
+          defesa: c.defense || 0, 
+          vida: c.life || 0 
+        }));
     }
-    // fallback slice
-    return all
-  .filter(c => c?.nome && c?.descoberta)
+    // fallback slice - usar cartas starter ou primeiras disponíveis
+    return allCards
+      .filter(c => c?.is_starter || c?.id)
       .slice(0, 12)
-      .map(c => ({ id: c.id, nome: c.nome, categoria: c.categoria, ataque: c.ataque || 0, defesa: c.defesa || 0, vida: c.vida || 0 }));
-  }, [idsPossuidos, isAuthenticated, carregandoColecao]);
+      .map(c => ({ 
+        id: c.id, 
+        nome: c.name, 
+        categoria: c.category, 
+        ataque: c.attack || 0, 
+        defesa: c.defense || 0, 
+        vida: c.life || 0 
+      }));
+  }, [allCards, loadingCards, idsPossuidos, isAuthenticated, carregandoColecao]);
 
   const [cartasDoDeckModal, setCartasDoDeckModal] = useState([]); // {id, quantity}
   const contagemDeckModal = useMemo(() => cartasDoDeckModal.reduce((s,c)=>s+c.quantity,0), [cartasDoDeckModal]);

@@ -4,13 +4,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import LayoutDePagina from '../../components/UI/PageLayout';
-import { bancoDeCartas, RARIDADES_CARTAS } from '../../data/cardsDatabase';
+import { getRaridades } from '../../utils/constantsAPI';
 
-// Tema visual por raridade
+// Tema visual por raridade (usando strings diretas por enquanto)
 const temaDeRaridade = {
-	[RARIDADES_CARTAS.MYTHIC]: 'border-red-500 text-red-300',
-	[RARIDADES_CARTAS.LEGENDARY]: 'border-yellow-500 text-yellow-300',
-	[RARIDADES_CARTAS.EPIC]: 'border-purple-500 text-purple-300',
+	'Mítico': 'border-red-500 text-red-300',
+	'Lendário': 'border-yellow-500 text-yellow-300',
+	'Épico': 'border-purple-500 text-purple-300',
 };
 
 // Auxiliar para escolher uma carta do conjunto, com opção de priorizar destaque
@@ -36,12 +36,37 @@ export default function Loja() {
 	const [resultados, setResultados] = useState([]);
 	const [mostrarResultados, setMostrarResultados] = useState(false);
 	const [ocupado, setOcupado] = useState(false);
+	const [cartas, setCartas] = useState([]);
+	const [raridades, setRaridades] = useState({});
+	const [carregando, setCarregando] = useState(true);
 	// Estados de pity por banner
 	const [pitySemanal5, setPitySemanal5] = useState(0);
 	const [pitySemanal4, setPitySemanal4] = useState(0);
 	const [cinquentaPorCentoPerdidoSemanal, setCinquentaPorCentoPerdidoSemanal] = useState(false);
 	const [pityPadrao5, setPityPadrao5] = useState(0);
 	const [pityPadrao4, setPityPadrao4] = useState(0);
+
+	// Carrega dados da API
+	useEffect(() => {
+		async function carregarDados() {
+			try {
+				// Carregar cartas da API
+				const resCartas = await fetch('/api/cards');
+				const cartasData = await resCartas.json();
+				setCartas(cartasData.cards || []);
+
+				// Carregar raridades
+				const raridadesData = await getRaridades();
+				setRaridades(raridadesData);
+			} catch (error) {
+				console.error('Erro ao carregar dados:', error);
+			} finally {
+				setCarregando(false);
+			}
+		}
+		
+		carregarDados();
+	}, []);
 
 	// Carrega pity do localStorage
 	useEffect(() => {
@@ -72,35 +97,39 @@ export default function Loja() {
 
 	// Conjuntos por raridade
 	const conjuntos = useMemo(() => {
+		if (!raridades || !cartas.length) return { 'Mítico': [], 'Lendário': [], 'Épico': [] };
+		
 		const porRaridade = {
-				[RARIDADES_CARTAS.MYTHIC]: [],
-				[RARIDADES_CARTAS.LEGENDARY]: [],
-				[RARIDADES_CARTAS.EPIC]: [],
-			};
-		for (const c of bancoDeCartas) {
+			[raridades.MYTHIC || 'Mítico']: [],
+			[raridades.LEGENDARY || 'Lendário']: [],
+			[raridades.EPIC || 'Épico']: [],
+		};
+		
+		for (const c of cartas) {
 			if (porRaridade[(c.raridade || c.rarity)]) porRaridade[(c.raridade || c.rarity)].push(c);
 		}
 		return porRaridade;
-	}, []);
+	}, [cartas, raridades]);
 
 	// Banner semanal: destaque Mítico
 	const destaqueSemanal = useMemo(() => {
 		// Seleciona o primeiro Mítico como destaque (rotacionar no futuro)
-		return conjuntos[RARIDADES_CARTAS.MYTHIC][0] || null;
-	}, [conjuntos]);
+		const miticos = conjuntos[raridades.MYTHIC || 'Mítico'] || [];
+		return miticos[0] || null;
+	}, [conjuntos, raridades]);
 
-	  const probSemanal = [
-			{ rarity: RARIDADES_CARTAS.MYTHIC, p: 0.8 },
-			{ rarity: RARIDADES_CARTAS.LEGENDARY, p: 9.2 },
-			{ rarity: RARIDADES_CARTAS.EPIC, p: 90 },
-		];
+	const probSemanal = [
+		{ rarity: 'Mítico', p: 0.8 },
+		{ rarity: 'Lendário', p: 9.2 },
+		{ rarity: 'Épico', p: 90 },
+	];
 
-    // Banner padrão: chance um pouco maior de Lendárias
-	  const probPadrao = [
-			{ rarity: RARIDADES_CARTAS.MYTHIC, p: 0.5 },
-			{ rarity: RARIDADES_CARTAS.LEGENDARY, p: 9.5 },
-			{ rarity: RARIDADES_CARTAS.EPIC, p: 90 },
-		];
+	// Banner padrão: chance um pouco maior de Lendárias
+	const probPadrao = [
+		{ rarity: 'Mítico', p: 0.5 },
+		{ rarity: 'Lendário', p: 9.5 },
+		{ rarity: 'Épico', p: 90 },
+	];
 
     // Custos
     const custoUnico = 8; // gemas
@@ -120,11 +149,11 @@ export default function Loja() {
 				let rarity;
 				if (p5 >= 29) {
 					// Pity 30 garante Mítico
-					rarity = RARIDADES_CARTAS.MYTHIC;
+					rarity = 'Mítico';
 				} else if (p4 >= 9) {
 					// Pity 10 garante ao menos Lendário (ou Mítico se a rolagem atingir)
 					const r = rolarRaridade(prob);
-					rarity = r === RARIDADES_CARTAS.MYTHIC ? RARIDADES_CARTAS.MYTHIC : RARIDADES_CARTAS.LEGENDARY;
+					rarity = r === 'Mítico' ? 'Mítico' : 'Lendário';
 				} else {
 					rarity = rolarRaridade(prob);
 				}
@@ -132,7 +161,7 @@ export default function Loja() {
 				// Escolhe carta do conjunto da raridade seguindo as regras do banner
 				const conjunto = conjuntos[rarity] || [];
 				let card = null;
-				if (rarity === RARIDADES_CARTAS.MYTHIC) {
+				if (rarity === 'Mítico') {
 					if (qual === 'weekly') {
 						// 50/50: se perdeu o último, garante a carta em destaque
 						if (destaqueSemanal) {
@@ -166,14 +195,14 @@ export default function Loja() {
 				}
 
 				// Atualiza contadores de pity com base no resultado
-				if (rarity === RARIDADES_CARTAS.MYTHIC) {
+				if (rarity === 'Mítico') {
 					p5 = 0;
 					p4 = 0;
-				} else if (rarity === RARIDADES_CARTAS.LEGENDARY) {
+				} else if (rarity === 'Lendário') {
 					// Lendário reseta pity de 10; mantém de 30
 					p5 += 1;
 					p4 = 0;
-				} else if (rarity === RARIDADES_CARTAS.EPIC) {
+				} else if (rarity === 'Épico') {
 					// Épico incrementa ambos
 					p5 += 1;
 					p4 += 1;
@@ -251,6 +280,18 @@ export default function Loja() {
 				</div>
 			);
 	};
+
+	if (carregando) {
+		return (
+			<LayoutDePagina>
+				<div className="container mx-auto px-4 py-8">
+					<div className="text-center">
+						<div className="text-lg">Carregando loja...</div>
+					</div>
+				</div>
+			</LayoutDePagina>
+		);
+	}
 
 	return (
 		<LayoutDePagina>

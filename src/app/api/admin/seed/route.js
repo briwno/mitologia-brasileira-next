@@ -1,7 +1,6 @@
 // src/app/api/admin/seed/route.js
 import { NextResponse } from 'next/server';
 import { requireSupabaseAdmin } from '@/lib/supabase';
-import { bancoDeCartas } from '@/data/cardsDatabase';
 
 function isAuthorized(req) {
   const url = new URL(req.url);
@@ -53,7 +52,13 @@ export async function POST(req) {
       row = upd.data || row;
     }
 
-  const allIds = bancoDeCartas.map((c) => c.id).filter(Boolean);
+    // Buscar todas as cartas disponíveis no banco
+    const { data: allCards, error: cardsError } = await supabase
+      .from('cards')
+      .select('id');
+    if (cardsError) throw cardsError;
+    
+    const allIds = (allCards || []).map((c) => c.id).filter(Boolean);
 
     // Buscar todos os item_cards disponíveis
     const { data: allItemCards, error: itemCardsError } = await supabase

@@ -1,5 +1,5 @@
 // src/utils/combatSystem.js
-import { MULTIPLICADORES, COMBOS_CARTAS, ELEMENTOS } from '../data/cardsDatabase';
+import { getMultiplicadores, getCombos, getElementos } from './constantsAPI';
 
 export class CombatSystem {
   constructor() {
@@ -14,10 +14,29 @@ export class CombatSystem {
         opponent: []
       }
     };
+    this.MULTIPLICADORES = null;
+    this.COMBOS_CARTAS = null;
+    this.ELEMENTOS = null;
+  }
+
+  // Inicializar com as constantes da API
+  async initialize() {
+    this.MULTIPLICADORES = await getMultiplicadores();
+    this.COMBOS_CARTAS = await getCombos();
+    this.ELEMENTOS = await getElementos();
+  }
+
+  // Garantir que está inicializado
+  async ensureInitialized() {
+    if (!this.MULTIPLICADORES || !this.COMBOS_CARTAS || !this.ELEMENTOS) {
+      await this.initialize();
+    }
   }
 
   // Calcular dano final com todos os modificadores
-  calculateDamage(attacker, defender, gameState = null) {
+  async calculateDamage(attacker, defender, gameState = null) {
+    await this.ensureInitialized();
+    
     if (gameState) this.gameState = gameState;
 
     // Valores base
@@ -54,7 +73,7 @@ export class CombatSystem {
     
     // Multiplicador regional
     if (this.hasRegionalBonus(attacker)) {
-  multiplier *= MULTIPLICADORES.REGIONAL.value;
+      multiplier *= this.MULTIPLICADORES.REGIONAL.value;
     }
     
     // Multiplicador elemental
@@ -65,7 +84,7 @@ export class CombatSystem {
     
     // Multiplicador de lua cheia
     if (this.gameState.isFullMoon && this.isNightCreature(attacker)) {
-  multiplier *= MULTIPLICADORES.FULL_MOON.value;
+      multiplier *= this.MULTIPLICADORES.FULL_MOON.value;
     }
     
     // Multiplicador sazonal
@@ -82,7 +101,7 @@ export class CombatSystem {
     
     // Multiplicador de contra-ataque
     if (attacker.hasCounterattack) {
-  multiplier *= MULTIPLICADORES.COUNTERATTACK.value;
+      multiplier *= this.MULTIPLICADORES.COUNTERATTACK.value;
     }
     
     return multiplier;
@@ -114,9 +133,9 @@ export class CombatSystem {
     
   if (!elementoDoAtacante || !elementoDoDefensor) return 1.0;
     
-  const vantagens = MULTIPLICADORES.ELEMENTAL.advantages[elementoDoAtacante];
-  if (vantagens && vantagens.includes(elementoDoDefensor)) {
-  return MULTIPLICADORES.ELEMENTAL.value;
+    const vantagens = this.MULTIPLICADORES.ELEMENTAL.advantages[elementoDoAtacante];
+    if (vantagens && vantagens.includes(elementoDoDefensor)) {
+      return this.MULTIPLICADORES.ELEMENTAL.value;
     }
     
     return 1.0;
@@ -153,7 +172,7 @@ export class CombatSystem {
 
   // Obter multiplicador de combo
   getComboMultiplier(card, type) {
-  for (const [comboId, combo] of Object.entries(COMBOS_CARTAS)) {
+    for (const [comboId, combo] of Object.entries(this.COMBOS_CARTAS)) {
       if (combo.cards.includes(card.id)) {
         // Verificar se todas as cartas do combo estão em campo
         const comboActive = combo.cards.every(cardId =>
@@ -326,7 +345,7 @@ export const checkComboActivation = (battlefield) => {
   const activeCards = battlefield.player.map(card => card.id);
   const activeCombos = [];
   
-  for (const [comboId, combo] of Object.entries(COMBOS_CARTAS)) {
+  for (const [comboId, combo] of Object.entries(this.COMBOS_CARTAS)) {
     const comboActive = combo.cards.every(cardId => activeCards.includes(cardId));
     if (comboActive) {
       activeCombos.push({ id: comboId, ...combo });
