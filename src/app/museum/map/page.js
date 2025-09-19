@@ -1,7 +1,7 @@
 // src/app/museum/map/page.js
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import LayoutDePagina from '../../../components/UI/PageLayout';
 import CardModal from '../../../components/Card/CardModal';
@@ -14,6 +14,7 @@ import {
   mapApiCardToLocal, 
   getRarityGradient 
 } from '../../../utils/cardUtils';
+import BrazilMap from '../../../components/Museum/BrazilMap';
 
 export default function MapaInterativo() {
   const { user, isAuthenticated } = useAuth();
@@ -22,11 +23,35 @@ export default function MapaInterativo() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Ref para a seção de cartas
+  const cardsRef = useRef(null);
 
   // Carregar cartas da API
+  // Handler para clique na região
+  const handleRegionClick = (regionData) => {
+    // Encontrar a região completa nos dados
+    const fullRegion = regions.find(r => r.id === regionData.id);
+    setSelectedRegion(fullRegion);
+    
+    // Scroll suave para a seção de cartas após um pequeno delay
+    setTimeout(() => {
+      if (cardsRef.current) {
+        // Calcula a posição considerando um offset para não colar no topo
+        const yOffset = -100; // 100px de espaço do topo
+        const element = cardsRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        
+        window.scrollTo({
+          top: y,
+          behavior: 'smooth'
+        });
+      }
+    }, 200);
+  };
+
   useEffect(() => {
     let cancelled = false;
-    
     const loadCards = async () => {
       try {
         const cardsData = await cardsAPI.getAll();
@@ -238,7 +263,27 @@ export default function MapaInterativo() {
           <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
             🗺️ Mapa Interativo do Brasil
           </h1>
-          <p className="text-xl text-green-300">Explore as lendas de cada região</p>
+          <p className="text-xl text-green-300 mb-4">Explore as lendas de cada região</p>
+          
+          {/* Dica de interação */}
+          <div className="mb-6 text-sm text-gray-400">
+            {selectedRegion ? (
+              <div className="inline-flex items-center gap-2 bg-black/30 rounded-lg px-4 py-2 border border-gray-600/30">
+                <span>{selectedRegion.emoji}</span>
+                <span>Região <strong className="text-white">{selectedRegion.name}</strong> selecionada - Role para baixo para ver as cartas</span>
+                <button 
+                  onClick={() => setSelectedRegion(null)}
+                  className="text-gray-400 hover:text-white ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <span>Clique em uma região do mapa ou nos cards abaixo para explorar</span>
+            )}
+          </div>
+          
+           <BrazilMap onRegionClick={handleRegionClick} selectedRegion={selectedRegion} />
           
           {/* Progresso total */}
           <div className="max-w-md mx-auto mt-6 bg-black/30 rounded-lg p-4 border border-gray-600/30">
@@ -250,7 +295,7 @@ export default function MapaInterativo() {
             </div>
             <div className="w-full bg-gray-700 rounded-full h-3">
               <div 
-                className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all"
+                className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full duration-500"
                 style={{ width: `${(totalProgress().collected / totalProgress().total) * 100}%` }}
               ></div>
             </div>
@@ -262,6 +307,7 @@ export default function MapaInterativo() {
           {regions.map((region) => {
             const progress = getRegionProgress(region.regionKey);
             const isUnlocked = isRegionUnlocked(region);
+            const isSelected = selectedRegion?.id === region.id;
             const progressPercentage = progress.total > 0 ? (progress.collected / progress.total) * 100 : 0;
             
             return (
@@ -269,10 +315,16 @@ export default function MapaInterativo() {
                 key={region.id}
                 className={`relative p-6 rounded-xl border transition-all duration-300 cursor-pointer ${
                   isUnlocked 
-                    ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-600/50 hover:border-green-400/50 hover:scale-105'
+                    ? isSelected
+                      ? `bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-2 hover:scale-105 ring-2 ring-opacity-50`
+                      : 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-600/50 hover:border-green-400/50 hover:scale-105'
                     : 'bg-gradient-to-br from-gray-700/30 to-gray-800/30 border-gray-700/50 opacity-60 cursor-not-allowed'
                 }`}
-                onClick={() => isUnlocked && setSelectedRegion(region)}
+                style={isSelected ? { 
+                  borderColor: region.color, 
+                  ringColor: region.color 
+                } : {}}
+                onClick={() => isUnlocked && handleRegionClick({ id: region.id })}
               >
                 {/* Header da região */}
                 <div className="flex items-center justify-between mb-4">
@@ -313,12 +365,29 @@ export default function MapaInterativo() {
                 )}
 
                 {/* Descrição */}
-                <p className={`text-sm ${isUnlocked ? 'text-gray-300' : 'text-gray-600'}`}>
+                <p className={`text-sm mb-3 ${isUnlocked ? 'text-gray-300' : 'text-gray-600'}`}>
                   {region.description}
                 </p>
 
-                {/* Unlock requirement */}
-                {!isUnlocked && (
+                {/* Botão Ver Cartas ou Unlock requirement */}
+                {isUnlocked ? (
+                  <button
+                    className={`w-full py-2 px-4 rounded-lg text-white text-sm font-medium transition-all duration-200 hover:scale-105 ${
+                      isSelected 
+                        ? 'bg-gray-600 cursor-default' 
+                        : 'hover:shadow-lg'
+                    }`}
+                    style={{ 
+                      backgroundColor: isSelected ? '#4b5563' : region.color,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRegionClick({ id: region.id });
+                    }}
+                  >
+                    {isSelected ? '✓ Região Selecionada' : '👁️ Ver Cartas'}
+                  </button>
+                ) : (
                   <div className="mt-3 text-xs text-yellow-400 bg-yellow-900/20 rounded px-2 py-1">
                     {region.unlock}
                   </div>
@@ -330,17 +399,23 @@ export default function MapaInterativo() {
 
         {/* Seção de cartas da região selecionada */}
         {selectedRegion && (
-          <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-600/30">
+          <div 
+            ref={cardsRef}
+            className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-600/30 animate-in fade-in-50 duration-500 scroll-mt-24"
+          >
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                   {selectedRegion.emoji} {selectedRegion.name}
                 </h2>
                 <p className="text-gray-400">{selectedRegion.description}</p>
+                <div className="mt-2 text-sm text-gray-500">
+                  {getPlayerCardsFromRegion(selectedRegion.regionKey).length} de {getCardsFromRegion(selectedRegion.regionKey).length} cartas coletadas
+                </div>
               </div>
               <button
                 onClick={() => setSelectedRegion(null)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors text-xl hover:scale-110"
               >
                 ✕
               </button>
