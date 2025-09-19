@@ -32,10 +32,6 @@ function rarityColor(rarity) {
 	}
 }
 
-function ensureImage(src) {
-	return src || '/window.svg';
-}
-
 function rarityFrame(rarity) {
 	switch (rarity) {
 		case RARIDADES_CARTAS.MYTHIC:
