@@ -159,18 +159,6 @@ export async function POST(req) {
       summary: {}
     };
 
-    // 1. Migrar cartas
-    console.log('\n1. Migrando cartas do JavaScript para o Supabase...');
-    const cardsMigration = await migrateCardsToSupabase();
-    results.cards = cardsMigration;
-
-    if (cardsMigration.success) {
-      console.log(`✓ Cartas migradas: ${cardsMigration.migratedCards}`);
-      console.log(`✓ Total no banco: ${cardsMigration.totalCardsInDatabase}`);
-    } else {
-      console.log(`✗ Erro na migração de cartas: ${cardsMigration.error}`);
-    }
-
     // 2. Setup item_cards table
     console.log('\n2. Configurando tabela item_cards...');
     const itemCardsSetup = await setupItemCardsTable();
