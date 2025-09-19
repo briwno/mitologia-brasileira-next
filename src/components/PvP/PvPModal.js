@@ -129,16 +129,23 @@ export default function PvPModal({ onClose }) {
 
         {/* Conteúdo */}
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             <CartaoDeModo
-              title="Bots"
-              iconName="target"
-              subtitle="Partida casual contra IA"
+              title="Contra Bots"
+              iconName="target" 
+              subtitle="Treinar contra IA"
               onClick={() => startMatch('bot')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
-              title="PVP"
+              title="Casual"
+              iconName="battle"
+              subtitle="Partida rápida online"
+              onClick={() => startMatch('casual')}
+              imageSrc="/images/banners/menubatalha.png"
+            />
+            <CartaoDeModo
+              title="Ranqueada"
               iconName="trophy"
               subtitle="Valendo pontos de ranking"
               onClick={() => startMatch('ranked')}

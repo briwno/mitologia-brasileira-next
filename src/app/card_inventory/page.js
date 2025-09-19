@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
+import DeckBuilder from '@/components/Deck/DeckBuilder';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
 import ItemCard from '@/components/Card/ItemCard';
@@ -94,6 +95,38 @@ export default function PaginaInventarioDeCartas() {
 	const totalOwned = ownedCards.length;
 
 	const [selectedCard, setSelectedCard] = useState(null);
+	const [showDeckBuilder, setShowDeckBuilder] = useState(false);
+
+	// Handler para salvar deck
+	const handleSaveDeck = async (cardIds) => {
+		try {
+			if (!isAuthenticated() || !user?.id) {
+				alert('Você precisa estar logado para salvar decks!');
+				return;
+			}
+			
+			const payload = {
+				ownerId: Number(user.id),
+				name: `Deck da Coleção - ${new Date().toLocaleString('pt-BR')}`,
+				cards: cardIds
+			};
+			
+			const response = await fetch('/api/decks', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
+			
+			if (response.ok) {
+				alert('Deck salvo com sucesso!');
+			} else {
+				throw new Error('Erro ao salvar deck');
+			}
+		} catch (error) {
+			console.error('Erro ao salvar deck:', error);
+			alert('Erro ao salvar deck. Tente novamente.');
+		}
+	};
 
 	return (
 		<LayoutDePagina>
@@ -107,7 +140,7 @@ export default function PaginaInventarioDeCartas() {
 				</div>
 
 				{/* Resumo Rápido */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 					<div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-gray-600/30">
 						<div className="text-sm text-gray-400">Cartas Coletadas</div>
 						<div className="text-2xl font-bold">{totalOwned}/{totalAvailable}</div>
@@ -117,6 +150,19 @@ export default function PaginaInventarioDeCartas() {
 						<div className="text-sm text-gray-400">Itens</div>
 						<div className="text-2xl font-bold">{allItems.length}</div>
 						<div className="text-xs text-gray-500">Equipamentos e Consumíveis</div>
+					</div>
+					<div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-gray-600/30">
+						<div className="text-sm text-gray-400">Ações Rápidas</div>
+						<button
+							onClick={() => setShowDeckBuilder(true)}
+							disabled={!isAuthenticated() || totalOwned < 20}
+							className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 rounded-lg text-sm font-semibold transition-all"
+						>
+							⚔️ Montar Deck
+						</button>
+						<div className="text-xs text-gray-500 mt-1">
+							{totalOwned < 20 ? `Precisa de ${20 - totalOwned} cartas` : 'Criar deck para batalhas'}
+						</div>
 					</div>
 				</div>
 
@@ -312,6 +358,16 @@ export default function PaginaInventarioDeCartas() {
 					card={selectedCard}
 					onClose={() => setSelectedCard(null)}
 					mode="battle"
+				/>
+
+				{/* Deck Builder */}
+				<DeckBuilder
+					isOpen={showDeckBuilder}
+					onClose={() => setShowDeckBuilder(false)}
+					onSave={handleSaveDeck}
+					availableCards={ownedCards}
+					title="Montar Deck da Coleção"
+					subtitle="Monte um deck usando suas cartas coletadas"
 				/>
 			</div>
 		</LayoutDePagina>
