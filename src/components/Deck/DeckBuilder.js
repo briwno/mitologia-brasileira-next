@@ -6,8 +6,8 @@ import { cardsAPI } from '@/utils/api';
 import { DECK_RULES } from '@/utils/deckValidation';
 import CardImage from '@/components/Card/CardImage';
 
-const DECK_MIN_SIZE = DECK_RULES.MIN_SIZE; // 15
-const DECK_MAX_SIZE = DECK_RULES.MAX_SIZE; // 15
+const DECK_MIN_SIZE = DECK_RULES.MIN_SIZE; // 25
+const DECK_MAX_SIZE = DECK_RULES.MAX_SIZE; // 25
 
 export default function DeckBuilder({
   isOpen,
@@ -60,15 +60,40 @@ export default function DeckBuilder({
 
   const addCardToDeck = useCallback((card) => {
     setDeckCards(prev => {
-      // Verificar se já atingiu o limite máximo
-      if (deckCount >= DECK_MAX_SIZE) return prev;
-      
       // Verificar se a carta já está no deck (máximo 1 de cada)
       if (prev.some(c => c.id === card.id)) return prev;
+
+      // Verificar se é lenda ou item
+      const category = (card.category || '').toLowerCase();
+      const type = (card.type || '').toLowerCase();
+      const isLegend = category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
+      
+      // Contar lendas e itens atuais
+      const currentLegends = prev.filter(({ id }) => {
+        const deckCard = availableCards.find(c => c.id === id);
+        const deckCategory = (deckCard?.category || '').toLowerCase();
+        const deckType = (deckCard?.type || '').toLowerCase();
+        return deckCategory === 'lenda' || deckType === 'lenda' || deckCategory === 'legend' || deckType === 'legend';
+      }).length;
+      
+      const currentItems = prev.filter(({ id }) => {
+        const deckCard = availableCards.find(c => c.id === id);
+        const deckCategory = (deckCard?.category || '').toLowerCase();
+        const deckType = (deckCard?.type || '').toLowerCase();
+        return deckCategory === 'item' || deckType === 'item' || deckCategory === 'itens' || deckType === 'itens';
+      }).length;
+
+      // Verificar se pode adicionar
+      if (isLegend && currentLegends >= DECK_RULES.REQUIRED_LENDAS) {
+        return prev; // Não pode adicionar mais lendas
+      }
+      if (!isLegend && currentItems >= DECK_RULES.REQUIRED_ITENS) {
+        return prev; // Não pode adicionar mais itens
+      }
       
       return [...prev, { id: card.id, quantity: 1 }];
     });
-  }, [deckCount]);
+  }, [availableCards]);
 
   const removeCardFromDeck = useCallback((cardId) => {
     setDeckCards(prev => prev.filter(c => c.id !== cardId));
@@ -154,12 +179,12 @@ export default function DeckBuilder({
           </select>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Coleção - 3/4 do espaço */}
-          <div className="lg:col-span-3 border border-white/10 rounded-lg p-3 bg-black/30">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Coleção - 2/3 do espaço */}
+          <div className="lg:col-span-2 border border-white/10 rounded-lg p-3 bg-black/30">
             <h3 className="font-semibold mb-3 text-white">Coleção Disponível</h3>
             <div className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredCards.map(card => {
                   const isInDeck = deckCards.some(c => c.id === card.id);
                   const canAdd = !isInDeck && deckCount < DECK_MAX_SIZE;
@@ -222,95 +247,129 @@ export default function DeckBuilder({
             </div>
           </div>
 
-          {/* Deck Atual - 1/4 do espaço */}
+          {/* Deck Atual - 1/3 do espaço */}
           <div className="border border-white/10 rounded-lg p-3 bg-black/30 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-white">Deck Atual</h3>
               <div className="text-xs text-white space-y-1">
                 <div className={`px-2 py-1 rounded ${
                   isValidDeck ? 'bg-green-900/50 text-green-300' : 
-                  deckCount < 15 ? 'bg-yellow-900/50 text-yellow-300' :
+                  deckCount < 25 ? 'bg-yellow-900/50 text-yellow-300' :
                   'bg-red-900/50 text-red-300'
                 }`}>
-                  Total: {deckCount}/15
+                  Total: {deckCount}/25
                 </div>
                 <div className="flex gap-2">
                   <span className="text-purple-300">
                     L: {deckCards.filter(({ id }) => {
                       const card = availableCards.find(c => c.id === id);
-                      const category = (card?.categoria || card?.category || '').toLowerCase();
-                      const type = (card?.tipo || card?.type || '').toLowerCase();
+                      const category = (card?.category || '').toLowerCase();
+                      const type = (card?.type || '').toLowerCase();
                       return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
                     }).length}/5
                   </span>
                   <span className="text-blue-300">
                     I: {deckCards.filter(({ id }) => {
                       const card = availableCards.find(c => c.id === id);
-                      const category = (card?.categoria || card?.category || '').toLowerCase();
-                      const type = (card?.tipo || card?.type || '').toLowerCase();
+                      const category = (card?.category || '').toLowerCase();
+                      const type = (card?.type || '').toLowerCase();
                       return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
-                    }).length}/10
+                    }).length}/20
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="overflow-y-auto flex-1 pr-1" style={{ maxHeight: '50vh' }}>
-              {deckCards.length === 0 ? (
-                <div className="text-xs text-white/60 text-center py-4">
-                  Seu deck está vazio.<br/>
-                  Clique nas cartas para adicionar.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {deckCards.map(deckCard => {
-                    const card = availableCards.find(c => c.id === deckCard.id);
-                    
-                    // Função auxiliar para determinar a raridade e frame
-                    const getRarityFrame = (rarity) => {
-                      const rarityLower = (rarity || '').toLowerCase();
-                      if (rarityLower.includes('mítico') || rarityLower.includes('mythic')) {
-                        return 'border-purple-500/50 bg-purple-900/20';
-                      } else if (rarityLower.includes('lendário') || rarityLower.includes('legendary')) {
-                        return 'border-yellow-500/50 bg-yellow-900/20';
-                      } else if (rarityLower.includes('épico') || rarityLower.includes('epic')) {
-                        return 'border-orange-500/50 bg-orange-900/20';
-                      }
-                      return 'border-gray-500/50 bg-gray-900/20';
-                    };
+            {/* Slots das Lendas */}
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-purple-300 mb-2">🔮 Lendas (5)</h4>
+              <div className="grid grid-cols-5 gap-2">
+                {Array.from({ length: 5 }).map((_, index) => {
+                  const legendCards = deckCards.filter(({ id }) => {
+                    const card = availableCards.find(c => c.id === id);
+                    const category = (card?.category || '').toLowerCase();
+                    const type = (card?.type || '').toLowerCase();
+                    return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
+                  });
+                  const legendCard = legendCards[index];
+                  const card = legendCard ? availableCards.find(c => c.id === legendCard.id) : null;
 
-                    const rarityFrame = getRarityFrame(card?.rarity || card?.raridade);
-                    
-                    return (
-                      <div key={deckCard.id} className={`bg-black/40 backdrop-blur-sm rounded-lg p-2 border relative ${rarityFrame}`}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-12 h-15 bg-gradient-to-b from-gray-700 to-gray-800 rounded flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm">🎭</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-white truncate">
-                              {card?.name || card?.nome || `Carta ${deckCard.id}`}
-                            </div>
-                            <div className="text-[10px] text-white/60 truncate">
-                              {card?.category || card?.categoria}
-                            </div>
-                            <div className="text-[10px] text-white/40 truncate">
-                              {card?.rarity || card?.raridade || 'Comum'}
-                            </div>
-                          </div>
+                  return (
+                    <div
+                      key={`legend-${index}`}
+                      className={`aspect-[3/4] border-2 border-dashed rounded-lg flex items-center justify-center relative ${
+                        card ? 'border-purple-500/50 bg-purple-900/20' : 'border-purple-500/30 bg-purple-900/10'
+                      }`}
+                    >
+                      {card ? (
+                        <div className="text-center p-1">
+                          <CardImage card={card} size="small" className="mx-auto mb-1" />
+                          <div className="text-[8px] text-white truncate">{card.name}</div>
                           <button
                             type="button"
-                            onClick={() => removeCardFromDeck(deckCard.id)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-xs text-white transition-colors"
+                            onClick={() => removeCardFromDeck(legendCard.id)}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-xs text-white transition-colors"
                           >
                             ×
                           </button>
                         </div>
+                      ) : (
+                        <div className="text-purple-400/50 text-xs text-center">
+                          <div className="mb-1">🔮</div>
+                          <div>Vazio</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Slots dos Itens */}
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-300 mb-2">⚔️ Itens (20)</h4>
+              <div className="overflow-x-auto pb-2" style={{ maxHeight: '35vh' }}>
+                <div className="grid grid-cols-10 gap-2 min-w-fit">
+                  {Array.from({ length: 20 }).map((_, index) => {
+                    const itemCards = deckCards.filter(({ id }) => {
+                      const card = availableCards.find(c => c.id === id);
+                      const category = (card?.category || '').toLowerCase();
+                      const type = (card?.type || '').toLowerCase();
+                      return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
+                    });
+                    const itemCard = itemCards[index];
+                    const card = itemCard ? availableCards.find(c => c.id === itemCard.id) : null;
+
+                    return (
+                      <div
+                        key={`item-${index}`}
+                        className={`w-16 aspect-[3/4] border-2 border-dashed rounded-lg flex items-center justify-center relative ${
+                          card ? 'border-blue-500/50 bg-blue-900/20' : 'border-blue-500/30 bg-blue-900/10'
+                        }`}
+                      >
+                        {card ? (
+                          <div className="text-center p-1">
+                            <CardImage card={card} size="small" className="mx-auto mb-1" />
+                            <div className="text-[7px] text-white truncate">{card.name}</div>
+                            <button
+                              type="button"
+                              onClick={() => removeCardFromDeck(itemCard.id)}
+                              className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-[10px] text-white transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-blue-400/50 text-[10px] text-center">
+                            <div className="mb-1">⚔️</div>
+                            <div className="text-[7px]">Vazio</div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Ações do Deck */}

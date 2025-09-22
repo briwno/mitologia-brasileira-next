@@ -65,14 +65,14 @@ export default function SelecaoDeDeck() {
         // Deck demo usando cartas starter
         // Criar deck inicial balanceado
         const lendas = availableCards.filter(c => {
-          const category = (c.categoria || c.category || '').toLowerCase();
-          const type = (c.tipo || c.type || '').toLowerCase();
+          const category = (c.category || '').toLowerCase();
+          const type = (c.type || '').toLowerCase();
           return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
         }).slice(0, DECK_RULES.REQUIRED_LENDAS);
         
         const itens = availableCards.filter(c => {
-          const category = (c.categoria || c.category || '').toLowerCase();
-          const type = (c.tipo || c.type || '').toLowerCase();
+          const category = (c.category || '').toLowerCase();
+          const type = (c.type || '').toLowerCase();
           return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
         }).slice(0, DECK_RULES.REQUIRED_ITENS);
         
@@ -282,18 +282,18 @@ export default function SelecaoDeDeck() {
                       <span className="text-purple-300">
                         L: {deck.cards.filter(cardId => {
                           const card = availableCards.find(c => c.id == cardId);
-                          const category = (card?.categoria || card?.category || '').toLowerCase();
-                          const type = (card?.tipo || card?.type || '').toLowerCase();
+                          const category = (card?.category || '').toLowerCase();
+                          const type = (card?.type || '').toLowerCase();
                           return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
                         }).length}/5
                       </span>
                       <span className="text-blue-300">
                         I: {deck.cards.filter(cardId => {
                           const card = availableCards.find(c => c.id == cardId);
-                          const category = (card?.categoria || card?.category || '').toLowerCase();
-                          const type = (card?.tipo || card?.type || '').toLowerCase();
+                          const category = (card?.category || '').toLowerCase();
+                          const type = (card?.type || '').toLowerCase();
                           return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
-                        }).length}/10
+                        }).length}/20
                       </span>
                     </div>
                   )}

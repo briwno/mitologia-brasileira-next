@@ -123,7 +123,7 @@ export default function LayoutDePagina({ children }) {
                   <h3 className="font-semibold text-white mb-1">Resumo dos termos</h3>
                   <p>
                     Este é um protótipo educacional de jogo de cartas. Ao usar, você concorda em não abusar do serviço,
-                    respeitar outros jogadores e reconhecer que o progresso pode ser apagado durante o desenvolvimento.
+                    respeitar outros jogadores e não usar dados reais sensíveis. Dados coletados são mínimos e usados apenas para funcionamento.
                   </p>
                 </section>
                 <section>

@@ -2,18 +2,18 @@
 
 export const DECK_RULES = {
   TAMANHO_DECK_LENDAS: 5,      // 5 Lendas únicas no deck
-  TAMANHO_DECK_ITENS: 10,      // 10 Itens no deck  
+  TAMANHO_DECK_ITENS: 20,      // 20 Itens no deck  
   TAMANHO_MAXIMO_MAO_ITENS: 3, // Máximo 3 itens na mão
   BANCO_LENDAS: 4,              // 4 lendas no banco (reserva)
   LENDA_ATIVA: 1,               // 1 lenda ativa em campo
   LIMITE_TEMPO_TURNO: 300,      // 5 minutos
   
   // Regras derivadas
-  MIN_SIZE: 15, // 5 lendas + 10 itens = 15 cartas mínimo
-  MAX_SIZE: 15, // Deck fixo de 15 cartas
+  MIN_SIZE: 25, // 5 lendas + 20 itens = 25 cartas mínimo
+  MAX_SIZE: 25, // Deck fixo de 25 cartas
   MAX_COPIES_PER_CARD: 1, // Apenas 1 cópia de cada carta
   REQUIRED_LENDAS: 5,     // Exatamente 5 lendas
-  REQUIRED_ITENS: 10,     // Exatamente 10 itens
+  REQUIRED_ITENS: 20,     // Exatamente 20 itens
   REQUIRED_FIELDS: ['id', 'name', 'category']
 };
 

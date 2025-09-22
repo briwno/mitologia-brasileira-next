@@ -12,7 +12,6 @@ export class BotAI {
   getBotDeck() {
     return [
       'boi001', // Boitatá
-      'enc001', // Encantado genérico
       'mul001', // Mula-sem-cabeça
       'sac001', // Saci-Pererê
       'iar001', // Iara
