@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LayoutDePagina from '../../../components/UI/PageLayout';
 
 // Quiz cultural do Museu
@@ -13,38 +13,63 @@ export default function QuizCultural() {
   const [respostaSelecionada, setRespostaSelecionada] = useState(null);
   const [quizConcluido, setQuizConcluido] = useState(false);
 
-  const questions = [
-    {
-      question: "Qual criatura folclórica brasileira tem os pés virados para trás?",
-      options: ["Saci-Pererê", "Curupira", "Iara", "Boitatá"],
-      correct: 1,
-      explanation: "O Curupira é conhecido por ter os pés virados para trás, o que confunde os caçadores e invasores da floresta."
-    },
-    {
-      question: "Onde vive a Iara, segundo a lenda brasileira?",
-      options: ["Na floresta", "Nos rios", "Nas montanhas", "No céu"],
-      correct: 1,
-      explanation: "A Iara é uma sereia que vive nos rios da Amazônia e atrai os homens com seu canto."
-    },
-    {
-      question: "O que o Saci-Pererê carrega sempre consigo?",
-      options: ["Uma vara de pescar", "Um gorro vermelho", "Uma flauta", "Um machado"],
-      correct: 1,
-      explanation: "O Saci-Pererê sempre usa um gorro vermelho, que é fonte de seus poderes mágicos."
-    },
-    {
-      question: "Qual criatura é conhecida como 'serpente de fogo'?",
-      options: ["Curupira", "Cuca", "Boitatá", "Lobisomem"],
-      correct: 2,
-      explanation: "O Boitatá é uma serpente gigante de fogo que protege os campos e florestas."
-    },
-    {
-      question: "Em qual região do Brasil a lenda da Mula sem Cabeça é mais comum?",
-      options: ["Norte", "Nordeste", "Sul", "Sudeste"],
-      correct: 3,
-      explanation: "A lenda da Mula sem Cabeça é mais comum na região Sudeste do Brasil."
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+
+  useEffect(() => {
+    async function fetchQuizzes() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/quizzes');
+        if (!res.ok) throw new Error('Erro ao buscar quizzes');
+        const data = await res.json();
+        if (data.quizzes && data.quizzes.length > 0) {
+          setQuestions(data.quizzes[0].questions || []);
+        } else {
+          setQuestions([]);
+        }
+      } catch (err) {
+        setApiError(err.message);
+        // fallback para perguntas fixas
+        setQuestions([
+          {
+            question: "Qual criatura folclórica brasileira tem os pés virados para trás?",
+            options: ["Saci-Pererê", "Curupira", "Iara", "Boitatá"],
+            correct: 1,
+            explanation: "O Curupira é conhecido por ter os pés virados para trás, o que confunde os caçadores e invasores da floresta."
+          },
+          {
+            question: "Onde vive a Iara, segundo a lenda brasileira?",
+            options: ["Na floresta", "Nos rios", "Nas montanhas", "No céu"],
+            correct: 1,
+            explanation: "A Iara é uma sereia que vive nos rios da Amazônia e atrai os homens com seu canto."
+          },
+          {
+            question: "O que o Saci-Pererê carrega sempre consigo?",
+            options: ["Uma vara de pescar", "Um gorro vermelho", "Uma flauta", "Um machado"],
+            correct: 1,
+            explanation: "O Saci-Pererê sempre usa um gorro vermelho, que é fonte de seus poderes mágicos."
+          },
+          {
+            question: "Qual criatura é conhecida como 'serpente de fogo'?",
+            options: ["Curupira", "Cuca", "Boitatá", "Lobisomem"],
+            correct: 2,
+            explanation: "O Boitatá é uma serpente gigante de fogo que protege os campos e florestas."
+          },
+          {
+            question: "Em qual região do Brasil a lenda da Mula sem Cabeça é mais comum?",
+            options: ["Norte", "Nordeste", "Sul", "Sudeste"],
+            correct: 3,
+            explanation: "A lenda da Mula sem Cabeça é mais comum na região Sudeste do Brasil."
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+    fetchQuizzes();
+  }, []);
 
   const responder = (indice) => {
     setRespostaSelecionada(indice);
@@ -79,6 +104,26 @@ export default function QuizCultural() {
     if (percentage >= 50) return "👍 Bom trabalho! Continue estudando nosso folclore!";
     return "📚 Continue aprendendo! Explore mais sobre nossa rica cultura!";
   };
+
+  if (loading) {
+    return (
+      <LayoutDePagina>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center text-xl text-gray-400">Carregando quiz...</div>
+        </div>
+      </LayoutDePagina>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <LayoutDePagina>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center text-xl text-red-400">Nenhum quiz disponível.</div>
+        </div>
+      </LayoutDePagina>
+    );
+  }
 
   if (quizConcluido) {
     return (

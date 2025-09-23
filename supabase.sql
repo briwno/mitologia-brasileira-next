@@ -41,8 +41,8 @@ CREATE TABLE public.cards (
 CREATE TABLE public.collections (
   player_id bigint NOT NULL,
   cards jsonb NOT NULL DEFAULT '[]'::jsonb,
-  item_cards jsonb NOT NULL DEFAULT '[]'::jsonb,
   updated_at timestamp with time zone DEFAULT now(),
+  item_cards jsonb NOT NULL DEFAULT '[]'::jsonb,
   CONSTRAINT collections_pkey PRIMARY KEY (player_id),
   CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
@@ -104,6 +104,21 @@ CREATE TABLE public.friendships (
   CONSTRAINT friendships_pkey PRIMARY KEY (id),
   CONSTRAINT friendships_requester_id_fkey FOREIGN KEY (requester_id) REFERENCES public.players(id),
   CONSTRAINT friendships_addressee_id_fkey FOREIGN KEY (addressee_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.item_cards (
+  id text NOT NULL,
+  name text NOT NULL,
+  description text,
+  item_type text NOT NULL,
+  rarity text NOT NULL,
+  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
+  lore text,
+  images jsonb NOT NULL DEFAULT '{}'::jsonb,
+  unlock_condition text,
+  is_tradeable boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT item_cards_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.match_history (
   id bigint NOT NULL DEFAULT nextval('match_history_id_seq'::regclass),
@@ -229,6 +244,15 @@ CREATE TABLE public.quests (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT quests_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.quizzes (
+  id bigint NOT NULL DEFAULT nextval('quizzes_id_seq'::regclass),
+  title text NOT NULL,
+  description text,
+  questions jsonb NOT NULL,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT quizzes_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.seasons (
   id bigint NOT NULL DEFAULT nextval('seasons_id_seq'::regclass),
   name text NOT NULL,
@@ -256,18 +280,10 @@ CREATE TABLE public.transactions (
   CONSTRAINT transactions_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
 
-CREATE TABLE public.item_cards (
-  id text NOT NULL,
-  name text NOT NULL,
-  description text,
-  item_type text NOT NULL,
-  rarity text NOT NULL,
-  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
-  lore text,
-  images jsonb NOT NULL DEFAULT '{}'::jsonb,
-  unlock_condition text,
-  is_tradeable boolean DEFAULT true,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT item_cards_pkey PRIMARY KEY (id)
-);
+-- Permissões para a tabela quizzes
+ALTER TABLE public.quizzes DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.quizzes TO service_role;
+GRANT SELECT ON public.quizzes TO authenticated;
+GRANT SELECT ON public.quizzes TO anon;
+GRANT USAGE, SELECT ON SEQUENCE public.quizzes_id_seq TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.quizzes_id_seq TO authenticated;

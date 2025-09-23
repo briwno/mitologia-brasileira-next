@@ -55,3 +55,7 @@ Thumbs.db
 
 #schema svg
 src/lib/schema.svg
+
+# GitHub
+
+.github

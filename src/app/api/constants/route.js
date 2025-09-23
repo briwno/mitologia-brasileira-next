@@ -122,7 +122,7 @@ export const MULTIPLICADORES = {
 // Constantes de deck e jogo
 export const CONSTANTES_DECK = {
   TAMANHO_DECK_LENDAS: 5,      // 5 Lendas únicas no deck
-  TAMANHO_DECK_ITENS: 10,      // 10 Itens no deck  
+  TAMANHO_DECK_ITENS: 20,      // 20 Itens no deck
   TAMANHO_MAXIMO_MAO_ITENS: 3, // Máximo 3 itens na mão
   BANCO_LENDAS: 4,              // 4 lendas no banco (reserva)
   LENDA_ATIVA: 1,               // 1 lenda ativa em campo

@@ -29,6 +29,13 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'clock': 'https://img.icons8.com/fluency/48/clock.png',
     'shield': 'https://img.icons8.com/fluency/48/shield.png',
     'heart': 'https://img.icons8.com/fluency/48/heart.png',
+    'smile': 'https://img.icons8.com/fluency/48/happy.png',
+    'package': 'https://img.icons8.com/fluency/48/package.png',
+    'layers': 'https://img.icons8.com/fluency/48/layers.png',
+    'check': 'https://img.icons8.com/fluency/48/checkmark.png',
+    'list': 'https://img.icons8.com/fluency/48/list.png',
+    'user': 'https://img.icons8.com/fluency/48/user.png',
+    'plus': 'https://img.icons8.com/fluency/48/plus.png',
     
     // Jogo e cartas
     'cards': 'https://img.icons8.com/?size=100&id=ce72bFahG6vd&format=png&color=000000',

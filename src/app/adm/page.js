@@ -11,6 +11,7 @@ const TABS = [
 	{ key: 'players', label: 'Players' },
 	{ key: 'contos', label: 'Contos' },
 	{ key: 'card-inventory', label: 'Inventário de Cartas' },
+	{ key: 'quizzes', label: 'Quizzes' },
 ];
 // ------------------- CARD INVENTORY SECTION (ADMIN) -------------------
 function CardInventorySection() {
@@ -642,10 +643,6 @@ function ItemCardsSection() {
 									<input type="text" value={effects.type} onChange={(e) => setEffects(f => ({...f, type: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="heal, damage, buff..." />
 								</div>
 								<div>
-									<label className="block text-sm font-medium mb-1">Valor</label>
-									<input type="text" value={effects.value} onChange={(e) => setEffects(f => ({...f, value: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="50, +2, etc" />
-								</div>
-								<div>
 									<label className="block text-sm font-medium mb-1">Duração</label>
 									<input type="text" value={effects.duration} onChange={(e) => setEffects(f => ({...f, duration: e.target.value}))} className="w-full border rounded px-2 py-1 text-sm" placeholder="instant, 3 turns..." />
 								</div>
@@ -962,6 +959,296 @@ function ContosSection() {
 	);
 }
 
+// ------------------- QUIZZES SECTION -------------------
+function QuizzesSection() {
+	const [quizzes, setQuizzes] = useState([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [formOpen, setFormOpen] = useState(false);
+	const [saving, setSaving] = useState(false);
+	const [editingId, setEditingId] = useState(null);
+	
+	const emptyForm = {
+		title: '',
+		description: '',
+		questions: [{
+			question: '',
+			options: ['', '', '', ''],
+			correct: 0,
+			explanation: ''
+		}]
+	};
+	const [form, setForm] = useState(emptyForm);
+
+	const load = useCallback(async () => {
+		setLoading(true);
+		setError(null);
+		try {
+			const data = await jsonFetch('/api/quizzes');
+			setQuizzes(data.quizzes || []);
+		} catch (e) {
+			setError(e.message);
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		load();
+	}, [load]);
+
+	const handleQuestionChange = (idx, field, value) => {
+		setForm(prev => {
+			const newQuestions = [...prev.questions];
+			newQuestions[idx] = { ...newQuestions[idx], [field]: value };
+			return { ...prev, questions: newQuestions };
+		});
+	};
+
+	const handleOptionChange = (qIdx, oIdx, value) => {
+		setForm(prev => {
+			const newQuestions = [...prev.questions];
+			const newOptions = [...newQuestions[qIdx].options];
+			newOptions[oIdx] = value;
+			newQuestions[qIdx] = { ...newQuestions[qIdx], options: newOptions };
+			return { ...prev, questions: newQuestions };
+		});
+	};
+
+	const addQuestion = () => {
+		setForm(prev => ({
+			...prev,
+			questions: [...prev.questions, {
+				question: '',
+				options: ['', '', '', ''],
+				correct: 0,
+				explanation: ''
+			}]
+		}));
+	};
+
+	const removeQuestion = (idx) => {
+		setForm(prev => ({
+			...prev,
+			questions: prev.questions.filter((_, i) => i !== idx)
+		}));
+	};
+
+	const startCreate = () => {
+		setEditingId(null);
+		setForm(emptyForm);
+		setFormOpen(true);
+	};
+
+	const startEdit = (quiz) => {
+		setEditingId(quiz.id);
+		setForm({
+			title: quiz.title || '',
+			description: quiz.description || '',
+			questions: quiz.questions || [{
+				question: '',
+				options: ['', '', '', ''],
+				correct: 0,
+				explanation: ''
+			}]
+		});
+		setFormOpen(true);
+	};
+
+	const remove = async (id) => {
+		if (!confirm('Deletar quiz?')) return;
+		try {
+			await jsonFetch(`/api/quizzes?id=${id}`, { method: 'DELETE' });
+			await load();
+		} catch (e) {
+			setError(e.message);
+		}
+	};
+
+	const submit = async (e) => {
+		e.preventDefault();
+		setSaving(true);
+		setError(null);
+		try {
+			const method = editingId ? 'PUT' : 'POST';
+			const url = editingId ? `/api/quizzes?id=${editingId}` : '/api/quizzes';
+			await jsonFetch(url, { method, body: form });
+			await load();
+			setFormOpen(false);
+		} catch (e) {
+			setError(e.message);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<SectionContainer>
+			<div className="flex justify-between items-center mb-4">
+				<h3 className="font-semibold text-indigo-900">Quizzes</h3>
+				<button
+					onClick={startCreate}
+					className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+				>
+					Novo Quiz
+				</button>
+			</div>
+			{error && <ErrorInline error={error} />}
+			{loading ? (
+				<LoadingInline />
+			) : (
+				<div className="overflow-auto max-h-[400px] border rounded border-gray-200 bg-gray-50 p-2">
+					<table className="w-full text-xs">
+						<thead className="bg-gray-200">
+							<tr>
+								<th className="p-2 text-left">Título</th>
+								<th className="p-2 text-left">Descrição</th>
+								<th className="p-2 text-center">Perguntas</th>
+								<th className="p-2 text-center">Ações</th>
+							</tr>
+						</thead>
+						<tbody>
+							{quizzes.map(quiz => (
+								<tr key={quiz.id} className="odd:bg-white even:bg-gray-100">
+									<td className="p-2 font-medium">{quiz.title}</td>
+									<td className="p-2 text-gray-600">{quiz.description}</td>
+									<td className="p-2 text-center">{quiz.questions?.length || 0}</td>
+									<td className="p-2 text-center">
+										<button
+											onClick={() => startEdit(quiz)}
+											className="px-2 py-1 bg-blue-600 text-white text-xs rounded mr-1 hover:bg-blue-700"
+										>
+											Editar
+										</button>
+										<button
+											onClick={() => remove(quiz.id)}
+											className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+										>
+											Excluir
+										</button>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+
+			{formOpen && (
+				<div className="mt-4 bg-white border rounded p-4">
+					<h4 className="font-semibold mb-3">{editingId ? 'Editar Quiz' : 'Novo Quiz'}</h4>
+					<form onSubmit={submit} className="space-y-4">
+						<div>
+							<label className="block text-sm font-medium mb-1">Título</label>
+							<input
+								value={form.title}
+								onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+								className="w-full p-2 border rounded text-sm"
+								required
+							/>
+						</div>
+						<div>
+							<label className="block text-sm font-medium mb-1">Descrição</label>
+							<input
+								value={form.description}
+								onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+								className="w-full p-2 border rounded text-sm"
+							/>
+						</div>
+						
+						<div>
+							<div className="flex justify-between items-center mb-2">
+								<label className="text-sm font-medium">Perguntas</label>
+								<button
+									type="button"
+									onClick={addQuestion}
+									className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+								>
+									Adicionar Pergunta
+								</button>
+							</div>
+							
+							{form.questions.map((question, qIdx) => (
+								<div key={qIdx} className="border rounded p-3 mb-3 bg-gray-50">
+									<div className="flex justify-between items-center mb-2">
+										<span className="text-sm font-medium">Pergunta {qIdx + 1}</span>
+										{form.questions.length > 1 && (
+											<button
+												type="button"
+												onClick={() => removeQuestion(qIdx)}
+												className="text-red-600 text-xs hover:text-red-800"
+											>
+												Remover
+											</button>
+										)}
+									</div>
+									
+									<input
+										value={question.question}
+										onChange={(e) => handleQuestionChange(qIdx, 'question', e.target.value)}
+										placeholder="Digite a pergunta"
+										className="w-full p-2 border rounded text-sm mb-2"
+										required
+									/>
+									
+									<div className="space-y-1">
+										<label className="text-xs font-medium">Opções de resposta:</label>
+										{question.options.map((option, oIdx) => (
+											<div key={oIdx} className="flex items-center gap-2">
+												<input
+													value={option}
+													onChange={(e) => handleOptionChange(qIdx, oIdx, e.target.value)}
+													placeholder={`Opção ${oIdx + 1}`}
+													className="flex-1 p-1 border rounded text-sm"
+													required
+												/>
+												<label className="flex items-center gap-1 text-xs">
+													<input
+														type="radio"
+														name={`correct-${qIdx}`}
+														checked={question.correct === oIdx}
+														onChange={() => handleQuestionChange(qIdx, 'correct', oIdx)}
+														className="text-green-600"
+													/>
+													Correta
+												</label>
+											</div>
+										))}
+									</div>
+									
+									<input
+										value={question.explanation}
+										onChange={(e) => handleQuestionChange(qIdx, 'explanation', e.target.value)}
+										placeholder="Explicação da resposta (opcional)"
+										className="w-full p-2 border rounded text-sm mt-2"
+									/>
+								</div>
+							))}
+						</div>
+						
+						<div className="flex gap-2">
+							<button
+								type="submit"
+								disabled={saving}
+								className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+							>
+								{saving ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Criar Quiz')}
+							</button>
+							<button
+								type="button"
+								onClick={() => setFormOpen(false)}
+								className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+							>
+								Cancelar
+							</button>
+						</div>
+					</form>
+				</div>
+			)}
+		</SectionContainer>
+	);
+}
+
 export default function AdminPage() {
 	const [tab, setTab] = useState('cards');
 	const [auth, setAuth] = useState({ user: '', pass: '' });
@@ -1028,6 +1315,7 @@ export default function AdminPage() {
 				{tab === 'players' && <PlayersSection />}
 				{tab === 'contos' && <ContosSection />}
 				{tab === 'card-inventory' && <CardInventorySection />}
+				{tab === 'quizzes' && <QuizzesSection />}
 			</div>
 		</div>
 	);
