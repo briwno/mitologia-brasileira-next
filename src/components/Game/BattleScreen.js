@@ -25,6 +25,7 @@ function PlayerInfo({ player, position = 'bottom', isCurrentPlayer = false }) {
               width={48}
               height={48}
               className="object-cover"
+              quality={90}
             />
           </div>
           <div>
@@ -32,11 +33,7 @@ function PlayerInfo({ player, position = 'bottom', isCurrentPlayer = false }) {
             <div className="text-orange-100 text-xs">
               {player.ranking || 'Iniciante'}
             </div>
-            {isCurrentPlayer && (
-              <div className="text-orange-200 text-xs mt-1">
-                Energia: {player.energia || 0}
-              </div>
-            )}
+
           </div>
         </div>
         {position === 'bottom' && (
@@ -53,8 +50,8 @@ function PlayerInfo({ player, position = 'bottom', isCurrentPlayer = false }) {
 // Componente para cartas no banco
 function BankCards({ cards, position = 'bottom', onClick }) {
   const positionClasses = position === 'bottom' 
-    ? 'bottom-4 left-32' 
-    : 'top-4 left-4';
+    ? 'bottom-4 left-20' 
+    : 'top-4 right-20';
 
   return (
     <div className={`absolute ${positionClasses} z-10`}>
@@ -73,6 +70,11 @@ function BankCards({ cards, position = 'bottom', onClick }) {
           );
         })}
       </div>
+      {position === 'bottom' && (
+        <div className="text-white text-xs mt-1 text-center bg-black/50 px-2 py-1 rounded">
+          BANCO DE CARTAS
+        </div>
+      )}
     </div>
   );
 }
@@ -85,19 +87,25 @@ function HandItems({ items, position = 'bottom', onUseItem }) {
 
   return (
     <div className={`absolute ${positionClasses} z-10`}>
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         {[...Array(3)].map((_, index) => {
           const item = items[index];
           return (
-            <BattleCard
-              key={index}
-              card={item}
-              size="medium"
-              type="item"
-              showStats={false}
-              onClick={(selectedItem) => onUseItem?.(selectedItem, index)}
-              className={!item ? "text-gray-500" : ""}
-            />
+            <div key={index} className="flex flex-col items-center">
+              <BattleCard
+                card={item}
+                size="medium"
+                type="item"
+                showStats={false}
+                onClick={(selectedItem) => onUseItem?.(selectedItem, index)}
+                className={!item ? "text-gray-500" : ""}
+              />
+              {position === 'bottom' && (
+                <div className="text-white text-xs mt-1 bg-black/50 px-1 py-0.5 rounded">
+                  ITEM {index + 1}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -113,26 +121,42 @@ function ActiveCard({ card, position = 'bottom', onClick, itemAtivo = null }) {
 
   return (
     <div className={`absolute ${positionClasses} z-15`}>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-center gap-4">
         {/* Carta Ativa */}
-        <BattleCard
-          card={card}
-          size="large"
-          type="lenda"
-          isActive={true}
-          showStats={true}
-          onClick={onClick}
-        />
+        <div className="flex flex-col items-center">
+          <BattleCard
+            card={card}
+            size="large"
+            type="lenda"
+            isActive={true}
+            showStats={true}
+            onClick={onClick}
+          />
+          {position === 'bottom' && (
+            <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
+              CARTA ATIVA
+            </div>
+          )}
+        </div>
 
         {/* Item Ativo */}
-        <BattleCard
-          card={itemAtivo}
-          size="medium"
-          type="item"
-          showStats={false}
-          isClickable={false}
-          className="border-orange-400 bg-orange-600"
-        />
+        {itemAtivo && (
+          <div className="flex flex-col items-center">
+            <BattleCard
+              card={itemAtivo}
+              size="medium"
+              type="item"
+              showStats={false}
+              isClickable={false}
+              className="border-orange-400 bg-orange-600"
+            />
+            {position === 'bottom' && (
+              <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
+                ITEM ATIVO
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -142,22 +166,29 @@ function ActiveCard({ card, position = 'bottom', onClick, itemAtivo = null }) {
 function CardStack({ count, position = 'bottom', onClick }) {
   const positionClasses = position === 'bottom' 
     ? 'bottom-4 right-4' 
-    : 'top-4 left-32';
+    : 'top-4 left-4';
 
   return (
     <div className={`absolute ${positionClasses} z-10`}>
-      <div
-        className="w-16 h-24 bg-green-700 border-2 border-green-500 rounded-lg cursor-pointer hover:scale-105 transition-all relative overflow-hidden"
-        onClick={onClick}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-800" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <Icon name="layers" size={20} />
-          <div className="text-xs font-bold mt-1">{count}</div>
+      <div className="flex flex-col items-center">
+        <div
+          className="w-16 h-24 bg-green-700 border-2 border-green-500 rounded-lg cursor-pointer hover:scale-105 transition-all relative overflow-hidden"
+          onClick={onClick}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-800" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+            <Icon name="layers" size={16} />
+            <div className="text-xs font-bold mt-1">{count}</div>
+          </div>
+          {/* Efeito de cartas empilhadas */}
+          <div className="absolute -top-1 -right-1 w-16 h-24 bg-green-600 border-2 border-green-400 rounded-lg -z-10" />
+          <div className="absolute -top-2 -right-2 w-16 h-24 bg-green-500 border-2 border-green-300 rounded-lg -z-20" />
         </div>
-        {/* Efeito de cartas empilhadas */}
-        <div className="absolute -top-1 -right-1 w-16 h-24 bg-green-600 border-2 border-green-400 rounded-lg -z-10" />
-        <div className="absolute -top-2 -right-2 w-16 h-24 bg-green-500 border-2 border-green-300 rounded-lg -z-20" />
+        {position === 'bottom' && (
+          <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
+            PILHA DE ITENS
+          </div>
+        )}
       </div>
     </div>
   );
@@ -167,14 +198,14 @@ function CardStack({ count, position = 'bottom', onClick }) {
 function GameLog({ events }) {
   return (
     <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20">
-      <div className="w-80 h-96 bg-blue-900/90 border-2 border-blue-600 rounded-lg backdrop-blur-sm">
+      <div className="w-72 h-80 bg-blue-900/90 border-2 border-blue-600 rounded-lg backdrop-blur-sm">
         <div className="p-3 border-b border-blue-600">
           <h3 className="text-white font-bold text-sm flex items-center gap-2">
             <Icon name="list" size={16} />
             Log de Eventos
           </h3>
         </div>
-        <div className="p-3 h-80 overflow-y-auto">
+        <div className="p-3 h-64 overflow-y-auto">
           <div className="space-y-2">
             {events.length === 0 ? (
               <div className="text-blue-300 text-sm text-center py-8">
@@ -257,7 +288,6 @@ export default function BattleScreen({
     nome: currentPlayer?.nome || 'Jogador 1',
     avatar: currentPlayer?.avatar || '/images/avatars/player.jpg',
     ranking: currentPlayer?.ranking || 'Bronze II',
-    energia: currentPlayer?.energia || 3,
     zonas: {
       [ZONAS_CAMPO.LENDA_ATIVA]: currentPlayer?.zonas?.[ZONAS_CAMPO.LENDA_ATIVA] || {
         nome: 'Saci-Pererê',
@@ -284,7 +314,6 @@ export default function BattleScreen({
     nome: opponent?.nome || 'Oponente',
     avatar: opponent?.avatar || '/images/avatars/player.jpg',
     ranking: opponent?.ranking || 'Prata I',
-    energia: opponent?.energia || 2,
     zonas: {
       [ZONAS_CAMPO.LENDA_ATIVA]: opponent?.zonas?.[ZONAS_CAMPO.LENDA_ATIVA] || {
         nome: 'Boitatá',
@@ -313,14 +342,18 @@ export default function BattleScreen({
           src="/images/playmat.svg"
           alt="Campo de batalha"
           fill
-          className="object-cover opacity-30"
+          className="object-cover opacity-20"
           priority
+          quality={100}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
       </div>
 
       {/* Divisória central */}
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
+      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-6 py-2 rounded-full border border-yellow-400/70 shadow-lg">
+        <span className="text-yellow-400 text-sm font-bold">⚔️ CAMPO DE BATALHA ⚔️</span>
+      </div>
 
       {/* Área do Jogador (inferior) */}
       <div className="absolute bottom-0 left-0 right-0 h-1/2">
@@ -351,13 +384,13 @@ export default function BattleScreen({
         />
         
         {/* Botão Encerrar Turno */}
-        <div className="absolute bottom-20 left-4 z-20">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
           <button
             onClick={handleEndTurn}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg border-2 border-blue-400 shadow-lg transition-all hover:scale-105"
+            className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl border-2 border-blue-400 shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
           >
-            <Icon name="check" size={16} className="inline mr-2" />
-            Encerrar Turno
+            <Icon name="check" size={18} className="inline mr-2" />
+            ENCERRAR TURNO
           </button>
         </div>
       </div>
@@ -390,13 +423,13 @@ export default function BattleScreen({
       <GameLog events={gameLog} />
 
       {/* Informações da fase atual */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-        <div className="bg-black/70 text-white px-4 py-2 rounded-lg border border-yellow-400">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+        <div className="bg-black/90 text-white px-6 py-3 rounded-xl border-2 border-yellow-400 shadow-xl">
           <div className="text-center">
-            <div className="text-yellow-400 font-bold">
+            <div className="text-yellow-400 font-bold text-lg">
               {gameState?.fase || FASES_DO_JOGO.ACAO}
             </div>
-            <div className="text-xs">
+            <div className="text-sm text-gray-300">
               Turno {gameState?.turn || 1} - {mockCurrentPlayer.nome}
             </div>
           </div>

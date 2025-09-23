@@ -68,6 +68,8 @@ export default function BattleCard({
               fill
               className="object-cover"
               sizes={`${sizeClasses[size].split(' ')[0].replace('w-', '')}px`}
+              quality={95}
+              priority={isActive}
             />
             
             {/* Overlay gradient */}
