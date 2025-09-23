@@ -13,7 +13,8 @@ export default function BattleCard({
   isClickable = true,
   showStats = true,
   onClick,
-  className = ''
+  className = '',
+  style = {}
 }) {
   const sizeClasses = {
     small: 'w-16 h-24',
@@ -57,6 +58,7 @@ export default function BattleCard({
         ${className}
       `}
       onClick={handleClick}
+      style={style}
     >
       {card ? (
         <>
