@@ -12,6 +12,7 @@ export default function ImagemDaCarta({
   className = '',
   onClick = null,
   preferFull = false,
+  priority = false,
 }) {
   // Estados locais: erro na imagem e carregamento
   const [erroNaImagem, definirErroNaImagem] = useState(false);
@@ -45,6 +46,8 @@ export default function ImagemDaCarta({
         alt={`Placeholder de ${card.nome || card.name}`}
         fill
         className="object-cover"
+        quality={100}
+        decoding="async"
         onLoad={lidarComCarregamentoDaImagem}
       />
     );
@@ -84,7 +87,11 @@ export default function ImagemDaCarta({
           fill
           className="object-cover"
           sizes={sizesStr}
-          quality={95}
+          quality={100}
+          decoding="async"
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           onError={lidarComErroDaImagem}
           onLoad={lidarComCarregamentoDaImagem}
           style={{ opacity: carregandoImagem ? 0 : 1 }}

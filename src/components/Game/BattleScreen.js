@@ -11,6 +11,7 @@ import {
   CONSTANTES_DO_JOGO,
 } from "@/utils/constants";
 import { MotorDeJogo } from "@/utils/gameLogic";
+import { useGameCards } from "@/hooks/useGameCards";
 
 // Card size scaling relative to stage (approx based on SVG):
 // small ≈ 4.5% width x 7% height, medium ≈ 5.5% x 8.5%, large ≈ 8.5% x 12%
@@ -27,12 +28,20 @@ function PlayerInfo({
   isCurrentPlayer = false,
   posStyle,
 }) {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   // If posStyle provided, use explicit coordinates; otherwise fall back to legacy corner positions
   const positionClasses = posStyle
     ? "z-20"
     : position === "bottom"
     ? "bottom-4 left-4 z-20"
     : "top-4 right-4 z-20";
+
+  const handleEmojiClick = (emoji) => {
+    console.log("Emoji selecionado:", emoji);
+    // Aqui você pode implementar a lógica para mostrar o emoji no jogo
+    setShowEmojiPicker(false); // Fecha o picker após selecionar
+  };
 
   return (
     <div className={`absolute ${positionClasses}`} style={posStyle}>
@@ -45,7 +54,9 @@ function PlayerInfo({
               width={48}
               height={48}
               className="object-cover"
-              quality={90}
+              quality={100}
+              decoding="async"
+              priority={isCurrentPlayer}
             />
           </div>
           <div>
@@ -56,10 +67,32 @@ function PlayerInfo({
           </div>
         </div>
         {position === "bottom" && (
-          <button className="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-700 rounded text-white text-xs">
-            <Icon name="smile" size={12} className="inline mr-1" />
-            Emote
-          </button>
+          <div className="relative">
+            <button 
+              className="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-700 rounded text-white text-xs transition-colors" 
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Icon name="smile" size={12} className="inline mr-1" />
+              Emote
+            </button>
+            
+            {/* EmojiPicker simplificado */}
+            {showEmojiPicker && (
+              <div className="absolute mb-2 left-0 bg-gray-800 p-2 rounded-lg shadow-xl border border-gray-600 z-50">
+                <div className="flex gap-1">
+                  {["😀", "😃", "😄", "😁", "😆", "🤔", "😎", "🥳", "😤", "💪"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      className="text-lg hover:scale-125 transition-transform p-1 hover:bg-gray-700 rounded"
+                      onClick={() => handleEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -71,8 +104,8 @@ function BankCards({ cards, position = "bottom", onClick, posStyle }) {
   const positionClasses = posStyle
     ? "z-10"
     : position === "bottom"
-    ? "bottom-4 left-20 z-10"
-    : "top-4 right-20 z-10";
+    ? "bottom-4 left-12 z-10"
+    : "top-4 right-12 z-10";
 
   return (
     <div className={`absolute ${positionClasses}`} style={posStyle}>
@@ -83,10 +116,10 @@ function BankCards({ cards, position = "bottom", onClick, posStyle }) {
             <BattleCard
               key={index}
               card={card}
-              size="small"
               type="lenda"
               showStats={false}
               onClick={(selectedCard) => onClick?.(selectedCard, index)}
+              className="w-24 h-34"
             />
           );
         })}
@@ -117,11 +150,10 @@ function HandItems({ items, position = "bottom", onUseItem, posStyle }) {
             <div key={index} className="flex flex-col items-center">
               <BattleCard
                 card={item}
-                size="medium"
                 type="item"
                 showStats={false}
                 onClick={(selectedItem) => onUseItem?.(selectedItem, index)}
-                className={!item ? "text-gray-500" : ""}
+                className={`w-20 h-28 ${!item ? "text-gray-500" : ""}`}
               />
               {position === "bottom" && (
                 <div className="text-white text-xs mt-1 bg-black/50 px-1 py-0.5 rounded">
@@ -146,9 +178,7 @@ function ActiveCard({
 }) {
   const positionClasses = posStyle
     ? "z-15"
-    : position === "bottom"
-    ? "bottom-20 left-1/2 -translate-x-1/2 z-15"
-    : "top-20 left-1/2 -translate-x-1/2 z-15";
+    : position === "bottom";
 
   return (
     <div className={`absolute ${positionClasses}`} style={posStyle}>
@@ -157,17 +187,12 @@ function ActiveCard({
         <div className="flex flex-col items-center">
           <BattleCard
             card={card}
-            size="large"
             type="lenda"
             isActive={true}
             showStats={true}
             onClick={onClick}
+            className="w-40 h-56"
           />
-          {position === "bottom" && (
-            <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
-              CARTA ATIVA
-            </div>
-          )}
         </div>
 
         {/* Item Ativo */}
@@ -175,11 +200,10 @@ function ActiveCard({
           <div className="flex flex-col items-center">
             <BattleCard
               card={itemAtivo}
-              size="medium"
               type="item"
               showStats={false}
               isClickable={false}
-              className="border-orange-400 bg-orange-600"
+              className="w-20 h-28 border-orange-400 bg-orange-600"
             />
             {position === "bottom" && (
               <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
@@ -204,6 +228,9 @@ function CardStack({ count, position = "bottom", onClick, posStyle }) {
   return (
     <div className={`absolute ${positionClasses}`} style={posStyle}>
       <div className="flex flex-col items-center">
+        {/* Efeito de cartas empilhadas */}
+        <div className="absolute top-1 left-1 w-26 h-34 bg-green-600 border-2 border-green-500 rounded-lg opacity-100 rotate-20" />
+        <div className="absolute top-1 left-1 w-26 h-34 bg-green-600 border-2 border-green-500 rounded-lg opacity-100 -rotate-20" />
         <div
           className="w-26 h-34 bg-green-700 border-2 border-green-500 rounded-lg cursor-pointer hover:scale-105 transition-all relative overflow-hidden"
           onClick={onClick}
@@ -213,9 +240,6 @@ function CardStack({ count, position = "bottom", onClick, posStyle }) {
             <Icon name="layers" size={16} />
             <div className="text-xs font-bold mt-1">{count}</div>
           </div>
-          {/* Efeito de cartas empilhadas */}
-          <div className="absolute -top-1 -right-1 w-16 h-24 bg-green-600 border-2 border-green-400 rounded-lg -z-10" />
-          <div className="absolute -top-2 -right-2 w-16 h-24 bg-green-500 border-2 border-green-300 rounded-lg -z-20" />
         </div>
         {position === "bottom" && (
           <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
@@ -269,6 +293,7 @@ export default function BattleScreen({
   mode = "pvp",
 }) {
   const [gameLog, setGameLog] = useState([]);
+  const { loading: cardsLoading, error: cardsError, getPlayerData } = useGameCards();
 
   // Anchor-aware position helper: x/y are percentages of viewport; choose anchors
   const posPercent = ({
@@ -294,16 +319,16 @@ export default function BattleScreen({
   const POS = {
     // bottom side
     playerBottom: posPercent({ x: 6, y: 92, useBottom: true }), // bottom-left
-    bankBottom: posPercent({ x: 18, y: 90, useBottom: true }), // bottom-left row
+    bankBottom: posPercent({ x: 16, y: 92, useBottom: true }), // bottom-left row
     itemsBottom: posPercent({ x: 50, y: 95, centerX: true, useBottom: true }), // bottom-center row
-    activeBottom: posPercent({ x: 50, y: 66, centerX: true, centerY: true }), // centered
+    activeBottom: posPercent({ x: 50, y: 65, centerX: true, centerY: true }), // centered
     pileBottom: posPercent({ x: 93, y: 90, useRight: true, useBottom: true }), // bottom-right
 
     // top side (mirrored)
     playerTop: posPercent({ x: 94, y: 8, useRight: true }), // top-right
-    bankTop: posPercent({ x: 82, y: 10, useRight: true }), // top-right row
+    bankTop: posPercent({ x: 84, y: 10, useRight: true }), // top-right row
     itemsTop: posPercent({ x: 50, y: 5, centerX: true }), // top-center row
-    activeTop: posPercent({ x: 50, y: 24, centerX: true }), // top-center
+    activeTop: posPercent({ x: 50, y: 23.5    , centerX: true }), // top-center
     pileTop: posPercent({ x: 7, y: 10 }), // top-left
 
     // UI
@@ -367,66 +392,82 @@ export default function BattleScreen({
     addToLog(`${currentPlayer?.nome} encerrou o turno`);
   }, [onEndTurn, addToLog, currentPlayer]);
 
-  // Garantir estrutura válida para currentPlayer
-  const mockCurrentPlayer = {
-    nome: currentPlayer?.nome || "Jogador 1",
-    avatar: currentPlayer?.avatar || "/images/avatars/player.jpg",
-    ranking: currentPlayer?.ranking || "Bronze II",
-    zonas: {
-      [ZONAS_CAMPO.LENDA_ATIVA]: currentPlayer?.zonas?.[
-        ZONAS_CAMPO.LENDA_ATIVA
-      ] || {
-        nome: "Saci-Pererê",
-        imagem: "/images/cards/portraits/saci.jpg",
-        ataque: 5,
-        defesa: 3,
+  // Carregar dados reais dos jogadores da API ou usar fallback mock
+  const getRealOrMockPlayer = (playerData, defaultName, defaultRanking, isOpponent = false) => {
+    // Se temos dados do hook e não está carregando
+    if (!cardsLoading && !cardsError && getPlayerData) {
+      const realPlayerData = getPlayerData(
+        playerData?.nome || defaultName, 
+        playerData?.avatar || "/images/avatars/player.jpg",
+        playerData?.ranking || defaultRanking
+      );
+      
+      if (realPlayerData) {
+        return {
+          ...realPlayerData,
+          zonas: {
+            [ZONAS_CAMPO.LENDA_ATIVA]: playerData?.zonas?.[ZONAS_CAMPO.LENDA_ATIVA] || realPlayerData.zonas.LENDA_ATIVA,
+            [ZONAS_CAMPO.BANCO_LENDAS]: playerData?.zonas?.[ZONAS_CAMPO.BANCO_LENDAS] || realPlayerData.zonas.BANCO_LENDAS,
+            [ZONAS_CAMPO.MAO_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.MAO_ITENS] || realPlayerData.zonas.MAO_ITENS,
+            [ZONAS_CAMPO.PILHA_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.PILHA_ITENS] || realPlayerData.zonas.PILHA_ITENS,
+          }
+        };
+      }
+    }
+
+    // Fallback para dados mock se API não disponível
+    return {
+      nome: playerData?.nome || defaultName,
+      avatar: playerData?.avatar || "/images/avatars/player.jpg",
+      ranking: playerData?.ranking || defaultRanking,
+      zonas: {
+        [ZONAS_CAMPO.LENDA_ATIVA]: playerData?.zonas?.[ZONAS_CAMPO.LENDA_ATIVA] || {
+          nome: isOpponent ? "Boitatá" : "Jaci",
+          imagem: isOpponent ? "/images/cards/portraits/boitata.jpg" : "/images/cards/portraits/jaci.png",
+          ataque: isOpponent ? 6 : 5,
+          defesa: isOpponent ? 4 : 3,
+        },
+        [ZONAS_CAMPO.BANCO_LENDAS]: playerData?.zonas?.[ZONAS_CAMPO.BANCO_LENDAS] || (
+          isOpponent ? [
+            { nome: "???", imagem: null },
+            { nome: "???", imagem: null },
+            { nome: "???", imagem: null },
+            { nome: "???", imagem: null },
+          ] : [
+            { nome: "Curupira", imagem: "/images/cards/portraits/curupira.jpg" },
+            { nome: "Iara", imagem: "/images/cards/portraits/iara.jpg" },
+            { nome: "Cuca", imagem: "/images/cards/portraits/cuca.jpg" },
+            { nome: "Boto", imagem: "/images/cards/portraits/boto.jpg" },
+          ]
+        ),
+        [ZONAS_CAMPO.MAO_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.MAO_ITENS] || (
+          isOpponent ? [
+            { nome: "???", imagem: null },
+          ] : [
+            { nome: "Poção de Força", imagem: "/images/placeholder.svg" },
+            { nome: "Escudo Mágico", imagem: "/images/placeholder.svg" },
+          ]
+        ),
+        [ZONAS_CAMPO.PILHA_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.PILHA_ITENS] || [],
       },
-      [ZONAS_CAMPO.BANCO_LENDAS]: currentPlayer?.zonas?.[
-        ZONAS_CAMPO.BANCO_LENDAS
-      ] || [
-        { nome: "Curupira", imagem: "/images/cards/portraits/curupira.jpg" },
-        { nome: "Iara", imagem: "/images/cards/portraits/iara.jpg" },
-        { nome: "Cuca", imagem: "/images/cards/portraits/cuca.jpg" },
-        { nome: "Boto", imagem: "/images/cards/portraits/boto.jpg" },
-      ],
-      [ZONAS_CAMPO.MAO_ITENS]: currentPlayer?.zonas?.[
-        ZONAS_CAMPO.MAO_ITENS
-      ] || [
-        { nome: "Poção de Força", imagem: "/images/placeholder.svg" },
-        { nome: "Escudo Mágico", imagem: "/images/placeholder.svg" },
-      ],
-      [ZONAS_CAMPO.PILHA_ITENS]:
-        currentPlayer?.zonas?.[ZONAS_CAMPO.PILHA_ITENS] || [],
-    },
+    };
   };
 
-  // Garantir estrutura válida para opponent
-  const mockOpponent = {
-    nome: opponent?.nome || "Oponente",
-    avatar: opponent?.avatar || "/images/avatars/player.jpg",
-    ranking: opponent?.ranking || "Prata I",
-    zonas: {
-      [ZONAS_CAMPO.LENDA_ATIVA]: opponent?.zonas?.[ZONAS_CAMPO.LENDA_ATIVA] || {
-        nome: "Boitatá",
-        imagem: "/images/cards/portraits/boitata.jpg",
-        ataque: 6,
-        defesa: 4,
-      },
-      [ZONAS_CAMPO.BANCO_LENDAS]: opponent?.zonas?.[
-        ZONAS_CAMPO.BANCO_LENDAS
-      ] || [
-        { nome: "???", imagem: null },
-        { nome: "???", imagem: null },
-        { nome: "???", imagem: null },
-        { nome: "???", imagem: null },
-      ],
-      [ZONAS_CAMPO.MAO_ITENS]: opponent?.zonas?.[ZONAS_CAMPO.MAO_ITENS] || [
-        { nome: "???", imagem: null },
-      ],
-      [ZONAS_CAMPO.PILHA_ITENS]:
-        opponent?.zonas?.[ZONAS_CAMPO.PILHA_ITENS] || [],
-    },
-  };
+  const mockCurrentPlayer = getRealOrMockPlayer(currentPlayer, "Jogador 1", "Bronze II", false);
+  const mockOpponent = getRealOrMockPlayer(opponent, "Oponente", "Prata I", true);
+
+  // Se ainda estiver carregando cartas, mostrar loading
+  if (cardsLoading) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <div className="text-white text-lg font-bold">Carregando Cartas de Alta Qualidade...</div>
+          <div className="text-yellow-400 text-sm mt-2">Preparando o campo de batalha</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 overflow-hidden flex items-center justify-center">

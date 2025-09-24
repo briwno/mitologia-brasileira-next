@@ -1,0 +1,39 @@
+<!-- filepath: /images/playmat-guides.svg -->
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo -->
+  <rect x="0" y="0" width="1920" height="1080" fill="#1e1b4b" />
+  <!-- Divisória central -->
+  <line x1="0" y1="540" x2="1920" y2="540" stroke="#FFD600" stroke-width="4" opacity="0.5"/>
+  <!-- Centro do campo -->
+  <circle cx="960" cy="540" r="40" fill="#FFD600" opacity="0.15"/>
+  <text x="960" y="540" text-anchor="middle" fill="#FFD600" font-size="32" font-weight="bold" dy="12">CENTRO</text>
+  <!-- Bottom Side -->
+  <circle cx="115" cy="995" r="30" fill="#FF9800" opacity="0.3"/>
+  <text x="115" y="995" text-anchor="middle" fill="#FF9800" font-size="20" dy="7">Jogador</text>
+  <circle cx="307" cy="995" r="30" fill="#FF9800" opacity="0.3"/>
+  <text x="307" y="995" text-anchor="middle" fill="#FF9800" font-size="20" dy="7">Banco</text>
+  <circle cx="960" cy="1026" r="30" fill="#FF9800" opacity="0.3"/>
+  <text x="960" y="1026" text-anchor="middle" fill="#FF9800" font-size="20" dy="7">Itens</text>
+  <circle cx="960" cy="702" r="30" fill="#FF9800" opacity="0.3"/>
+  <text x="960" y="702" text-anchor="middle" fill="#FF9800" font-size="20" dy="7">Carta Ativa</text>
+  <circle cx="1785" cy="972" r="30" fill="#FF9800" opacity="0.3"/>
+  <text x="1785" y="972" text-anchor="middle" fill="#FF9800" font-size="20" dy="7">Pilha</text>
+  <!-- Top Side -->
+  <circle cx="1805" cy="86" r="30" fill="#2196F3" opacity="0.3"/>
+  <text x="1805" y="86" text-anchor="middle" fill="#2196F3" font-size="20" dy="7">Jogador</text>
+  <circle cx="1613" cy="108" r="30" fill="#2196F3" opacity="0.3"/>
+  <text x="1613" y="108" text-anchor="middle" fill="#2196F3" font-size="20" dy="7">Banco</text>
+  <circle cx="960" cy="54" r="30" fill="#2196F3" opacity="0.3"/>
+  <text x="960" y="54" text-anchor="middle" fill="#2196F3" font-size="20" dy="7">Itens</text>
+  <circle cx="960" cy="254" r="30" fill="#2196F3" opacity="0.3"/>
+  <text x="960" y="254" text-anchor="middle" fill="#2196F3" font-size="20" dy="7">Carta Ativa</text>
+  <circle cx="134" cy="108" r="30" fill="#2196F3" opacity="0.3"/>
+  <text x="134" y="108" text-anchor="middle" fill="#2196F3" font-size="20" dy="7">Pilha</text>
+  <!-- UI Guides -->
+  <rect x="1820" y="490" width="80" height="100" fill="#00E676" opacity="0.2"/>
+  <text x="1860" y="540" text-anchor="middle" fill="#00E676" font-size="18" dy="7">Log</text>
+  <rect x="440" y="108" width="160" height="60" fill="#FFD600" opacity="0.2"/>
+  <text x="520" y="140" text-anchor="middle" fill="#FFD600" font-size="18" dy="7">Fase</text>
+  <rect x="0" y="490" width="80" height="100" fill="#00E676" opacity="0.2"/>
+  <text x="40" y="540" text-anchor="middle" fill="#00E676" font-size="18" dy="7">Encerrar Turno</text>
+</svg>
