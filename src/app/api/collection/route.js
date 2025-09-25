@@ -10,18 +10,34 @@ const UpsertSchema = z.object({
 });
 
 export async function GET(req) {
+  console.log('[Collection API] GET request received');
   try {
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get('uid');
+    console.log('[Collection API] uid parameter:', uid);
     if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
 
   const supabase = requireSupabaseAdmin();
+  console.log('[Collection API] Querying players table for uid:', uid);
   const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-  if (uerr) throw uerr;
-  if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
+  if (uerr) {
+    console.error('[Collection API] Error querying players:', uerr);
+    throw uerr;
+  }
+  if (!user) {
+    console.log('[Collection API] Player not found for uid:', uid);
+    return NextResponse.json({ error: 'player not found' }, { status: 404 });
+  }
+
+  console.log(`[Collection API] Found player: uid=${uid} -> player_id=${user.id}`);
 
   const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', user.id).maybeSingle();
-  if (error && error.code !== 'PGRST116') throw error;
+  if (error && error.code !== 'PGRST116') {
+    console.error('[Collection API] Error querying collections:', error);
+    throw error;
+  }
+  
+  console.log('[Collection API] Collection data:', row);
   
   // Converter formato: [{ id: 'cur001' }] -> ['cur001']
   let cards = row?.cards || [];
@@ -34,9 +50,10 @@ export async function GET(req) {
     itemCards = itemCards.map(c => c.id);
   }
   
+  console.log('[Collection API] Returning response:', { cards, itemCards });
   return NextResponse.json({ cards, itemCards });
   } catch (e) {
-    console.error('collection GET', e);
+    console.error('[Collection API] ERROR in GET:', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
   }
 }

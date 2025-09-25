@@ -1,3 +1,38 @@
+// Mock: retorna todas as cartas do jogo (lendas e itens)
+export const getAllGameCards = () => [
+  // Lendas
+  {
+    id: 'lenda1', nome: 'Saci', category: 'lenda', type: 'lenda', ataque: 7, defesa: 5, vida: 20, raridade: 'EPIC', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
+  },
+  {
+    id: 'lenda2', nome: 'Curupira', category: 'lenda', type: 'lenda', ataque: 6, defesa: 6, vida: 22, raridade: 'LEGENDARY', elemento: 'EARTH', images: {}, habilidades: {}, cardType: 'creature',
+  },
+  {
+    id: 'lenda3', nome: 'Iara', category: 'lenda', type: 'lenda', ataque: 5, defesa: 7, vida: 18, raridade: 'MYTHIC', elemento: 'WATER', images: {}, habilidades: {}, cardType: 'creature',
+  },
+  {
+    id: 'lenda4', nome: 'Boitatá', category: 'lenda', type: 'lenda', ataque: 8, defesa: 4, vida: 19, raridade: 'EPIC', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
+  },
+  {
+    id: 'lenda5', nome: 'Mula sem Cabeça', category: 'lenda', type: 'lenda', ataque: 7, defesa: 5, vida: 21, raridade: 'LEGENDARY', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
+  },
+  // Itens
+  {
+    id: 'item1', nome: 'Poção de Cura', category: 'item', type: 'item', efeito: 'cura', raridade: 'EPIC', cardType: 'spell',
+  },
+  {
+    id: 'item2', nome: 'Machado Encantado', category: 'item', type: 'item', efeito: 'dano', raridade: 'LEGENDARY', cardType: 'artifact',
+  },
+  {
+    id: 'item3', nome: 'Amuleto da Sorte', category: 'item', type: 'item', efeito: 'buff', raridade: 'MYTHIC', cardType: 'artifact',
+  },
+  {
+    id: 'item4', nome: 'Escudo Protetor', category: 'item', type: 'item', efeito: 'defesa', raridade: 'EPIC', cardType: 'artifact',
+  },
+  {
+    id: 'item5', nome: 'Pergaminho Místico', category: 'item', type: 'item', efeito: 'dano', raridade: 'LEGENDARY', cardType: 'spell',
+  },
+];
 // src/utils/cardUtils.js
 
 // Mapas de tradução (API -> PT-BR) centralizados

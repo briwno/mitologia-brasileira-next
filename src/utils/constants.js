@@ -7,7 +7,11 @@ export const CONSTANTES_DO_JOGO = {
   TAMANHO_MAXIMO_MAO_ITENS: 3, // Máximo 3 itens na mão
   BANCO_LENDAS: 4,              // 4 lendas no banco (reserva)
   LENDA_ATIVA: 1,               // 1 lenda ativa em campo
+  ITEM_ATIVO: 1,                // 1 item equipado por lenda ativa
   LIMITE_TEMPO_TURNO: 300,      // 5 minutos
+  COOLDOWN_HABILIDADE: 3,       // 3 turnos de cooldown para mesma habilidade
+  MAXIMO_LENDAS_MITICAS: 2,     // Máximo 2 lendas míticas por deck
+  ULTIMATE_POR_PARTIDA: 1,      // Ultimate só pode ser usado 1x por partida
 
   // Tipos de carta - Nova estrutura
   CARD_TYPES: {
@@ -107,6 +111,7 @@ export const ZONAS_CAMPO = {
   LENDA_ATIVA: 'lenda_ativa',     // 1 carta em combate
   BANCO_LENDAS: 'banco_lendas',   // 4 cartas de reserva
   MAO_ITENS: 'mao_itens',         // até 3 cartas na mão
+  ITEM_ATIVO: 'item_ativo',       // 1 item equipado na lenda ativa
   PILHA_ITENS: 'pilha_itens',     // cartas restantes para compra
   DESCARTE_ITENS: 'descarte_itens' // para reciclagem/habilidades
 };

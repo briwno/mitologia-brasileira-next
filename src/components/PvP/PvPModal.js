@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/UI/Icon';
-import { nanoid } from 'nanoid'
+import { nanoid } from 'nanoid';
+// ...existing code...
 
 function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
@@ -88,14 +89,7 @@ function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {
 
 export default function PvPModal({ onClose }) {
   const router = useRouter();
-
-  const createRoomId = useCallback(() => {
-    const id = nanoid(6);
-    return id;
-  }, []);
-
   const startMatch = useCallback((mode) => {
-    // Redireciona para seleção de deck antes de iniciar o jogo
     const m = mode ? `?mode=${encodeURIComponent(mode)}` : '';
     router.push(`/pvp/deck${m}`);
     onClose?.();
@@ -132,9 +126,9 @@ export default function PvPModal({ onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
               title="Contra Bots"
-              iconName="target" 
+              iconName="target"
               subtitle="Treinar contra IA"
-              href="/pvp/game/battle"
+              onClick={() => startMatch('bot')}
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo

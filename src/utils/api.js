@@ -116,6 +116,16 @@ export const cardsAPI = {
   removeFromFavorites: (cardId) => apiClient.delete(`/cards/favorites/${cardId}`),
 };
 
+// Coleção
+export const collectionAPI = {
+  get: (uid) => apiClient.get(`/collection?uid=${encodeURIComponent(uid)}`),
+  set: (uid, cards, itemCards = []) => apiClient.post('/collection', { uid, cards, itemCards }),
+  addCard: (uid, cardId) => apiClient.patch('/collection', { uid, add: cardId }),
+  removeCard: (uid, cardId) => apiClient.patch('/collection', { uid, remove: cardId }),
+  addItemCard: (uid, itemCardId) => apiClient.patch('/collection', { uid, addItemCard: itemCardId }),
+  removeItemCard: (uid, itemCardId) => apiClient.patch('/collection', { uid, removeItemCard: itemCardId }),
+};
+
 // Decks
 export const decksAPI = {
   getAll: () => apiClient.get('/decks'),

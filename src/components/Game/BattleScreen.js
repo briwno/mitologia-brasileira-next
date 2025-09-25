@@ -349,51 +349,91 @@ export default function BattleScreen({
     setGameLog((prev) => [...prev, newEvent]);
   }, []);
 
-  // Handlers para ações do jogador
+  // Handlers para ações do jogador - Integrado com MotorDeJogo
   const handleBankCardClick = useCallback(
     (card, index) => {
-      onAction?.({
+      if (gameState?.phase !== 'acao') {
+        addToLog('Não é a fase de ação!');
+        return;
+      }
+      
+      const resultado = onAction?.({
         type: "TROCAR_LENDA",
         data: { card, index },
       });
-      addToLog(`Tentativa de trocar para ${card.nome}`);
+      
+      if (resultado?.success) {
+        addToLog(`${currentPlayer?.nome} trocou para ${card.nome}`);
+      } else {
+        addToLog(resultado?.error || 'Não foi possível trocar lenda');
+      }
     },
-    [onAction, addToLog]
+    [onAction, addToLog, currentPlayer, gameState]
   );
 
   const handleUseItem = useCallback(
     (item, index) => {
-      onAction?.({
+      if (!item) return; // Slot vazio
+      
+      if (gameState?.phase !== 'acao') {
+        addToLog('Não é a fase de ação!');
+        return;
+      }
+      
+      const resultado = onAction?.({
         type: "USAR_ITEM",
         data: { item, index },
       });
-      addToLog(`${currentPlayer?.nome} usou ${item.nome}`);
+      
+      if (resultado?.success) {
+        if (item.categoria === 'equipamento') {
+          addToLog(`${currentPlayer?.nome} equipou ${item.nome}`);
+        } else {
+          addToLog(`${currentPlayer?.nome} usou ${item.nome}`);
+        }
+      } else {
+        addToLog(resultado?.error || 'Não foi possível usar item');
+      }
     },
-    [onAction, addToLog, currentPlayer]
+    [onAction, addToLog, currentPlayer, gameState]
   );
 
   const handleActiveCardClick = useCallback(
     (card) => {
-      onAction?.({
+      if (gameState?.phase !== 'acao') {
+        addToLog('Não é a fase de ação!');
+        return;
+      }
+      
+      // Por padrão, usar habilidade básica (skill1)
+      const resultado = onAction?.({
         type: "USAR_HABILIDADE",
-        data: { card },
+        data: { card, habilidadeId: 'skill1' },
       });
-      addToLog(`${currentPlayer?.nome} ativou habilidade de ${card.nome}`);
+      
+      if (resultado?.success) {
+        addToLog(`${currentPlayer?.nome} usou habilidade de ${card.nome}`);
+      } else {
+        addToLog(resultado?.error || 'Não foi possível usar habilidade');
+      }
     },
-    [onAction, addToLog, currentPlayer]
+    [onAction, addToLog, currentPlayer, gameState]
   );
 
   const handleDrawCard = useCallback(() => {
-    onAction?.({
-      type: "COMPRAR_ITEM",
-    });
-    addToLog(`${currentPlayer?.nome} comprou uma carta`);
-  }, [onAction, addToLog, currentPlayer]);
+    // Compra automática acontece na fase de fim de turno
+    addToLog('Compra de cartas acontece automaticamente no fim do turno');
+  }, [addToLog]);
 
   const handleEndTurn = useCallback(() => {
+    if (gameState?.phase !== 'acao') {
+      addToLog('Você só pode encerrar o turno na fase de ação!');
+      return;
+    }
+    
     onEndTurn?.();
-    addToLog(`${currentPlayer?.nome} encerrou o turno`);
-  }, [onEndTurn, addToLog, currentPlayer]);
+    addToLog(`${currentPlayer?.nome} passou o turno`);
+  }, [onEndTurn, addToLog, currentPlayer, gameState]);
 
   // Carregar dados reais dos jogadores da API ou usar fallback mock
   const getRealOrMockPlayer = (playerData, defaultName, defaultRanking, isOpponent = false) => {
@@ -582,15 +622,33 @@ export default function BattleScreen({
           posStyle={POS.pileTop}
         />
 
-        {/* Botão Encerrar Turno */}
+        {/* Controles do Turno */}
         <div className="absolute z-20" style={POS.endTurn}>
-          <button
-            onClick={handleEndTurn}
-            className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl border-2 border-blue-400 shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
-          >
-            <Icon name="check" size={18} className="inline mr-2" />
-            ENCERRAR TURNO
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleEndTurn}
+              disabled={gameState?.phase !== 'acao'}
+              className={`px-10 py-4 text-white font-bold text-lg rounded-xl border-2 shadow-xl transition-all hover:scale-105 hover:shadow-2xl ${
+                gameState?.phase === 'acao' 
+                  ? 'bg-blue-600 hover:bg-blue-700 border-blue-400' 
+                  : 'bg-gray-600 border-gray-500 cursor-not-allowed opacity-50'
+              }`}
+            >
+              <Icon name="check" size={18} className="inline mr-2" />
+              {gameState?.phase === 'acao' ? 'PASSAR TURNO' : 'AGUARDE...'}
+            </button>
+            
+            <button
+              onClick={() => {
+                if (confirm('Tem certeza que deseja desistir da partida?')) {
+                  onAction?.({ type: "DESISTIR" });
+                }
+              }}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg border border-red-400 shadow-lg transition-all hover:scale-105"
+            >
+              🏳️ DESISTIR
+            </button>
+          </div>
         </div>
 
         {/* Log de Eventos */}
@@ -601,11 +659,20 @@ export default function BattleScreen({
           <div className="bg-black/90 text-white px-6 py-3 rounded-xl border-2 border-yellow-400 shadow-xl">
             <div className="text-center">
               <div className="text-yellow-400 font-bold text-lg">
-                {gameState?.fase || FASES_DO_JOGO.ACAO}
+                {gameState?.phase === 'inicio' && '⚡ FASE 1: INÍCIO'}
+                {gameState?.phase === 'acao' && '⚔️ FASE 2: AÇÃO'}
+                {gameState?.phase === 'resolucao' && '💥 FASE 3: RESOLUÇÃO'}
+                {gameState?.phase === 'fim_turno' && '🔄 FASE 4: FIM DO TURNO'}
+                {!gameState?.phase && '⚔️ FASE 2: AÇÃO'}
               </div>
               <div className="text-sm text-gray-300">
                 Turno {gameState?.turn || 1} - {mockCurrentPlayer.nome}
               </div>
+              {gameState?.phase === 'acao' && (
+                <div className="text-xs text-yellow-200 mt-1">
+                  Escolha UMA ação
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -9,9 +9,11 @@ export class MotorDeJogo {
     this.fase = FASES_DO_JOGO.INICIO;
     this.gameLog = [];
     this.turnPhaseData = {}; // Dados temporários da fase atual
-    this.ultimateConditions = new Map(); // Condições para ultimates
+    this.ultimateUsed = new Map(); // Controla ultimates já usados
+    this.habilidadeCooldowns = new Map(); // Controla cooldowns das habilidades
     this.gameOver = false;
     this.vencedor = null;
+    this.tipoVitoria = null; // 'eliminacao' ou 'desistencia'
   }
 
   // =============================================================================
@@ -30,16 +32,22 @@ export class MotorDeJogo {
         [ZONAS_CAMPO.LENDA_ATIVA]: null,                    // 1 lenda ativa (escolhida na pré-partida)
         [ZONAS_CAMPO.BANCO_LENDAS]: lendas.slice(1),        // 4 lendas restantes
         [ZONAS_CAMPO.MAO_ITENS]: [],                        // Mão de itens (até 3)
+        [ZONAS_CAMPO.ITEM_ATIVO]: null,                     // 1 item equipado na lenda ativa
         [ZONAS_CAMPO.PILHA_ITENS]: this.embaralharBaralho([...itens]), // Pilha embaralhada
         [ZONAS_CAMPO.DESCARTE_ITENS]: []                    // Descarte de itens
       };
       
       // Definir lenda inicial (primeira do deck ou escolhida)
-      player.zonas[ZONAS_CAMPO.LENDA_ATIVA] = lendas[0];
+      const lendaInicial = lendas[0];
+      lendaInicial.vidaAtual = lendaInicial.vida; // Inicializar vida atual
+      lendaInicial.ppAtual = {}; // Inicializar PP atual para cada habilidade
+      lendaInicial.ultimateUsado = false; // Ultimate ainda não usado
+      player.zonas[ZONAS_CAMPO.LENDA_ATIVA] = lendaInicial;
       
       // Status do jogador
       player.energia = 0; // Para ultimates
       player.efeitosAtivos = new Map(); // Buffs/debuffs temporários
+      player.lendasDerrotadas = 0; // Contador de lendas derrotadas
     });
 
     // Compra inicial de itens
@@ -56,6 +64,7 @@ export class MotorDeJogo {
   comprarItens(player, quantidade = 1) {
     const pilhaItens = player.zonas[ZONAS_CAMPO.PILHA_ITENS];
     const maoItens = player.zonas[ZONAS_CAMPO.MAO_ITENS];
+    let comprados = 0;
     
     for (let i = 0; i < quantidade; i++) {
       if (maoItens.length >= CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_MAO_ITENS) {
@@ -75,8 +84,11 @@ export class MotorDeJogo {
       const item = pilhaItens.shift();
       if (item) {
         maoItens.push(item);
+        comprados++;
       }
     }
+    
+    return comprados;
   }
 
   // Embaralhar deck
@@ -96,18 +108,26 @@ export class MotorDeJogo {
   // FASE 1: INÍCIO
   executarFaseInicio() {
     this.fase = FASES_DO_JOGO.INICIO;
-    this.adicionarAoLog(`--- Turno ${this.turn} - Fase de Início ---`, 'phase');
+    const jogadorAtual = this.players[this.indiceJogadorAtual];
+    this.adicionarAoLog(`--- Turno ${this.turn} - ${jogadorAtual.name} ---`, 'phase');
+    this.adicionarAoLog('FASE 1: INÍCIO', 'phase');
     
     this.players.forEach((player, index) => {
-      // Ativar passivas das lendas
+      // 1. Ativação Passiva: Ativar todas as habilidades passivas da Lenda Ativa
       this.ativarPassivas(player);
       
-      // Resolver efeitos contínuos (veneno, queimadura, escudos)
+      // 2. Resolução de Efeitos Contínuos (DoT/HoT): Resolver efeitos persistentes
       this.resolverEfeitosContinuos(player);
       
-      // Checar condições de ultimate
+      // 3. Verificação de Ultimate: Verificar se os requisitos foram atendidos
       this.checarCondicoesUltimate(player);
+      
+      // Reduzir cooldowns das habilidades
+      this.reduzirCooldowns(player);
     });
+    
+    // Verificar se jogo acabou por derrota
+    if (this.gameOver) return this.obterEstadoDoJogo();
     
     // Prosseguir para fase de ação
     this.proximaFase();
@@ -117,24 +137,31 @@ export class MotorDeJogo {
   executarFaseAcao() {
     this.fase = FASES_DO_JOGO.ACAO;
     const jogadorAtual = this.players[this.indiceJogadorAtual];
-    this.adicionarAoLog(`${jogadorAtual.name} - Fase de Ação`, 'phase');
+    this.adicionarAoLog('FASE 2: AÇÃO', 'phase');
+    this.adicionarAoLog(`${jogadorAtual.name} deve escolher UMA ação:`, 'info');
+    this.adicionarAoLog('• Usar Habilidade (PP disponível)', 'info');
+    this.adicionarAoLog('• Trocar Lenda (consome ação)', 'info');
+    this.adicionarAoLog('• Usar Item (da mão)', 'info');
     
-    // Aguarda escolha do jogador (será chamado externamente)
-    // Possíveis ações: usar habilidade, trocar lenda, usar item, ação especial
+    // Aguarda escolha do jogador (será chamado externamente via usarHabilidade, trocarLenda, usarItem)
+    // IMPORTANTE: O jogador deve escolher APENAS UMA ação que consome o turno inteiro
   }
 
   // FASE 3: RESOLUÇÃO
   executarFaseResolucao(resultado) {
     this.fase = FASES_DO_JOGO.RESOLUCAO;
-    this.adicionarAoLog('Fase de Resolução', 'phase');
+    this.adicionarAoLog('FASE 3: RESOLUÇÃO', 'phase');
     
-    // Calcular dano, aplicar efeitos
+    // 1. Cálculo e Consumo: Calcular dano final e reduzir PP
     this.aplicarEfeitos(resultado);
     
-    // Checar derrotas de lendas
+    // 2. Verificação de Derrota: Avaliar se alguma Lenda atingiu 0 HP
     this.checarDerrota();
     
-    // Ativar efeitos pós-ação (contra-ataques, explosões)
+    // Se jogo acabou, parar aqui
+    if (this.gameOver) return this.obterEstadoDoJogo();
+    
+    // 3. Efeitos Pós-Ação: Ativar efeitos desencadeados pela jogada
     this.ativarEfeitosPosAcao(resultado);
     
     this.proximaFase();
@@ -143,16 +170,22 @@ export class MotorDeJogo {
   // FASE 4: FIM DO TURNO
   executarFaseFimTurno() {
     this.fase = FASES_DO_JOGO.FIM_TURNO;
-    this.adicionarAoLog('Fase de Fim do Turno', 'phase');
+    this.adicionarAoLog('FASE 4: FIM DO TURNO', 'phase');
     
-    // Ambos compram 1 item (se não estiverem com 3)
-    this.players.forEach(player => {
+    // 1. Compra de Item: AMBOS os jogadores compram 1 carta adicional da Pilha
+    // Condição: A Mão de Itens não deve estar no limite máximo de 3 cartas
+    this.players.forEach((player, index) => {
       if (player.zonas[ZONAS_CAMPO.MAO_ITENS].length < CONSTANTES_DO_JOGO.TAMANHO_MAXIMO_MAO_ITENS) {
-        this.comprarItens(player, 1);
+        const comprou = this.comprarItens(player, 1);
+        if (comprou > 0) {
+          this.adicionarAoLog(`${player.name} comprou ${comprou} item`, 'info');
+        }
+      } else {
+        this.adicionarAoLog(`${player.name} tem mão cheia (3/3 itens)`, 'info');
       }
     });
     
-    // Aplicar efeitos de fim de turno
+    // 2. Efeitos de Fim de Turno: Aplicar efeitos programados para o final
     this.aplicarEfeitosFimTurno();
     
     // Passar turno
@@ -189,11 +222,28 @@ export class MotorDeJogo {
 
   checarCondicoesUltimate(player) {
     const lendaAtiva = player.zonas[ZONAS_CAMPO.LENDA_ATIVA];
-    if (lendaAtiva && lendaAtiva.habilidades?.skill5) {
+    if (lendaAtiva && lendaAtiva.habilidades?.skill5 && !lendaAtiva.ultimateUsado) {
       const ultimate = lendaAtiva.habilidades.skill5;
-      // Verificar se pode usar ultimate (por turnos, energia, etc.)
-      if (ultimate.ppMax === 1 && this.turn >= 5) { // Exemplo: ultimate disponível após turno 5
-        this.adicionarAoLog(`Ultimate ${ultimate.name} disponível!`, 'ultimate');
+      // Verificar se pode usar ultimate (requisitos específicos)
+      if (this.turn >= 5 || player.energia >= 10) { // Exemplo: disponível após turno 5 ou energia 10
+        this.adicionarAoLog(`Ultimate ${ultimate.name} DISPONÍVEL para ${lendaAtiva.nome}!`, 'ultimate');
+      }
+    }
+  }
+
+  reduzirCooldowns(player) {
+    const playerId = this.players.indexOf(player);
+    const lendaAtiva = player.zonas[ZONAS_CAMPO.LENDA_ATIVA];
+    
+    if (lendaAtiva && this.habilidadeCooldowns.has(playerId)) {
+      const cooldowns = this.habilidadeCooldowns.get(playerId);
+      for (const [habilidadeId, turnosRestantes] of cooldowns) {
+        if (turnosRestantes > 0) {
+          cooldowns.set(habilidadeId, turnosRestantes - 1);
+          if (turnosRestantes - 1 === 0) {
+            this.adicionarAoLog(`${lendaAtiva.habilidades[habilidadeId]?.name || habilidadeId} não está mais em cooldown`, 'info');
+          }
+        }
       }
     }
   }
@@ -217,24 +267,47 @@ export class MotorDeJogo {
 
     const habilidade = lendaAtiva.habilidades[habilidadeId];
     
+    // Verificar se é ultimate e se já foi usado
+    if (habilidadeId === 'skill5' && lendaAtiva.ultimateUsado) {
+      return { success: false, error: 'Ultimate já foi usado nesta partida' };
+    }
+    
+    // Verificar cooldown (3 turnos para mesma habilidade)
+    if (this.habilidadeEmCooldown(playerIndex, habilidadeId)) {
+      const cooldown = this.obterCooldownRestante(playerIndex, habilidadeId);
+      return { success: false, error: `Habilidade em cooldown por ${cooldown} turnos` };
+    }
+    
     // Verificar PP disponível
-    if (!lendaAtiva.pp) lendaAtiva.pp = {};
-    const ppAtual = lendaAtiva.pp[habilidadeId] || habilidade.ppMax;
+    if (!lendaAtiva.ppAtual) lendaAtiva.ppAtual = {};
+    const ppAtual = lendaAtiva.ppAtual[habilidadeId] || habilidade.ppMax;
     
     if (ppAtual < habilidade.cost) {
-      return { success: false, error: 'PP insuficiente' };
+      return { success: false, error: `PP insuficiente (${ppAtual}/${habilidade.cost})` };
     }
 
     // Gastar PP
-    lendaAtiva.pp[habilidadeId] = ppAtual - habilidade.cost;
+    lendaAtiva.ppAtual[habilidadeId] = ppAtual - habilidade.cost;
+    
+    // Aplicar cooldown (exceto ataque básico)
+    if (habilidadeId !== 'skill1') { // skill1 = ataque básico sem cooldown
+      this.aplicarCooldown(playerIndex, habilidadeId, CONSTANTES_DO_JOGO.COOLDOWN_HABILIDADE);
+    }
+    
+    // Marcar ultimate como usado se for o caso
+    if (habilidadeId === 'skill5') {
+      lendaAtiva.ultimateUsado = true;
+      this.adicionarAoLog(`🔥 ULTIMATE USADO! ${habilidade.name} não pode mais ser usado nesta partida`, 'ultimate');
+    }
 
-    this.adicionarAoLog(`${player.name} usou ${habilidade.name}`, 'action');
+    this.adicionarAoLog(`${player.name} usou ${habilidade.name} (${habilidade.cost} PP)`, 'action');
 
     // Executar resolução
     const resultado = {
       tipo: ACOES_TURNO.USAR_HABILIDADE,
       playerIndex,
       habilidade,
+      habilidadeId,
       target
     };
     
@@ -284,22 +357,37 @@ export class MotorDeJogo {
     const player = this.players[playerIndex];
     const maoItens = player.zonas[ZONAS_CAMPO.MAO_ITENS];
     
-    if (itemIndex < 0 || itemIndex >= maoItens.length) {
-      return { success: false, error: 'Item inválido' };
+    if (itemIndex < 0 || itemIndex >= maoItens.length || !maoItens[itemIndex]) {
+      return { success: false, error: 'Item inválido ou slot vazio' };
     }
 
     const item = maoItens.splice(itemIndex, 1)[0];
     
-    // Mover para descarte
-    player.zonas[ZONAS_CAMPO.DESCARTE_ITENS].push(item);
-
-    this.adicionarAoLog(`${player.name} usou ${item.nome}`, 'action');
+    // Verificar se é item equipável (fica ativo) ou consumível (usa e descarta)
+    if (item.categoria === 'equipamento') {
+      // Item equipável: substitui item ativo atual
+      const itemAtivoAnterior = player.zonas[ZONAS_CAMPO.ITEM_ATIVO];
+      if (itemAtivoAnterior) {
+        // Mover item ativo anterior para descarte
+        player.zonas[ZONAS_CAMPO.DESCARTE_ITENS].push(itemAtivoAnterior);
+        this.adicionarAoLog(`${itemAtivoAnterior.nome} foi desequipado`, 'info');
+      }
+      
+      // Equipar novo item
+      player.zonas[ZONAS_CAMPO.ITEM_ATIVO] = item;
+      this.adicionarAoLog(`${player.name} equipou ${item.nome}`, 'action');
+    } else {
+      // Item consumível: usar e descartar
+      player.zonas[ZONAS_CAMPO.DESCARTE_ITENS].push(item);
+      this.adicionarAoLog(`${player.name} usou ${item.nome}`, 'action');
+    }
 
     const resultado = {
       tipo: ACOES_TURNO.USAR_ITEM,
       playerIndex,
       item,
-      target
+      target,
+      equipavel: item.categoria === 'equipamento'
     };
     
     this.executarFaseResolucao(resultado);
@@ -450,21 +538,33 @@ export class MotorDeJogo {
   checarDerrota() {
     this.players.forEach((player, index) => {
       const lendaAtiva = player.zonas[ZONAS_CAMPO.LENDA_ATIVA];
-      if (lendaAtiva && lendaAtiva.vida <= 0) {
-        this.adicionarAoLog(`${lendaAtiva.nome} foi derrotada!`, 'defeat');
+      if (lendaAtiva && lendaAtiva.vidaAtual <= 0) {
+        this.adicionarAoLog(`💀 ${lendaAtiva.nome} foi derrotada!`, 'defeat');
+        player.lendasDerrotadas++;
+        
+        // Descartar item ativo se houver
+        if (player.zonas[ZONAS_CAMPO.ITEM_ATIVO]) {
+          player.zonas[ZONAS_CAMPO.DESCARTE_ITENS].push(player.zonas[ZONAS_CAMPO.ITEM_ATIVO]);
+          player.zonas[ZONAS_CAMPO.ITEM_ATIVO] = null;
+        }
         
         // Verificar se há lendas no banco
         const bancoLendas = player.zonas[ZONAS_CAMPO.BANCO_LENDAS];
         if (bancoLendas.length > 0) {
           // Automaticamente trocar para próxima lenda
           const proximaLenda = bancoLendas.shift();
+          proximaLenda.vidaAtual = proximaLenda.vida; // Resetar vida
+          proximaLenda.ppAtual = {}; // Resetar PP
+          proximaLenda.ultimateUsado = false; // Resetar ultimate
           player.zonas[ZONAS_CAMPO.LENDA_ATIVA] = proximaLenda;
-          this.adicionarAoLog(`${proximaLenda.nome} entra em campo`, 'info');
+          this.adicionarAoLog(`🔄 ${proximaLenda.nome} entra em campo automaticamente`, 'info');
         } else {
-          // Jogador derrotado
-          this.adicionarAoLog(`${player.name} foi derrotado!`, 'gameover');
+          // VITÓRIA POR ELIMINAÇÃO: Todas as 5 lendas foram derrotadas
+          this.adicionarAoLog(`🏆 ${player.name} perdeu todas as 5 lendas!`, 'gameover');
+          this.adicionarAoLog(`🎉 VITÓRIA POR ELIMINAÇÃO!`, 'victory');
           this.gameOver = true;
           this.vencedor = 1 - index;
+          this.tipoVitoria = 'eliminacao';
         }
       }
     });
@@ -506,6 +606,48 @@ export class MotorDeJogo {
       winner: this.vencedor,
       log: this.gameLog
     };
+  }
+
+  // =============================================================================
+  // SISTEMA DE COOLDOWN
+  // =============================================================================
+  
+  aplicarCooldown(playerIndex, habilidadeId, turnos) {
+    if (!this.habilidadeCooldowns.has(playerIndex)) {
+      this.habilidadeCooldowns.set(playerIndex, new Map());
+    }
+    this.habilidadeCooldowns.get(playerIndex).set(habilidadeId, turnos);
+  }
+  
+  habilidadeEmCooldown(playerIndex, habilidadeId) {
+    if (!this.habilidadeCooldowns.has(playerIndex)) return false;
+    const cooldowns = this.habilidadeCooldowns.get(playerIndex);
+    return cooldowns.has(habilidadeId) && cooldowns.get(habilidadeId) > 0;
+  }
+  
+  obterCooldownRestante(playerIndex, habilidadeId) {
+    if (!this.habilidadeCooldowns.has(playerIndex)) return 0;
+    return this.habilidadeCooldowns.get(playerIndex).get(habilidadeId) || 0;
+  }
+
+  // =============================================================================
+  // SISTEMA DE DESISTÊNCIA
+  // =============================================================================
+  
+  declararDesistencia(playerIndex) {
+    if (this.gameOver) {
+      return { success: false, error: 'Jogo já terminou' };
+    }
+    
+    const player = this.players[playerIndex];
+    this.adicionarAoLog(`🏳️ ${player.name} declarou desistência!`, 'surrender');
+    this.adicionarAoLog(`🎉 VITÓRIA POR DESISTÊNCIA!`, 'victory');
+    
+    this.gameOver = true;
+    this.vencedor = 1 - playerIndex;
+    this.tipoVitoria = 'desistencia';
+    
+    return { success: true, vencedor: this.vencedor };
   }
 
   adicionarAoLog(message, type = 'info') {

@@ -17,13 +17,14 @@ export default function SelecaoDeDeck() {
   const gameMode = searchParams.get("mode") || "bot";
 
   const { user, isAuthenticated } = useAuth();
-  const { cards: ownedCardIds, loading: loadingCollection } = useCollection();
+  const { cards: ownedCardIds, itemCards: ownedItemCardIds, loading: loadingCollection } = useCollection();
 
   const [decksCarregando, setDecksCarregando] = useState(true);
   const [decksSalvos, setDecksSalvos] = useState([]);
   const [deckSelecionado, setDeckSelecionado] = useState(null);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
   const [allCards, setAllCards] = useState([]);
+  const [allItemCards, setAllItemCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(true);
   const [botDifficulty, setBotDifficulty] = useState('normal');
 
@@ -31,8 +32,13 @@ export default function SelecaoDeDeck() {
   useEffect(() => {
     const loadCards = async () => {
       try {
-        const data = await cardsAPI.getAll();
-        setAllCards(data.cards || []);
+        const [cardsResponse, itemCardsResponse] = await Promise.all([
+          cardsAPI.getAll(),
+          fetch('/api/item-cards').then(res => res.json())
+        ]);
+        
+        setAllCards(cardsResponse.cards || []);
+        setAllItemCards(itemCardsResponse.itemCards || []);
       } catch (error) {
         console.error('Erro ao carregar cartas:', error);
       } finally {
@@ -47,16 +53,35 @@ export default function SelecaoDeDeck() {
   const availableCards = useMemo(() => {
     if (loadingCards) return [];
     
-    if (isAuthenticated() && !loadingCollection && ownedCardIds?.length) {
-      const cardMap = new Map(allCards.map(c => [c.id, c]));
-      return ownedCardIds
-        .map(id => cardMap.get(id))
-        .filter(Boolean);
+    if (isAuthenticated() && !loadingCollection && (ownedCardIds?.length || ownedItemCardIds?.length)) {
+      const allAvailableCards = [];
+      
+      // Adicionar cartas regulares (lendas) que o usuário possui
+      if (ownedCardIds?.length) {
+        const cardMap = new Map(allCards.map(c => [c.id, { ...c, category: 'lenda', type: 'lenda' }]));
+        const userCards = ownedCardIds
+          .map(id => cardMap.get(id))
+          .filter(Boolean);
+        allAvailableCards.push(...userCards);
+      }
+      
+      // Adicionar item cards que o usuário possui
+      if (ownedItemCardIds?.length) {
+        const itemCardMap = new Map(allItemCards.map(c => [c.id, { ...c, category: 'item', type: 'item' }]));
+        const userItemCards = ownedItemCardIds
+          .map(id => itemCardMap.get(id))
+          .filter(Boolean);
+        allAvailableCards.push(...userItemCards);
+      }
+      
+      return allAvailableCards;
     }
     
-    // Fallback para cartas starter
-    return allCards.filter(c => c?.is_starter || c?.id).slice(0, 30);
-  }, [allCards, loadingCards, ownedCardIds, isAuthenticated, loadingCollection]);
+    // Fallback para cartas starter - incluir tanto lendas quanto itens
+    const starterLegends = allCards.filter(c => c?.is_starter || c?.id).slice(0, 15).map(c => ({ ...c, category: 'lenda', type: 'lenda' }));
+    const starterItems = allItemCards.filter(c => c?.is_starter || c?.id).slice(0, 15).map(c => ({ ...c, category: 'item', type: 'item' }));
+    return [...starterLegends, ...starterItems];
+  }, [allCards, allItemCards, loadingCards, ownedCardIds, ownedItemCardIds, isAuthenticated, loadingCollection]);
 
   // Carregar decks salvos
   useEffect(() => {
@@ -391,6 +416,8 @@ export default function SelecaoDeDeck() {
             Iniciar Batalha!
           </button>
         </div>
+
+        
 
         {/* Deck Builder */}
         <DeckBuilder
