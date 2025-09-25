@@ -272,3 +272,17 @@ body {
 .bg-fire {
   background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
 }
+
+/* Animação para o ultimate skill */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}

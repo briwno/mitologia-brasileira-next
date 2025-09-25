@@ -101,10 +101,9 @@ export const TIPOS_DE_CONQUISTA = {
 };
 
 export const MODOS_DE_JOGO = {
-  CASUAL: 'casual',
+  BOTS: 'bots',
   RANKED: 'ranked',
-  TOURNAMENT: 'tournament',
-  TUTORIAL: 'tutorial'
+  CUSTOM: 'custom'
 };
 
 export const ZONAS_CAMPO = {
