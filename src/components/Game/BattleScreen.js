@@ -145,15 +145,15 @@ function HandItems({ items, position = "bottom", onUseItem, posStyle }) {
     <div className={`absolute ${positionClasses}`} style={posStyle}>
       <div className="flex gap-2">
         {[...Array(3)].map((_, index) => {
-          const item = items[index];
+          const item = items?.[index];
           return (
             <div key={index} className="flex flex-col items-center">
               <BattleCard
                 card={item}
                 type="item"
                 showStats={false}
-                onClick={(selectedItem) => onUseItem?.(selectedItem, index)}
-                className={`w-20 h-28 ${!item ? "text-gray-500" : ""}`}
+                onClick={item ? (selectedItem) => onUseItem?.(selectedItem, index) : undefined}
+                className={`w-20 h-28 ${!item ? "opacity-30 border-dashed border-2 border-gray-400" : ""}`}
               />
               {position === "bottom" && (
                 <div className="text-white text-xs mt-1 bg-black/50 px-1 py-0.5 rounded">
@@ -167,6 +167,7 @@ function HandItems({ items, position = "bottom", onUseItem, posStyle }) {
     </div>
   );
 }
+
 
 // Componente para a carta ativa em campo
 function ActiveCard({
@@ -195,23 +196,25 @@ function ActiveCard({
           />
         </div>
 
-        {/* Item Ativo */}
-        {itemAtivo && (
-          <div className="flex flex-col items-center">
-            <BattleCard
-              card={itemAtivo}
-              type="item"
-              showStats={false}
-              isClickable={false}
-              className="w-20 h-28 border-orange-400 bg-orange-600"
-            />
-            {position === "bottom" && (
-              <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
-                ITEM ATIVO
-              </div>
-            )}
-          </div>
-        )}
+        {/* Item Ativo - sempre mostrado ao lado */}
+        <div className="flex flex-col items-center">
+          <BattleCard
+            card={itemAtivo}
+            type="item"
+            showStats={false}
+            isClickable={!!itemAtivo}
+            className={`w-20 h-28 ${
+              itemAtivo 
+                ? "border-orange-400 shadow-lg shadow-orange-400/50" 
+                : "opacity-30 border-dashed border-2 border-gray-400"
+            }`}
+          />
+          {position === "bottom" && (
+            <div className="text-white text-xs mt-1 bg-black/50 px-2 py-1 rounded">
+              {itemAtivo ? "ITEM ATIVO" : "SLOT ITEM"}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -443,10 +446,16 @@ export default function BattleScreen({
         [ZONAS_CAMPO.MAO_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.MAO_ITENS] || (
           isOpponent ? [
             { nome: "???", imagem: null },
+            null,
+            null,
           ] : [
             { nome: "Poção de Força", imagem: "/images/placeholder.svg" },
             { nome: "Escudo Mágico", imagem: "/images/placeholder.svg" },
+            null, // terceiro slot vazio
           ]
+        ),
+        [ZONAS_CAMPO.ITEM_ATIVO]: playerData?.zonas?.[ZONAS_CAMPO.ITEM_ATIVO] || (
+          isOpponent ? null : { nome: "Amuleto de Proteção", imagem: "/images/placeholder.svg" }
         ),
         [ZONAS_CAMPO.PILHA_ITENS]: playerData?.zonas?.[ZONAS_CAMPO.PILHA_ITENS] || [],
       },
@@ -536,6 +545,7 @@ export default function BattleScreen({
           position="bottom"
           posStyle={POS.activeBottom}
           onClick={handleActiveCardClick}
+          itemAtivo={mockCurrentPlayer.zonas[ZONAS_CAMPO.ITEM_ATIVO] || null}
         />
         <CardStack
           count={mockCurrentPlayer.zonas[ZONAS_CAMPO.PILHA_ITENS].length || 18}
@@ -544,6 +554,7 @@ export default function BattleScreen({
           onClick={handleDrawCard}
         />
 
+        {/* Lado do oponente (topo) */}
         <PlayerInfo
           player={mockOpponent}
           position="top"
@@ -563,6 +574,7 @@ export default function BattleScreen({
           card={mockOpponent.zonas[ZONAS_CAMPO.LENDA_ATIVA]}
           position="top"
           posStyle={POS.activeTop}
+          itemAtivo={mockOpponent.zonas[ZONAS_CAMPO.ITEM_ATIVO] || null}
         />
         <CardStack
           count={mockOpponent.zonas[ZONAS_CAMPO.PILHA_ITENS].length || 15}
