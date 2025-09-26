@@ -4,35 +4,35 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '../hooks/useAuth';
-import { usePlayerData } from '../hooks/usePlayerData';
+import { useAuth as usarAutenticacao } from '../hooks/useAuth';
+import { usePlayerData as usarDadosJogador } from '../hooks/usePlayerData';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import Icon from '@/components/UI/Icon';
 
 // Carregamento dinâmico dos modais com fallback de carregamento
-const PvPModal = dynamic(() => import('@/components/PvP/PvPModal'), { 
+const ModalPvP = dynamic(() => import('@/components/PvP/PvPModal'), { 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Batalha..." />
     </div>
   )
 });
-const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { 
+const ModalMuseu = dynamic(() => import('@/components/Museum/MuseumModal'), { 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Museu..." />
     </div>
   )
 });
-const RankingModal = dynamic(() => import('@/components/Ranking/RankingModal'), { 
+const ModalRanking = dynamic(() => import('@/components/Ranking/RankingModal'), { 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Ranking..." />
     </div>
   )
 });
-const ProfileModal = dynamic(() => import('@/components/Profile/ProfileModal'), { 
+const ModalPerfil = dynamic(() => import('@/components/Profile/ProfileModal'), { 
   loading: () => (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <LoadingSpinner text="Abrindo Perfil..." />
@@ -41,56 +41,56 @@ const ProfileModal = dynamic(() => import('@/components/Profile/ProfileModal'), 
 });
 
 // Cartão clicável para cada modo da página inicial
-function CartaoDeModo({ href, title, iconName, available = true, subtitle, highlight = false, imageSrc }) {
-  const [erroImagem, setErroImagem] = useState(false);
-  
+function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, destaque = false, caminhoImagem }) {
+  const [erroAoCarregarImagem, definirErroAoCarregarImagem] = useState(false);
+
   // Verificação de segurança para props obrigatórias
-  if (!title || !iconName) {
-    console.warn('CartaoDeModo: title and iconName are required props');
+  if (!titulo || !nomeIcone) {
+    console.warn('CartaoModo: propriedades titulo e nomeIcone são obrigatórias');
     return null;
   }
   
   const conteudo = (
     <div
       className={`relative h-80 md:h-[26rem] rounded-2xl border-2 overflow-hidden transition-all select-none
-        ${available ? (highlight ? 'border-cyan-300 shadow-[0_20px_60px_-20px_rgba(0,255,255,0.35)]' : 'border-neutral-600 hover:border-cyan-400') : 'border-neutral-700 opacity-70 grayscale'}
+        ${disponivel ? (destaque ? 'border-cyan-300 shadow-[0_20px_60px_-20px_rgba(0,255,255,0.35)]' : 'border-neutral-600 hover:border-cyan-400') : 'border-neutral-700 opacity-70 grayscale'}
         bg-gradient-to-b from-black/60 to-black/30 backdrop-blur-sm`}
     >
       {/* Imagem de fundo (placeholder por padrão) */}
       <Image
-        src={!imageSrc || erroImagem ? '/images/placeholder.svg' : imageSrc}
-        alt={`${title} banner`}
+        src={!caminhoImagem || erroAoCarregarImagem ? '/images/placeholder.svg' : caminhoImagem}
+        alt={`${titulo} banner`}
         fill
   className="object-cover transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-150 group-hover:contrast-110"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-        priority={highlight}
-        onError={() => setErroImagem(true)}
+        priority={destaque}
+        onError={() => definirErroAoCarregarImagem(true)}
       />
       {/* Overlay e moldura decorativa */}
       <div className="absolute inset-0 pointer-events-none">
   <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/20" />
   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.35),transparent_60%)] mix-blend-screen" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.15),transparent_55%)]" />
-        {highlight && <div className="absolute inset-0 animate-pulse bg-cyan-200/5" />}
+        {destaque && <div className="absolute inset-0 animate-pulse bg-cyan-200/5" />}
       </div>
       <div className="absolute top-4 right-4">
-        <Icon name={iconName} size={32} />
+        <Icon name={nomeIcone} size={32} />
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/70 border-t border-white/10 p-4">
-        <div className={`text-center font-extrabold ${available ? 'text-white' : 'text-neutral-400'} text-xl md:text-2xl tracking-wide`}>{title}</div>
-        {subtitle && <div className="text-center text-neutral-300 text-xs md:text-sm mt-1">{subtitle}</div>}
-        {!available && (
+        <div className={`text-center font-extrabold ${disponivel ? 'text-white' : 'text-neutral-400'} text-xl md:text-2xl tracking-wide`}>{titulo}</div>
+        {subtitulo && <div className="text-center text-neutral-300 text-xs md:text-sm mt-1">{subtitulo}</div>}
+        {!disponivel && (
           <div className="text-center text-red-300/90 text-xs md:text-sm mt-1">Requer Nível 20</div>
         )}
       </div>
-      {highlight && (
+      {destaque && (
         <div className="absolute inset-x-0 -bottom-3 mx-auto w-11/12 h-1 rounded-full bg-cyan-400/30 blur" />
       )}
     </div>
   );
 
-  return available ? (
-    <Link href={href} className="block group transform transition will-change-transform hover:scale-[1.01]">{conteudo}</Link>
+  return disponivel ? (
+    <Link href={destino} className="block group transform transition will-change-transform hover:scale-[1.01]">{conteudo}</Link>
   ) : (
     <div className="cursor-not-allowed">{conteudo}</div>
   );
@@ -110,16 +110,28 @@ export default function Inicio() {
     setCarregado(true);
   }, []);
   
-  const authData = useAuth();
-  const { user, isAuthenticated, logout } = authData || {};
-  
-  // Use player data hook for enhanced functionality
-  const playerData = usePlayerData();
-  const { currencies, stats, quests, winRate, levelProgress } = playerData;
+  const contextoAutenticacao = usarAutenticacao();
+  const {
+    user: usuario,
+    isAuthenticated: verificarAutenticacao,
+    logout: realizarLogout,
+  } = contextoAutenticacao || {};
+
+  // Dados do jogador obtidos via hook dedicado
+  const informacoesJogador = usarDadosJogador();
+  const {
+    currencies: moedas,
+    stats: estatisticas,
+    quests: missoes,
+    winRate: taxaVitoria,
+    levelProgress: progressoNivel,
+  } = informacoesJogador || {};
+
+  const estaAutenticado = typeof verificarAutenticacao === 'function' ? verificarAutenticacao() : false;
 
   // Verificação de segurança para auth
-  if (!authData) {
-    console.warn('useAuth hook returned null/undefined');
+  if (!contextoAutenticacao) {
+    console.warn('useAuth retornou um valor inválido');
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] flex items-center justify-center">
         <div className="text-white text-center">
@@ -171,45 +183,45 @@ export default function Inicio() {
             </div>
             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/10">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
-              {user?.name?.charAt(0)?.toUpperCase() || 'BR'}
+              {usuario?.name?.charAt(0)?.toUpperCase() || 'BR'}
             </div>
             <div className="hidden sm:block">
               <div className="text-white font-bold text-sm flex items-center gap-2">
-                {user?.username || user?.name || 'Convidado'}
-                {user?.title && (
+                {usuario?.username || usuario?.name || 'Convidado'}
+                {usuario?.title && (
                   <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
-                    {user.title}
+                    {usuario.title}
                   </span>
                 )}
               </div>
               <div className="text-cyan-300 text-xs flex items-center gap-1">
-                <span>Nível {user?.level || 1}</span>
-                {isAuthenticated() && stats && (
+                <span>Nível {usuario?.level || 1}</span>
+                {estaAutenticado && estatisticas && (
                   <>
                     <span>•</span>
-                    <span>{stats.wins}V/{stats.losses}D</span>
+                    <span>{estatisticas.wins}V/{estatisticas.losses}D</span>
                     <span>•</span>
-                    <span>{winRate}%</span>
+                    <span>{taxaVitoria}%</span>
                   </>
                 )}
               </div>
             </div>
             
-            {/* Player Currencies - Only show if authenticated */}
-            {isAuthenticated() && currencies && (
+            {/* Moedas do jogador — exibidas apenas se autenticado */}
+            {estaAutenticado && moedas && (
               <div className="hidden md:flex items-center gap-3 ml-2">
                 <div className="flex items-center gap-1 text-xs">
                   <Icon name="coins" size={16} className="text-yellow-400" />
-                  <span className="text-yellow-300 font-semibold">{currencies.gold?.toLocaleString() || 0}</span>
+                  <span className="text-yellow-300 font-semibold">{moedas.gold?.toLocaleString() || 0}</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs">
                   <Icon name="gem" size={16} className="text-blue-400" />
-                  <span className="text-blue-300 font-semibold">{currencies.gems?.toLocaleString() || 0}</span>
+                  <span className="text-blue-300 font-semibold">{moedas.gems?.toLocaleString() || 0}</span>
                 </div>
-                {(currencies.tokens > 0) && (
+                {(moedas.tokens > 0) && (
                   <div className="flex items-center gap-1 text-xs">
                     <Icon name="star" size={16} className="text-purple-400" />
-                    <span className="text-purple-300 font-semibold">{currencies.tokens}</span>
+                    <span className="text-purple-300 font-semibold">{moedas.tokens}</span>
                   </div>
                 )}
               </div>
@@ -232,9 +244,9 @@ export default function Inicio() {
               <Icon name="scroll" size={20} />
             </button>
             {/* Login/logout minimalista */}
-            {isAuthenticated() ? (
+            {estaAutenticado ? (
               <button
-                onClick={logout}
+                onClick={realizarLogout}
                 title="Sair"
                 className="px-3 h-10 rounded-lg bg-black/40 border border-green-400/30 hover:border-green-400/60 text-green-300 text-sm font-semibold"
               >
@@ -274,16 +286,16 @@ export default function Inicio() {
         <div className="mx-auto mt-6 max-w-7xl px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div onClick={() => setMostrarPvPModal(true)}>
-              <CartaoDeModo href="#" title="BATALHA" iconName="battle" subtitle="Duelar contra outros jogadores" imageSrc="/images/banners/menubatalha.png" />
+              <CartaoModo destino="#" titulo="BATALHA" nomeIcone="battle" subtitulo="Duelar contra outros jogadores" caminhoImagem="/images/banners/menubatalha.png" />
             </div>
             <div onClick={() => setMostrarMuseuModal(true)}>
-              <CartaoDeModo href="#" title="MUSEU" iconName="museum" subtitle="Explore as lendas" imageSrc="/images/banners/menumuseu.png" />
+              <CartaoModo destino="#" titulo="MUSEU" nomeIcone="museum" subtitulo="Explore as lendas" caminhoImagem="/images/banners/menumuseu.png" />
             </div>
             <div onClick={() => setMostrarRankingModal(true)}>
-              <CartaoDeModo href="#" title="RANKING" iconName="trophy" subtitle="Top jogadores" imageSrc="/images/banners/menuranking.png" />
+              <CartaoModo destino="#" titulo="RANKING" nomeIcone="trophy" subtitulo="Top jogadores" caminhoImagem="/images/banners/menuranking.png" />
             </div>
             <div onClick={() => setMostrarPerfilModal(true)}>
-              <CartaoDeModo href="#" title="PERFIL" iconName="profile" subtitle="Suas conquistas" imageSrc="/images/banners/menuperfil.png" />
+              <CartaoModo destino="#" titulo="PERFIL" nomeIcone="profile" subtitulo="Suas conquistas" caminhoImagem="/images/banners/menuperfil.png" />
             </div>
           </div>
         </div>
@@ -322,42 +334,42 @@ export default function Inicio() {
           </div>
         </div>
 
-        {/* Daily Quests Section - Only show if authenticated and has active quests */}
-        {isAuthenticated() && quests?.active?.length > 0 && (
+        {/* Missões diárias — exibidas apenas quando autenticado */}
+        {estaAutenticado && missoes?.active?.length > 0 && (
           <div className="mx-auto mt-6 max-w-5xl px-6">
             <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Icon name="scroll" size={20} className="text-cyan-400" />
                 <h3 className="font-bold text-white">Missões Diárias</h3>
                 <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
-                  {quests.active.length}
+                  {missoes.active.length}
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {quests.active.slice(0, 4).map((playerQuest) => {
-                  const quest = playerQuest.quests;
-                  const objective = quest.objectives[0]; // Get first objective
-                  const progress = playerQuest.progress[objective.type] || 0;
-                  const progressPercent = Math.min(100, (progress / objective.target) * 100);
+                {missoes.active.slice(0, 4).map((missaoJogador) => {
+                  const missao = missaoJogador.quests;
+                  const objetivoPrincipal = missao.objectives[0];
+                  const progressoAtual = missaoJogador.progress[objetivoPrincipal.type] || 0;
+                  const percentualProgresso = Math.min(100, (progressoAtual / objetivoPrincipal.target) * 100);
                   
                   return (
-                    <div key={quest.id} className="bg-black/30 rounded-lg p-3 border border-white/5">
+                    <div key={missao.id} className="bg-black/30 rounded-lg p-3 border border-white/5">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="font-semibold text-sm text-white">{quest.name}</div>
-                          <div className="text-xs text-gray-300">{quest.description}</div>
+                          <div className="font-semibold text-sm text-white">{missao.name}</div>
+                          <div className="text-xs text-gray-300">{missao.description}</div>
                         </div>
                         <div className="ml-2 flex items-center gap-1 text-xs">
-                          {quest.rewards.gold && (
+                          {missao.rewards.gold && (
                             <>
                               <Icon name="coins" size={12} className="text-yellow-400" />
-                              <span className="text-yellow-300">{quest.rewards.gold}</span>
+                              <span className="text-yellow-300">{missao.rewards.gold}</span>
                             </>
                           )}
-                          {quest.rewards.xp && (
+                          {missao.rewards.xp && (
                             <>
                               <span className="text-gray-400 mx-1">•</span>
-                              <span className="text-blue-300">{quest.rewards.xp} XP</span>
+                              <span className="text-blue-300">{missao.rewards.xp} XP</span>
                             </>
                           )}
                         </div>
@@ -365,12 +377,12 @@ export default function Inicio() {
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-400">Progresso</span>
-                          <span className="text-white">{progress}/{objective.target}</span>
+                          <span className="text-white">{progressoAtual}/{objetivoPrincipal.target}</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-1.5">
                           <div 
                             className="bg-cyan-400 h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${progressPercent}%` }}
+                            style={{ width: `${percentualProgresso}%` }}
                           />
                         </div>
                       </div>
@@ -450,16 +462,16 @@ export default function Inicio() {
         )}
         {/* Modais - Renderizados apenas após carregamento completo */}
         {carregado && mostrarPvPModal && (
-          <PvPModal onClose={() => setMostrarPvPModal(false)} />
+          <ModalPvP onClose={() => setMostrarPvPModal(false)} />
         )}
         {carregado && mostrarMuseuModal && (
-          <MuseumModal onClose={() => setMostrarMuseuModal(false)} />
+          <ModalMuseu onClose={() => setMostrarMuseuModal(false)} />
         )}
         {carregado && mostrarRankingModal && (
-          <RankingModal onClose={() => setMostrarRankingModal(false)} />
+          <ModalRanking onClose={() => setMostrarRankingModal(false)} />
         )}
         {carregado && mostrarPerfilModal && (
-          <ProfileModal onClose={() => setMostrarPerfilModal(false)} />
+          <ModalPerfil onClose={() => setMostrarPerfilModal(false)} />
         )}
       </div>
     </main>

@@ -4,47 +4,47 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth as usarAutenticacao } from '../../hooks/useAuth';
 import LayoutDePagina from '../../components/UI/PageLayout';
 
-export default function Profile() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { user, isAuthenticated } = useAuth();
+export default function PaginaPerfil() {
+  const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
+  const [dadosPerfil, definirDadosPerfil] = useState(null);
+  const [carregando, definirCarregando] = useState(true);
+  const [erro, definirErro] = useState(null);
+  const contextoAutenticacao = usarAutenticacao();
+  const { user: usuario, isAuthenticated: verificarAutenticacao } = contextoAutenticacao || {};
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      // Verifica se o usuário está logado
-      if (!isAuthenticated() || !user?.id) {
-        setError('Você precisa estar logado para ver seu perfil');
-        setLoading(false);
+    const carregarDadosPerfil = async () => {
+      if (!verificarAutenticacao?.() || !usuario?.id) {
+        definirErro('Você precisa estar logado para ver seu perfil');
+        definirCarregando(false);
         return;
       }
 
       try {
-        setLoading(true);
-        const response = await fetch(`/api/profile?playerId=${user.id}`);
-        
-        if (!response.ok) {
+        definirCarregando(true);
+        const resposta = await fetch(`/api/profile?playerId=${usuario.id}`);
+
+        if (!resposta.ok) {
           throw new Error('Erro ao carregar dados do perfil');
         }
 
-        const data = await response.json();
-        setProfileData(data.profile);
-      } catch (err) {
-        console.error('Erro ao buscar dados do perfil:', err);
-        setError(err.message);
+        const dados = await resposta.json();
+        definirDadosPerfil(dados.profile);
+      } catch (erroCarregamento) {
+        console.error('Erro ao buscar dados do perfil:', erroCarregamento);
+        definirErro(erroCarregamento.message);
       } finally {
-        setLoading(false);
+        definirCarregando(false);
       }
     };
 
-    fetchProfileData();
-  }, [user?.id, isAuthenticated]);
+    carregarDadosPerfil();
+  }, [usuario?.id, verificarAutenticacao]);
 
-  if (loading) {
+  if (carregando) {
     return (
       <LayoutDePagina>
         <div className="container mx-auto px-4 py-8">
@@ -53,7 +53,7 @@ export default function Profile() {
               👤 Perfil do Jogador
             </h1>
             <div className="text-xl text-purple-300 mb-8">Carregando dados do perfil...</div>
-            {/* Loading animation */}
+            {/* Animação de carregamento */}
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400"></div>
             </div>
@@ -63,7 +63,7 @@ export default function Profile() {
     );
   }
 
-  if (error || !profileData) {
+  if (erro || !dadosPerfil) {
     return (
       <LayoutDePagina>
         <div className="container mx-auto px-4 py-8">
@@ -72,9 +72,9 @@ export default function Profile() {
               👤 Perfil do Jogador
             </h1>
             <div className="text-xl text-red-400 mb-4">
-              {error || 'Erro ao carregar dados do perfil'}
+              {erro || 'Erro ao carregar dados do perfil'}
             </div>
-            {error === 'Você precisa estar logado para ver seu perfil' && (
+            {erro === 'Você precisa estar logado para ver seu perfil' && (
               <div className="mb-4">
                 <Link
                   href="/login"
@@ -96,14 +96,14 @@ export default function Profile() {
     );
   }
 
-  const playerStats = profileData;
-  const recentMatches = profileData.recentMatches || [];
-  const achievements = profileData.achievementsList || [];
-  const favoriteCards = profileData.favoriteCards || [];
+  const estatisticasJogador = dadosPerfil;
+  const partidasRecentes = dadosPerfil.recentMatches || [];
+  const conquistas = dadosPerfil.achievementsList || [];
+  const cartasFavoritas = dadosPerfil.favoriteCards || [];
 
-  const getWinRateColor = (rate) => {
-    if (rate >= 70) return 'text-green-400';
-    if (rate >= 50) return 'text-yellow-400';
+  const obterClasseTaxaVitoria = (taxa) => {
+    if (taxa >= 70) return 'text-green-400';
+    if (taxa >= 50) return 'text-yellow-400';
     return 'text-red-400';
   };
 
@@ -117,22 +117,22 @@ export default function Profile() {
               {/* Foto do perfil */}
               <div className="w-24 h-24 bg-gradient-to-br from-purple-600 via-blue-600 to-green-600 rounded-full p-1 shadow-lg">
                 <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-                  {(user?.avatar_url || playerStats?.avatar_url) ? (
+                  {(usuario?.avatar_url || estatisticasJogador?.avatar_url) ? (
                     <Image 
-                      src={user?.avatar_url || playerStats?.avatar_url} 
-                      alt={`Avatar de ${playerStats?.username || user?.username}`}
+                      src={usuario?.avatar_url || estatisticasJogador?.avatar_url} 
+                      alt={`Avatar de ${estatisticasJogador?.username || usuario?.username}`}
                       width={88}
                       height={88}
                       className="w-full h-full object-cover rounded-full"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
+                      onError={(evento) => {
+                        evento.target.style.display = 'none';
+                        evento.target.nextSibling.style.display = 'block';
                       }}
                     />
                   ) : (
                     <Image 
                       src="/images/avatars/player.jpg"
-                      alt={`Avatar padrão de ${playerStats?.username || user?.username}`}
+                      alt={`Avatar padrão de ${estatisticasJogador?.username || usuario?.username}`}
                       width={88}
                       height={88}
                       className="w-full h-full object-cover rounded-full"
@@ -142,29 +142,29 @@ export default function Profile() {
               </div>
               {/* Badge de nível */}
               <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full">
-                Nv. {playerStats?.level || 1}
+                Nv. {estatisticasJogador?.level || 1}
               </div>
             </div>
             
             {/* Nome do usuário */}
             <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              {playerStats?.username || user?.username || 'Jogador'}
+              {estatisticasJogador?.username || usuario?.username || 'Jogador'}
             </h1>
             
             {/* Email e informações adicionais */}
-            {(user?.email || playerStats?.email) && (
+            {(usuario?.email || estatisticasJogador?.email) && (
               <p className="text-sm text-gray-400 mb-2">
-                {user?.email || playerStats?.email}
+                {usuario?.email || estatisticasJogador?.email}
               </p>
             )}
             
             {/* Rank */}
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-lg font-semibold text-yellow-400">
-                {playerStats?.rank || 'Bronze I'}
+                {estatisticasJogador?.rank || 'Bronze I'}
               </span>
               <span className="text-sm text-gray-400">
-                ({playerStats?.rankPoints || 0} pontos)
+                ({estatisticasJogador?.rankPoints || 0} pontos)
               </span>
             </div>
             
@@ -175,7 +175,7 @@ export default function Profile() {
           </div>
           
           <h2 className="text-2xl font-bold mb-4 text-purple-300">
-            � Perfil do Jogador
+            📜 Perfil do Jogador
           </h2>
           <p className="text-xl text-purple-300">
             Acompanhe seu progresso e conquistas
@@ -187,26 +187,31 @@ export default function Profile() {
           <div className="space-y-6">
             {/* Card de Progresso */}
             <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-gray-600/30">
-              <h3 className="text-lg font-bold mb-4 text-center text-blue-400">� Progresso</h3>
+              <h3 className="text-lg font-bold mb-4 text-center text-blue-400">📈 Progresso</h3>
               <div className="text-center">
                 <div className="text-sm text-gray-400 mb-4">
-                  Membro desde {playerStats.joinDate}
+                  Membro desde {estatisticasJogador.joinDate}
                 </div>
-                
+
                 {/* Nível e XP */}
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Nível {playerStats.level}</span>
-                    <span>{playerStats.xp}/{playerStats.xp + playerStats.xpToNext} XP</span>
+                    <span>Nível {estatisticasJogador.level}</span>
+                    <span>
+                      {estatisticasJogador.xp}/
+                      {estatisticasJogador.xp + estatisticasJogador.xpToNext} XP
+                    </span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${(playerStats.xp / (playerStats.xp + playerStats.xpToNext)) * 100}%` }}
+                      style={{
+                        width: `${(estatisticasJogador.xp / (estatisticasJogador.xp + estatisticasJogador.xpToNext)) * 100}%`
+                      }}
                     ></div>
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    {playerStats.xpToNext} XP para o próximo nível
+                    {estatisticasJogador.xpToNext} XP para o próximo nível
                   </div>
                 </div>
 
@@ -214,10 +219,13 @@ export default function Profile() {
                 <div className="bg-black/40 p-4 rounded-lg">
                   <div className="text-sm font-semibold text-blue-400 mb-2">🃏 Coleção</div>
                   <div className="text-lg font-bold">
-                    {playerStats.totalCardsCollected}/{playerStats.totalCardsAvailable}
+                    {estatisticasJogador.totalCardsCollected}/
+                    {estatisticasJogador.totalCardsAvailable}
                   </div>
                   <div className="text-xs text-gray-400">
-                    {Math.round((playerStats.totalCardsCollected / playerStats.totalCardsAvailable) * 100)}% completa
+                    {estatisticasJogador.totalCardsAvailable > 0
+                      ? `${Math.round((estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100)}% completa`
+                      : 'Nenhuma carta disponível'}
                   </div>
                 </div>
               </div>
@@ -229,29 +237,29 @@ export default function Profile() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Partidas:</span>
-                  <span className="font-bold">{playerStats.totalGames}</span>
+                  <span className="font-bold">{estatisticasJogador.totalGames}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Vitórias:</span>
-                  <span className="font-bold text-green-400">{playerStats.wins}</span>
+                  <span className="font-bold text-green-400">{estatisticasJogador.wins}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Derrotas:</span>
-                  <span className="font-bold text-red-400">{playerStats.losses}</span>
+                  <span className="font-bold text-red-400">{estatisticasJogador.losses}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Taxa de Vitória:</span>
-                  <span className={`font-bold ${getWinRateColor(playerStats.winRate)}`}>
-                    {playerStats.winRate}%
+                  <span className={`font-bold ${obterClasseTaxaVitoria(estatisticasJogador.winRate)}`}>
+                    {estatisticasJogador.winRate}%
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Sequência Atual:</span>
-                  <span className="font-bold text-yellow-400">{playerStats.currentStreak}W</span>
+                  <span className="font-bold text-yellow-400">{estatisticasJogador.currentStreak}W</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Melhor Sequência:</span>
-                  <span className="font-bold text-purple-400">{playerStats.bestStreak}W</span>
+                  <span className="font-bold text-purple-400">{estatisticasJogador.bestStreak}W</span>
                 </div>
               </div>
             </div>
@@ -263,30 +271,30 @@ export default function Profile() {
             <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-gray-600/30 mb-6">
               <div className="flex border-b border-gray-600/30">
                 <button
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => definirAbaAtiva('visaoGeral')}
                   className={`flex-1 p-4 font-semibold transition-colors ${
-                    activeTab === 'overview' 
-                      ? 'text-blue-400 border-b-2 border-blue-400' 
+                    abaAtiva === 'visaoGeral'
+                      ? 'text-green-400 border-b-2 border-green-400'
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  📊 Visão Geral
+                  🏠 Visão Geral
                 </button>
                 <button
-                  onClick={() => setActiveTab('matches')}
+                  onClick={() => definirAbaAtiva('partidas')}
                   className={`flex-1 p-4 font-semibold transition-colors ${
-                    activeTab === 'matches' 
-                      ? 'text-green-400 border-b-2 border-green-400' 
+                    abaAtiva === 'partidas'
+                      ? 'text-blue-400 border-b-2 border-blue-400'
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  ⚔️ Histórico de Partidas
+                  ⚔️ Partidas
                 </button>
                 <button
-                  onClick={() => setActiveTab('achievements')}
+                  onClick={() => definirAbaAtiva('conquistas')}
                   className={`flex-1 p-4 font-semibold transition-colors ${
-                    activeTab === 'achievements' 
-                      ? 'text-yellow-400 border-b-2 border-yellow-400' 
+                    abaAtiva === 'conquistas'
+                      ? 'text-yellow-400 border-b-2 border-yellow-400'
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
@@ -295,25 +303,32 @@ export default function Profile() {
               </div>
 
               <div className="p-6">
-                {activeTab === 'overview' && (
+                {abaAtiva === 'visaoGeral' && (
                   <div className="space-y-6">
                     {/* Progresso da Coleção */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="bg-black/40 p-6 rounded-lg">
-                        <h4 className="text-xl font-bold mb-4 text-blue-400">🃏 Coleção de Cartas</h4>
+                        <h4 className="text-xl font-bold mb-4 text-blue-400">🃏 Coleção</h4>
                         <div className="text-center">
                           <div className="text-3xl font-bold mb-2">
-                            {playerStats.totalCardsCollected}/{playerStats.totalCardsAvailable}
+                            {estatisticasJogador.totalCardsCollected}/
+                            {estatisticasJogador.totalCardsAvailable}
                           </div>
                           <div className="text-sm text-gray-400 mb-3">Cartas coletadas</div>
                           <div className="w-full bg-gray-700 rounded-full h-3">
-                            <div 
+                            <div
                               className="bg-blue-500 h-3 rounded-full"
-                              style={{ width: `${(playerStats.totalCardsCollected / playerStats.totalCardsAvailable) * 100}%` }}
+                              style={{
+                                width: `${estatisticasJogador.totalCardsAvailable > 0
+                                  ? (estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100
+                                  : 0}%`
+                              }}
                             ></div>
                           </div>
                           <div className="text-sm text-blue-400 mt-2">
-                            {Math.round((playerStats.totalCardsCollected / playerStats.totalCardsAvailable) * 100)}% completa
+                            {estatisticasJogador.totalCardsAvailable > 0
+                              ? `${Math.round((estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100)}% completa`
+                              : 'Nenhuma carta disponível'}
                           </div>
                         </div>
                       </div>
@@ -322,17 +337,24 @@ export default function Profile() {
                         <h4 className="text-xl font-bold mb-4 text-yellow-400">🏆 Conquistas</h4>
                         <div className="text-center">
                           <div className="text-3xl font-bold mb-2">
-                            {achievements.filter(a => a.completed).length}/{achievements.length}
+                            {conquistas.filter((conquista) => conquista.completed).length}/
+                            {conquistas.length}
                           </div>
                           <div className="text-sm text-gray-400 mb-3">Conquistas desbloqueadas</div>
                           <div className="w-full bg-gray-700 rounded-full h-3">
-                            <div 
+                            <div
                               className="bg-yellow-500 h-3 rounded-full"
-                              style={{ width: `${(achievements.filter(a => a.completed).length / achievements.length) * 100}%` }}
+                              style={{
+                                width: `${conquistas.length > 0
+                                  ? (conquistas.filter((conquista) => conquista.completed).length / conquistas.length) * 100
+                                  : 0}%`
+                              }}
                             ></div>
                           </div>
                           <div className="text-sm text-yellow-400 mt-2">
-                            {Math.round((achievements.filter(a => a.completed).length / achievements.length) * 100)}% completas
+                            {conquistas.length > 0
+                              ? `${Math.round((conquistas.filter((conquista) => conquista.completed).length / conquistas.length) * 100)}% completas`
+                              : 'Nenhuma conquista disponível'}
                           </div>
                         </div>
                       </div>
@@ -342,17 +364,22 @@ export default function Profile() {
                     <div className="bg-black/40 p-6 rounded-lg">
                       <h4 className="text-xl font-bold mb-4 text-green-400">💚 Cartas Mais Usadas</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {favoriteCards.map((card, index) => (
-                          <div key={index} className="bg-black/30 p-4 rounded border border-gray-600/30">
+                        {cartasFavoritas.length === 0 && (
+                          <div className="col-span-full text-center text-gray-400">
+                            Nenhuma carta favorita registrada ainda.
+                          </div>
+                        )}
+                        {cartasFavoritas.map((carta, indice) => (
+                          <div key={indice} className="bg-black/30 p-4 rounded border border-gray-600/30">
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className="font-bold">{card.name}</div>
-                                <div className="text-sm text-gray-400">{card.category}</div>
+                                <div className="font-bold">{carta.name}</div>
+                                <div className="text-sm text-gray-400">{carta.category}</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm text-gray-400">{card.timesPlayed} jogos</div>
-                                <div className={`text-sm font-bold ${getWinRateColor(card.winRate)}`}>
-                                  {card.winRate}% vitórias
+                                <div className="text-sm text-gray-400">{carta.timesPlayed} jogos</div>
+                                <div className={`text-sm font-bold ${obterClasseTaxaVitoria(carta.winRate)}`}>
+                                  {carta.winRate}% vitórias
                                 </div>
                               </div>
                             </div>
@@ -363,100 +390,112 @@ export default function Profile() {
                   </div>
                 )}
 
-                {activeTab === 'matches' && (
+                {abaAtiva === 'partidas' && (
                   <div>
                     <h3 className="text-2xl font-bold mb-6">📜 Histórico de Partidas</h3>
-                    <div className="space-y-3">
-                      {recentMatches.map((match) => (
-                        <div
-                          key={match.id}
-                          className={`bg-black/40 p-4 rounded-lg border ${
-                            match.result === 'win' 
-                              ? 'border-green-500/30' 
-                              : 'border-red-500/30'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-3 h-3 rounded-full ${
-                                match.result === 'win' ? 'bg-green-500' : 'bg-red-500'
-                              }`}></div>
-                              <div>
-                                <div className="font-bold">vs {match.opponent}</div>
-                                <div className="text-sm text-gray-400">{match.deck}</div>
+                    {partidasRecentes.length === 0 ? (
+                      <div className="text-center text-gray-400">
+                        Nenhuma partida registrada ainda.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {partidasRecentes.map((partida) => (
+                          <div
+                            key={partida.id}
+                            className={`bg-black/40 p-4 rounded-lg border ${
+                              partida.result === 'win' ? 'border-green-500/30' : 'border-red-500/30'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center space-x-4">
+                                <div
+                                  className={`w-3 h-3 rounded-full ${
+                                    partida.result === 'win' ? 'bg-green-500' : 'bg-red-500'
+                                  }`}
+                                ></div>
+                                <div>
+                                  <div className="font-bold">vs {partida.opponent}</div>
+                                  <div className="text-sm text-gray-400">{partida.deck}</div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-bold ${
-                                match.result === 'win' ? 'text-green-400' : 'text-red-400'
-                              }`}>
-                                {match.result === 'win' ? 'VITÓRIA' : 'DERROTA'}
+                              <div className="text-right">
+                                <div
+                                  className={`font-bold ${
+                                    partida.result === 'win' ? 'text-green-400' : 'text-red-400'
+                                  }`}
+                                >
+                                  {partida.result === 'win' ? 'VITÓRIA' : 'DERROTA'}
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                  {partida.duration} • {partida.date}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-400">{match.duration} • {match.date}</div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="text-center mt-6">
                       <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                        Ver Mais Partidas
+                        Ver mais partidas
                       </button>
                     </div>
                   </div>
                 )}
 
-                {activeTab === 'achievements' && (
+                {abaAtiva === 'conquistas' && (
                   <div>
                     <h3 className="text-2xl font-bold mb-6">🏆 Conquistas</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {achievements.map((achievement) => (
-                        <div
-                          key={achievement.id}
-                          className={`bg-black/40 p-4 rounded-lg border ${
-                            achievement.completed 
-                              ? 'border-yellow-500/50' 
-                              : 'border-gray-600/30'
-                          }`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className={`text-2xl ${achievement.completed ? '' : 'grayscale opacity-50'}`}>
-                              {achievement.icon}
-                            </div>
-                            <div className="flex-1">
-                              <div className={`font-bold ${achievement.completed ? 'text-yellow-400' : 'text-gray-400'}`}>
-                                {achievement.name}
+                    {conquistas.length === 0 ? (
+                      <div className="text-center text-gray-400">
+                        Nenhuma conquista disponível no momento.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {conquistas.map((conquista) => (
+                          <div
+                            key={conquista.id}
+                            className={`bg-black/40 p-4 rounded-lg border ${
+                              conquista.completed ? 'border-yellow-500/50' : 'border-gray-600/30'
+                            }`}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className={`text-2xl ${conquista.completed ? '' : 'grayscale opacity-50'}`}>
+                                {conquista.icon}
                               </div>
-                              <div className="text-sm text-gray-400 mb-2">
-                                {achievement.description}
+                              <div className="flex-1">
+                                <div className={`font-bold ${conquista.completed ? 'text-yellow-400' : 'text-gray-400'}`}>
+                                  {conquista.name}
+                                </div>
+                                <div className="text-sm text-gray-400 mb-2">
+                                  {conquista.description}
+                                </div>
+                                {conquista.completed ? (
+                                  <div className="text-xs text-green-400">
+                                    ✅ Desbloqueado em {conquista.date}
+                                  </div>
+                                ) : conquista.progress ? (
+                                  <div>
+                                    <div className="text-xs text-gray-400 mb-1">
+                                      Progresso: {conquista.progress}/{conquista.total}
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                      <div
+                                        className="bg-yellow-500 h-2 rounded-full"
+                                        style={{ width: `${(conquista.progress / conquista.total) * 100}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-500">🔒 Não desbloqueado</div>
+                                )}
                               </div>
-                              {achievement.completed ? (
-                                <div className="text-xs text-green-400">
-                                  ✅ Desbloqueado em {achievement.date}
-                                </div>
-                              ) : achievement.progress ? (
-                                <div>
-                                  <div className="text-xs text-gray-400 mb-1">
-                                    Progresso: {achievement.progress}/{achievement.total}
-                                  </div>
-                                  <div className="w-full bg-gray-700 rounded-full h-2">
-                                    <div 
-                                      className="bg-yellow-500 h-2 rounded-full"
-                                      style={{ width: `${(achievement.progress / achievement.total) * 100}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="text-xs text-gray-500">
-                                  🔒 Não desbloqueado
-                                </div>
-                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -473,6 +512,6 @@ export default function Profile() {
           </Link>
         </div>
       </div>
-  </LayoutDePagina>
+    </LayoutDePagina>
   );
 }

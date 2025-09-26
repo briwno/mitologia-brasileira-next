@@ -1,8 +1,8 @@
 // src/app/providers.js
 "use client";
 
-import { AuthProvider } from '../hooks/useAuth';
+import { AuthProvider as ProvedorAutenticacao } from '../hooks/useAuth';
 
-export default function Providers({ children }) {
-  return <AuthProvider>{children}</AuthProvider>;
+export default function Provedores({ children }) {
+  return <ProvedorAutenticacao>{children}</ProvedorAutenticacao>;
 }

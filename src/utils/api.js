@@ -87,6 +87,13 @@ class ApiClient {
   async delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
   }
+
+  async patch(endpoint, data = {}) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 // Instância única

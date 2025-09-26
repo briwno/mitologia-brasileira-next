@@ -6,43 +6,43 @@ import Link from 'next/link';
 import LayoutDePagina from '../../components/UI/PageLayout';
 
 export default function PaginaLogin() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
+  const [modoLogin, definirModoLogin] = useState(true);
+  const [dadosFormulario, definirDadosFormulario] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     username: ''
   });
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, definirCarregando] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isLogin && formData.password !== formData.confirmPassword) {
+  const aoEnviarFormulario = async (evento) => {
+    evento.preventDefault();
+    if (!modoLogin && dadosFormulario.password !== dadosFormulario.confirmPassword) {
       alert('As senhas não conferem.');
       return;
     }
     try {
-      setCarregando(true);
-      const payload = isLogin
-        ? { action: 'login', username: formData.username, password: formData.password }
-        : { action: 'register', username: formData.username, email: formData.email, password: formData.password };
-      const res = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Falha na autenticação');
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+  definirCarregando(true);
+      const carga = modoLogin
+        ? { action: 'login', username: dadosFormulario.username, password: dadosFormulario.password }
+        : { action: 'register', username: dadosFormulario.username, email: dadosFormulario.email, password: dadosFormulario.password };
+      const resposta = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(carga) });
+      const dadosResposta = await resposta.json();
+      if (!resposta.ok) throw new Error(dadosResposta.error || 'Falha na autenticação');
+      localStorage.setItem('authToken', dadosResposta.token);
+      localStorage.setItem('user', JSON.stringify(dadosResposta.user));
       window.location.href = '/';
-    } catch (err) {
-      alert(err.message);
+    } catch (erro) {
+      alert(erro.message);
     } finally {
-      setCarregando(false);
+      definirCarregando(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+  const aoAtualizarCampo = (evento) => {
+    definirDadosFormulario({
+      ...dadosFormulario,
+      [evento.target.name]: evento.target.value
     });
   };
 
@@ -52,15 +52,15 @@ export default function PaginaLogin() {
         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 w-full max-w-md border border-green-500/30">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            {isLogin ? 'Entrar' : 'Cadastrar'}
+            {modoLogin ? 'Entrar' : 'Cadastrar'}
           </h1>
           <p className="text-gray-300 mt-2">
-            {isLogin ? 'Entre em sua conta' : 'Crie sua conta e comece a jogar'}
+            {modoLogin ? 'Entre em sua conta' : 'Crie sua conta e comece a jogar'}
           </p>
         </div>
 
-  <form onSubmit={handleSubmit} className="space-y-4" aria-busy={carregando}>
-          {/* Username em ambos os modos */}
+  <form onSubmit={aoEnviarFormulario} className="space-y-4" aria-busy={carregando}>
+          {/* Campo de nome de usuário presente em ambos os modos */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Nome de usuário
@@ -68,15 +68,15 @@ export default function PaginaLogin() {
             <input
               type="text"
               name="username"
-              value={formData.username}
-              onChange={handleChange}
+              value={dadosFormulario.username}
+              onChange={aoAtualizarCampo}
       className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
       disabled={carregando}
               required
             />
           </div>
 
-          {!isLogin && (
+          {!modoLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Email
@@ -84,11 +84,11 @@ export default function PaginaLogin() {
               <input
                 type="email"
                 name="email"
-                value={formData.email}
-                onChange={handleChange}
+                value={dadosFormulario.email}
+                onChange={aoAtualizarCampo}
                 className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
                 disabled={carregando}
-                required={!isLogin}
+                required={!modoLogin}
               />
             </div>
           )}
@@ -100,15 +100,15 @@ export default function PaginaLogin() {
             <input
               type="password"
               name="password"
-              value={formData.password}
-              onChange={handleChange}
+              value={dadosFormulario.password}
+              onChange={aoAtualizarCampo}
               className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
               disabled={carregando}
               required
             />
           </div>
 
-          {!isLogin && (
+          {!modoLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Confirmar senha
@@ -116,11 +116,11 @@ export default function PaginaLogin() {
               <input
                 type="password"
                 name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
+                value={dadosFormulario.confirmPassword}
+                onChange={aoAtualizarCampo}
                 className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
                 disabled={carregando}
-                required={!isLogin}
+                required={!modoLogin}
               />
             </div>
           )}
@@ -133,16 +133,16 @@ export default function PaginaLogin() {
             {carregando && (
               <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
             )}
-            {carregando ? (isLogin ? 'Entrando...' : 'Cadastrando...') : (isLogin ? 'Entrar' : 'Cadastrar')}
+            {carregando ? (modoLogin ? 'Entrando...' : 'Cadastrando...') : (modoLogin ? 'Entrar' : 'Cadastrar')}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => definirModoLogin(!modoLogin)}
             className="text-green-400 hover:text-green-300 text-sm"
           >
-            {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
+            {modoLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
           </button>
         </div>
 

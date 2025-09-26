@@ -1,14 +1,14 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Providers from "./providers";
-import GlobalNav from "@/components/UI/GlobalNav";
+import ProvedoresAplicacao from "./providers";
+import BarraNavegacaoGlobal from "@/components/UI/GlobalNav";
 
-const geistSans = Geist({
+const fonteGeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const fonteGeistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
@@ -19,20 +19,20 @@ export const metadata = {
 };
 
 // Layout raiz da aplicação
-export default function LayoutRaiz({ children }) {
-  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0-alpha';
+export default function LayoutPrincipal({ children }) {
+  const versaoAplicacao = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0-alpha';
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fonteGeistSans.variable} ${fonteGeistMono.variable} antialiased`}
       >
-  <Providers>
+  <ProvedoresAplicacao>
     {children}
-    <GlobalNav />
-  </Providers>
+    <BarraNavegacaoGlobal />
+  </ProvedoresAplicacao>
   {/* Marca d'água global com a versão */}
   <div className="fixed bottom-2 left-1/2 -translate-x-1/2 text-[11px] text-white/30 pointer-events-none select-none z-30">
-    Versão: {appVersion}
+    Versão: {versaoAplicacao}
   </div>
       </body>
     </html>
