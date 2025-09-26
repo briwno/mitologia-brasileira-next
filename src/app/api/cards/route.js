@@ -5,10 +5,25 @@ import { requireSupabaseAdmin } from '@/lib/supabase';
 /**
  * Converte uma carta do banco para o formato da API
  */
+function inferCardPlayCost(card) {
+  if (!card) return null;
+  const abilitySources = [
+    card.abilities?.skill1?.cost,
+    card.abilities?.basic?.cost,
+    card.abilities?.principal?.cost,
+    card.abilities?.ultimate?.cost,
+  ];
+  const fromAbility = abilitySources.find((value) => typeof value === 'number');
+  if (typeof fromAbility === 'number') return fromAbility;
+  if (typeof card.cost === 'number') return card.cost; // legado
+  return null;
+}
+
 function formatCardForAPI(card) {
   // Extrair primeira habilidade para compatibilidade
   const firstSkill = card.abilities?.skill1 || {};
-  
+  const computedCost = inferCardPlayCost(card);
+
   return {
     id: card.id,
     name: card.name,
@@ -16,8 +31,8 @@ function formatCardForAPI(card) {
     category: card.category,
     attack: card.attack,
     defense: card.defense,
-    life: card.health,
-    cost: card.cost,
+  life: card.health,
+  cost: computedCost,
     ability: firstSkill.name || null,
     abilityDescription: firstSkill.description || null,
     rarity: card.rarity,
@@ -144,8 +159,7 @@ export async function POST(request) {
       category: payload.category || null,
       attack: payload.attack ?? 0,
       defense: payload.defense ?? 0,
-      health: payload.life ?? payload.health ?? 1,
-      cost: payload.cost ?? 0,
+  health: payload.life ?? payload.health ?? 1,
       rarity: payload.rarity || 'comum',
       lore: payload.history || payload.lore || null,
       element: payload.element || null,
@@ -175,9 +189,10 @@ export async function PUT(request) {
     const supabase = requireSupabaseAdmin();
     if (updates.life && !updates.health) updates.health = updates.life; // alias
     if (updates.history && !updates.lore) updates.lore = updates.history;
-    const map = { life: 'health', history: 'lore', cardType: 'card_type', unlockCondition: 'unlock_condition', seasonalBonus: 'seasonal_bonus', isStarter: 'is_starter' };
+  const map = { life: 'health', history: 'lore', cardType: 'card_type', unlockCondition: 'unlock_condition', seasonalBonus: 'seasonal_bonus', isStarter: 'is_starter' };
     const dbUpdates = {};
     for (const k of Object.keys(updates)) {
+      if (k === 'cost') continue; // coluna removida
       const target = map[k] || k;
       dbUpdates[target] = updates[k];
     }

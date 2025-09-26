@@ -21,7 +21,6 @@ CREATE TABLE public.cards (
   region text NOT NULL,
   category text NOT NULL,
   card_type text NOT NULL,
-  cost integer NOT NULL,
   attack integer,
   defense integer,
   health integer,
@@ -279,11 +278,3 @@ CREATE TABLE public.transactions (
   CONSTRAINT transactions_pkey PRIMARY KEY (id),
   CONSTRAINT transactions_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
-
--- Permissões para a tabela quizzes
-ALTER TABLE public.quizzes DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.quizzes TO service_role;
-GRANT SELECT ON public.quizzes TO authenticated;
-GRANT SELECT ON public.quizzes TO anon;
-GRANT USAGE, SELECT ON SEQUENCE public.quizzes_id_seq TO service_role;
-GRANT USAGE, SELECT ON SEQUENCE public.quizzes_id_seq TO authenticated;

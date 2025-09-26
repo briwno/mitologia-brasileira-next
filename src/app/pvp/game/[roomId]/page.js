@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameState } from '@/hooks/useGameState';
 import { cardsAPI } from '@/utils/api';
+import { inferCardPlayCost } from '@/utils/cardUtils';
 
 export default function BattleRoomPage() {
   const params = useParams();
@@ -101,6 +102,11 @@ export default function BattleRoomPage() {
               return null;
             }
 
+            const inferredCost = inferCardPlayCost(card);
+            const finalCost = typeof inferredCost === 'number'
+              ? inferredCost
+              : (card.value || card.valor || 1);
+
             // Converter para formato esperado pelo BattleScreen
             return {
               id: card.id,
@@ -110,7 +116,7 @@ export default function BattleRoomPage() {
               ataque: card.attack || card.ataque || 0,
               defesa: card.defense || card.defesa || 0,
               vida: card.life || card.vida || 0,
-              custo: card.cost || card.custo || 1,
+              custo: finalCost,
               tipo_item: card.category === 'item' ? (card.type_item || 'neutro') : null,
               valor: card.value || card.valor || 1,
               habilidade: card.ability || card.habilidade,

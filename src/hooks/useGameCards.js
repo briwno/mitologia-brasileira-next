@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { cardsAPI } from '@/utils/api';
-import { mapApiCardToLocal } from '@/utils/cardUtils';
+import { mapApiCardToLocal, inferCardPlayCost } from '@/utils/cardUtils';
 
 export function useGameCards() {
   const [cards, setCards] = useState({
@@ -53,18 +53,22 @@ export function useGameCards() {
         });
 
         // Mapear itens para formato local
-        const mappedItems = (itemsData.items || []).map(item => ({
-          id: item.id,
-          nome: item.name,
-          imagem: item.image || '/images/placeholder.svg',
-          tipo: 'item',
-          tipo_item: item.type || 'consumível',
-          efeito: item.effect,
-          valor: item.value || 1,
-          raridade: item.rarity || 'Comum',
-          custo: item.cost || 1,
-          descricao: item.description
-        }));
+        const mappedItems = (itemsData.items || []).map(item => {
+          const inferredCost = inferCardPlayCost(item);
+          const finalCost = typeof inferredCost === 'number' ? inferredCost : (item.value || 1);
+          return {
+            id: item.id,
+            nome: item.name,
+            imagem: item.image || '/images/placeholder.svg',
+            tipo: 'item',
+            tipo_item: item.type || 'consumível',
+            efeito: item.effect,
+            valor: item.value || 1,
+            raridade: item.rarity || 'Comum',
+            custo: finalCost,
+            descricao: item.description
+          };
+        });
 
         setCards({
           lendas: mappedCards,

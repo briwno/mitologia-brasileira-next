@@ -74,6 +74,14 @@ export const TRANSLATION_MAPS = {
     SCROLL: 'Pergaminho' 
   }
 };
+ 
+export const inferCardPlayCost = (card) => {
+  if (!card) return null;
+  const abilityCost = card.abilities?.skill1?.cost ?? card.abilities?.basic?.cost ?? card.abilities?.ultimate?.cost ?? null;
+  const fallback = card.cost ?? card.custo ?? null;
+  if (typeof abilityCost === 'number') return abilityCost;
+  return typeof fallback === 'number' ? fallback : null;
+};
 
 /**
  * Função utilitária para traduzir valores usando os mapas
@@ -145,6 +153,8 @@ export const mapApiCardToLocal = (apiCard) => {
     multiplicador: seasonalBonus.multiplier || seasonalBonus.multiplicador || seasonalBonus.bonus || null
   } : null;
 
+  const inferredCost = inferCardPlayCost(apiCard);
+
   return {
     id: apiCard.id,
     nome: apiCard.name,
@@ -155,7 +165,7 @@ export const mapApiCardToLocal = (apiCard) => {
     ataque: apiCard.attack || 0,
     defesa: apiCard.defense || 0,
     vida: apiCard.life || apiCard.health || 0,
-    custo: apiCard.cost || 0,
+    custo: typeof inferredCost === 'number' ? inferredCost : null,
     descricao: apiCard.description || apiCard.lore || apiCard.history,
     imagens: apiCard.images || {},
     habilidades: apiCard.abilities || {},

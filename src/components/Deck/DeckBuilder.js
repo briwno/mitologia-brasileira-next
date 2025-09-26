@@ -5,7 +5,7 @@ import { cardsAPI } from '@/utils/api';
 import { DECK_RULES } from '@/utils/deckValidation';
 import ImagemDaCarta from '@/components/Card/CardImage';
 import { useCollection } from '@/hooks/useCollection';
-import { mapApiCardToLocal } from '@/utils/cardUtils';
+import { mapApiCardToLocal, inferCardPlayCost } from '@/utils/cardUtils';
 
 const DECK_MIN_SIZE = DECK_RULES.MIN_SIZE; // 25
 const DECK_MAX_SIZE = DECK_RULES.MAX_SIZE; // 25
@@ -162,6 +162,7 @@ export default function DeckBuilder({
   const [searchFilter, setSearchFilter] = useState('');
   const [previewCard, setPreviewCard] = useState(null);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
+  const previewCost = useMemo(() => inferCardPlayCost(previewCard), [previewCard]);
 
   const deckCount = useMemo(() => 
     deckCards.reduce((sum, card) => sum + card.quantity, 0), 
@@ -858,9 +859,9 @@ export default function DeckBuilder({
                       {previewCard.name || previewCard.nome}
                     </h3>
                     <div className="flex items-center gap-1">
-                      {previewCard.cost && (
+                      {previewCost != null && !Number.isNaN(previewCost) && (
                         <div className="bg-yellow-600/80 text-white text-xs px-2 py-1 rounded-full font-bold">
-                          {previewCard.cost}⚡
+                          {previewCost}⚡
                         </div>
                       )}
                     </div>
