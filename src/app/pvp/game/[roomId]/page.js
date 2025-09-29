@@ -38,11 +38,13 @@ export default function BattleRoomPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Erro ao carregar dados da sala');
+          setError(data.error || 'Erro ao carregar dados da sala');
+          return;
         }
 
         if (!data.success) {
-          throw new Error('Dados da sala inválidos');
+          setError('Dados da sala inválidos');
+          return;
         }
 
         console.log('[Battle Room] Dados carregados:', data.room);
@@ -65,7 +67,7 @@ export default function BattleRoomPage() {
 
       } catch (err) {
         console.error('Erro ao carregar sala:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Erro ao carregar dados da sala');
       } finally {
         setLoading(false);
       }

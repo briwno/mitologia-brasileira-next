@@ -55,10 +55,14 @@ export async function GET(req) {
           .select('*')
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('[Currency API] Error creating default currencies:', createError);
+          return NextResponse.json({ error: 'database_error' }, { status: 500 });
+        }
         return NextResponse.json({ currencies: newCurrencies });
       }
-      throw error;
+      console.error('[Currency API] Error fetching currencies:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     return NextResponse.json({ currencies });
@@ -93,7 +97,8 @@ export async function POST(req) {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
+      console.error('[Currency API] Error fetching current balances:', fetchError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Update currency
@@ -110,7 +115,10 @@ export async function POST(req) {
       .select('*')
       .single();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[Currency API] Error updating balances:', updateError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     // Record transaction
     const { error: transactionError } = await supabase
@@ -124,7 +132,10 @@ export async function POST(req) {
         metadata: metadata || {}
       });
 
-    if (transactionError) throw transactionError;
+    if (transactionError) {
+      console.error('[Currency API] Error recording transaction:', transactionError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({
       message: `Added ${amount} ${currencyType}`,
@@ -167,7 +178,8 @@ export async function SPEND(req) {
           { status: 404 }
         );
       }
-      throw fetchError;
+      console.error('[Currency API] Error fetching balances for spend:', fetchError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Check if player has enough currencies
@@ -221,7 +233,10 @@ export async function SPEND(req) {
       .select('*')
       .single();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[Currency API] Error updating balances during spend:', updateError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     // Record transactions
     if (transactions.length > 0) {
@@ -229,7 +244,10 @@ export async function SPEND(req) {
         .from('transactions')
         .insert(transactions);
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('[Currency API] Error recording spend transactions:', transactionError);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({
@@ -280,7 +298,10 @@ export async function GET_TRANSACTIONS(req) {
 
     const { data: transactions, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Currency API] Error fetching transactions:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     // Get total count for pagination
     const { count, error: countError } = await supabase
@@ -288,7 +309,10 @@ export async function GET_TRANSACTIONS(req) {
       .select('*', { count: 'exact', head: true })
       .eq('player_id', parseInt(playerId));
 
-    if (countError) throw countError;
+    if (countError) {
+      console.error('[Currency API] Error counting transactions:', countError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({
       transactions,

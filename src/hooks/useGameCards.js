@@ -24,8 +24,12 @@ export function useGameCards() {
         
         // Carregar itens da API
         const itemsResponse = await fetch('/api/item-cards');
-        if (!itemsResponse.ok) throw new Error('Falha ao carregar itens');
-        const itemsData = await itemsResponse.json();
+        let itemsData = { items: [] };
+        if (!itemsResponse.ok) {
+          console.error('[useGameCards] Falha ao carregar itens:', itemsResponse.status);
+        } else {
+          itemsData = await itemsResponse.json();
+        }
         
         // Mapear cartas para formato local
         const mappedCards = (cardsResponse.cards || []).map(card => {

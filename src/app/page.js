@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth as usarAutenticacao } from '../hooks/useAuth';
-import { usePlayerData as usarDadosJogador } from '../hooks/usePlayerData';
+import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
+import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import Icon from '@/components/UI/Icon';

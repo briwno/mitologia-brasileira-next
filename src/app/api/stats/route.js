@@ -30,7 +30,8 @@ export async function GET(req) {
       .single();
 
     if (error && error.code !== 'PGRST116') { // Not found is OK
-      throw error;
+      console.error('[Stats API] Error fetching stats:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // If no stats exist, create default stats
@@ -41,7 +42,10 @@ export async function GET(req) {
         .select('*')
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('[Stats API] Error creating default stats:', createError);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       return NextResponse.json({ stats: newStats });
     }
 
@@ -70,7 +74,8 @@ export async function POST(req) {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
+      console.error('[Stats API] Error fetching current stats:', fetchError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Calculate new statistics
@@ -133,7 +138,10 @@ export async function POST(req) {
       .select('*')
       .single();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[Stats API] Error updating stats:', updateError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({ 
       stats: updatedStats,
@@ -193,7 +201,10 @@ export async function GET_LEADERBOARD(req) {
 
     const { data: leaderboard, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Stats API] Error fetching leaderboard:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     // Calculate win rates and format response
     const formattedLeaderboard = leaderboard.map((entry, index) => ({

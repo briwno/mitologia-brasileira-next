@@ -109,7 +109,13 @@ export async function GET(request) {
     query = query.order('published_at', { ascending: false }).range(offset, offset + limit - 1);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42501') {
+        return NextResponse.json({ error: 'Permissão negada: verifique RLS/policies ou use chave service role no backend.' }, { status: 403 });
+      }
+      console.error('[Contos API] Error fetching stories:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({ stories: (data || []).map(formatStory) });
   } catch (e) {
@@ -153,7 +159,10 @@ export async function POST(request) {
     };
 
     const { data, error } = await supabase.from('contos').insert(insertPayload).select('*').single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Contos API] Error creating story:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ story: formatStory(data) }, { status: 201 });
   } catch (e) {
     console.error('Contos POST error', e);
@@ -176,7 +185,10 @@ export async function PUT(request) {
       updates[target] = body[k];
     }
     const { data, error } = await supabase.from('contos').update(updates).eq('id', id).select('*').single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Contos API] Error updating story:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ story: formatStory(data) });
   } catch (e) {
     console.error('Contos PUT error', e);
@@ -191,7 +203,10 @@ export async function DELETE(request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
     const { error } = await supabase.from('contos').delete().eq('id', id);
-    if (error) throw error;
+    if (error) {
+      console.error('[Contos API] Error deleting story:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('Contos DELETE error', e);

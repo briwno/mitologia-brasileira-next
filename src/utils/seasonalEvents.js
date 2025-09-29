@@ -1,5 +1,5 @@
 // src/utils/seasonalEvents.js
-import { getEstacoes } from './constantsAPI';
+import { obterEstacoes } from './constantsAPI';
 
 export class SeasonalEventSystem {
   constructor() {
@@ -11,7 +11,7 @@ export class SeasonalEventSystem {
 
   // Inicializar com as constantes da API
   async initialize() {
-    this.ESTACOES = await getEstacoes();
+  this.ESTACOES = await obterEstacoes();
   }
 
   // Garantir que está inicializado

@@ -1,5 +1,5 @@
 // src/utils/combatSystem.js
-import { getMultiplicadores, getCombos, getElementos } from './constantsAPI';
+import { obterMultiplicadores, obterCombos, obterElementos } from './constantsAPI';
 
 export class CombatSystem {
   constructor() {
@@ -21,9 +21,9 @@ export class CombatSystem {
 
   // Inicializar com as constantes da API
   async initialize() {
-    this.MULTIPLICADORES = await getMultiplicadores();
-    this.COMBOS_CARTAS = await getCombos();
-    this.ELEMENTOS = await getElementos();
+  this.MULTIPLICADORES = await obterMultiplicadores();
+  this.COMBOS_CARTAS = await obterCombos();
+  this.ELEMENTOS = await obterElementos();
   }
 
   // Garantir que está inicializado

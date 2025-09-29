@@ -37,7 +37,10 @@ export async function POST(request) {
         .insert({ uid, name: username, password, avatar_url: null })
         .select('*')
         .single();
-      if (insErr) throw insErr;
+      if (insErr) {
+        console.error('[Auth API] Error registering player:', insErr);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       const p = inserted;
       // seed coleção inicial simples
       await supabase
@@ -53,7 +56,10 @@ export async function POST(request) {
       if (!password) return NextResponse.json({ error: 'Senha obrigatória' }, { status: 400 });
 
       const { data: p, error } = await supabase.from('players').select('*').eq('name', username).maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error('[Auth API] Error fetching player on login:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       if (!p) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
       if (!p.password || p.password !== password) {
         return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
@@ -94,7 +100,10 @@ export async function GET(request) {
   try {
     const supabase = requireSupabaseAdmin();
     const { data: p, error } = await supabase.from('players').select('*').eq('id', userId).single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Auth API] Error fetching player from token:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!p) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   return NextResponse.json({ user: { id: p.id, username: p.name, email: p.uid, level: p.level, xp: p.xp } });
   } catch (e) {

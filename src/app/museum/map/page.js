@@ -3,18 +3,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import LayoutDePagina from '../../../components/UI/PageLayout';
-import CardModal from '../../../components/Card/CardModal';
-import { useAuth } from '../../../hooks/useAuth';
-import { useCollection } from '../../../hooks/useCollection';
-import { cardsAPI } from '../../../utils/api';
-import { 
-  TRANSLATION_MAPS, 
-  translate, 
-  mapApiCardToLocal, 
-  getRarityGradient 
-} from '../../../utils/cardUtils';
-import BrazilMap from '../../../components/Museum/BrazilMap';
+import LayoutDePagina from '@/components/UI/PageLayout';
+import CardModal from '@/components/Card/CardModal';
+import { useAuth } from '@/hooks/useAuth';
+import { useCollection } from '@/hooks/useCollection';
+import { cardsAPI } from '@/utils/api';
+import { mapApiCardToLocal, getRarityGradient } from '@/utils/cardUtils';
+import BrazilMap from '@/components/Museum/BrazilMap';
 
 export default function MapaInterativo() {
   const { user, isAuthenticated } = useAuth();

@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import LayoutDePagina from "../../../components/UI/PageLayout";
+import LayoutDePagina from "@/components/UI/PageLayout";
 import DeckBuilder from "@/components/Deck/DeckBuilder";
 import { useAuth } from "@/hooks/useAuth";
 import { useCollection } from "@/hooks/useCollection";
 import { cardsAPI } from "@/utils/api";
 import Icon from "@/components/UI/Icon";
-import { nanoid } from "nanoid";
 import { validateDeck, DECK_RULES } from "@/utils/deckValidation";
 
 export default function SelecaoDeDeck() {
@@ -214,9 +213,13 @@ export default function SelecaoDeDeck() {
         const data = await res.json();
         setDecksSalvos(data.decks || []);
         alert('Deck salvo com sucesso!');
-      } else {
-        throw new Error('Erro ao salvar deck');
+        return;
       }
+
+      const errorData = await response.json().catch(() => ({}));
+      const message = errorData.error || 'Erro ao salvar deck';
+      console.error('[PvP Deck] Falha ao salvar deck:', response.status, message);
+      alert(message);
     } catch (error) {
       console.error('Erro ao salvar deck:', error);
       alert('Erro ao salvar deck. Tente novamente.');

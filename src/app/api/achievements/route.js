@@ -26,7 +26,10 @@ export async function GET(req) {
         `)
         .eq('player_id', parseInt(playerId));
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Achievements API] Error fetching player achievements:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       // Also get all available achievements to show progress
       const { data: allAchievements, error: allError } = await supabase
@@ -35,7 +38,10 @@ export async function GET(req) {
         .eq('is_active', true)
         .order('category', { ascending: true });
 
-      if (allError) throw allError;
+      if (allError) {
+        console.error('[Achievements API] Error fetching all achievements:', allError);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       // Combine unlocked and available achievements
       const unlockedIds = new Set(playerAchievements.map(pa => pa.achievement_id));
@@ -55,7 +61,10 @@ export async function GET(req) {
         .eq('is_active', true)
         .order('category', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Achievements API] Error fetching achievements:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       return NextResponse.json({ achievements });
     }
@@ -90,7 +99,8 @@ export async function POST(req) {
           { status: 404 }
         );
       }
-      throw achievementError;
+  console.error('[Achievements API] Error fetching achievement:', achievementError);
+  return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Check if player already has this achievement
@@ -102,7 +112,8 @@ export async function POST(req) {
       .single();
 
     if (existingError && existingError.code !== 'PGRST116') {
-      throw existingError;
+      console.error('[Achievements API] Error checking existing achievement:', existingError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     if (existing) {
@@ -127,7 +138,10 @@ export async function POST(req) {
       `)
       .single();
 
-    if (unlockError) throw unlockError;
+    if (unlockError) {
+      console.error('[Achievements API] Error unlocking achievement:', unlockError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     // Award rewards if any
     if (achievement.rewards && Object.keys(achievement.rewards).length > 0) {

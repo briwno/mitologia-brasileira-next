@@ -26,10 +26,16 @@ export async function POST(req) {
     const supabase = requireSupabaseAdmin();
     // procurar player por name ou uid
     let { data: row, error: e1 } = await supabase.from('players').select('*').eq('name', username).maybeSingle();
-    if (e1 && e1.code !== 'PGRST116') throw e1;
+    if (e1 && e1.code !== 'PGRST116') {
+      console.error('[Admin Seed API] Error querying player by name:', e1);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!row) {
       const byUid = await supabase.from('players').select('*').eq('uid', email).maybeSingle();
-      if (byUid.error && byUid.error.code !== 'PGRST116') throw byUid.error;
+      if (byUid.error && byUid.error.code !== 'PGRST116') {
+        console.error('[Admin Seed API] Error querying player by uid:', byUid.error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       row = byUid.data || null;
     }
 
@@ -39,7 +45,10 @@ export async function POST(req) {
         .insert({ uid: email, name: username, password, avatar_url: null, level: 50, xp: 0 })
         .select('*')
         .single();
-      if (ins.error) throw ins.error;
+      if (ins.error) {
+        console.error('[Admin Seed API] Error inserting player:', ins.error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       row = ins.data;
     } else {
       const upd = await supabase
@@ -48,7 +57,10 @@ export async function POST(req) {
         .eq('id', row.id)
         .select('*')
         .single();
-      if (upd.error) throw upd.error;
+      if (upd.error) {
+        console.error('[Admin Seed API] Error updating player:', upd.error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       row = upd.data || row;
     }
 
@@ -56,7 +68,10 @@ export async function POST(req) {
     const { data: allCards, error: cardsError } = await supabase
       .from('cards')
       .select('id');
-    if (cardsError) throw cardsError;
+    if (cardsError) {
+      console.error('[Admin Seed API] Error fetching cards:', cardsError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     
     const allIds = (allCards || []).map((c) => c.id).filter(Boolean);
 
@@ -77,7 +92,10 @@ export async function POST(req) {
     const up = await supabase
       .from('collections')
       .upsert(upsertData, { onConflict: 'player_id' });
-    if (up.error) throw up.error;
+    if (up.error) {
+      console.error('[Admin Seed API] Error upserting collection:', up.error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({ ok: true, player: { id: row.id, username: row.name, email: row.uid }, totalCards: allIds.length, totalItemCards: allItemIds.length });
   } catch (e) {

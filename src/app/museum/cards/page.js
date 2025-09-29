@@ -8,18 +8,16 @@ import { useState, useMemo, useEffect } from 'react';
 // Agora todos os mapas estão centralizados em cardUtils.js
 import Image from 'next/image';
 import Link from 'next/link';
-import LayoutDePagina from '../../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 // Removido bancoDeCartas: agora buscando da API /api/cards
-import CardModal from '../../../components/Card/CardModal';
-import ItemCard from '../../../components/Card/ItemCard';
-import { cardsAPI } from '../../../utils/api';
-import { 
-  TRANSLATION_MAPS, 
-  translate, 
-  formatEnumLabel, 
-  mapApiCardToLocal, 
-  getRarityGradient 
-} from '../../../utils/cardUtils';
+import CardModal from '@/components/Card/CardModal';
+import ItemCard from '@/components/Card/ItemCard';
+import { cardsAPI } from '@/utils/api';
+import {
+  TRANSLATION_MAPS,
+  translate,
+  formatEnumLabel
+} from '@/utils/cardUtils';
 
 // Card estilo "story quest"
 function StoryCard({ card, onClick, idx = 0 }) {
@@ -101,202 +99,6 @@ function StoryCard({ card, onClick, idx = 0 }) {
   );
 }
 
-// Modal com abas
-function StoryModal({ card, onClose }) {
-  const [tab, setTab] = useState('detalhes'); // 'detalhes' | 'historia'
-  const [stories, setStories] = useState([]);
-  const [loadingStories, setLoadingStories] = useState(false);
-  const [storiesError, setStoriesError] = useState(null);
-  
-  // Check if it's an item card
-  const isItemCard = card?.itemType !== undefined || card?.effects !== undefined;
-  const portrait = card?.images?.retrato || card?.imagens?.retrato || card?.images?.completa || card?.images?.full || card?.image || card?.imagem || '/images/placeholder.svg';
-
-  useEffect(() => {
-    if (tab !== 'historia' || isItemCard) {
-      return;
-    }
-    
-    setLoadingStories(true);
-    setStoriesError(null);
-    
-    if (!card?.id) {
-      setStoriesError('Card ID não encontrado');
-      setLoadingStories(false);
-      return;
-    }
-    
-    fetch(`/api/contos?cardId=${encodeURIComponent(card.id)}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Falha ao carregar contos: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        const loaded = data.stories || [];
-        setStories(loaded);
-      })
-      .catch(e => {
-        console.error('Erro ao carregar contos:', e);
-        setStoriesError(e.message);
-      })
-      .finally(() => {
-        setLoadingStories(false);
-      });
-  }, [tab, card, isItemCard]);
-
-  if (!card) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div
-        className="relative w-full max-w-7xl bg-[#101b28] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              {isItemCard ? '�' : '�📜'} <span className="text-cyan-300">{card.nome || card.name}</span>
-            </h2>
-            {!isItemCard && (
-              <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 text-xs">
-                <button
-                  onClick={() => setTab('detalhes')}
-                  className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'detalhes' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
-                >Detalhes</button>
-                <button
-                  onClick={() => setTab('historia')}
-                  className={`px-3 py-1 rounded-md font-semibold transition-colors ${tab === 'historia' ? 'bg-cyan-600 text-white' : 'text-white/70 hover:text-white'}`}
-                >História</button>
-              </div>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white/70 hover:text-white text-xl leading-none px-3 py-1 rounded"
-            aria-label="Fechar"
-          >×</button>
-        </div>
-
-        {/* Conteúdo */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          {isItemCard ? (
-            /* Item Details */
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
-                <Image
-                  src={portrait}
-                  alt={`${card.name}`}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width:768px) 95vw, (max-width:1280px) 640px, 800px"
-                  quality={98}
-                  priority
-                />
-              </div>
-              <div className="space-y-5 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-1">
-                <div>
-                  <h3 className="text-lg font-semibold text-purple-400 mb-3">Detalhes do Item</h3>
-                  <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">Tipo:</span>
-                        <div className="text-white font-medium">{card.itemType}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Raridade:</span>
-                        <div className="text-white font-medium">{card.rarity}</div>
-                      </div>
-                    </div>
-                    
-                    {card.description && (
-                      <div>
-                        <span className="text-gray-400 text-sm">Descrição:</span>
-                        <p className="text-white text-sm mt-1 leading-relaxed">{card.description}</p>
-                      </div>
-                    )}
-                    
-                    {card.effects && Object.keys(card.effects).length > 0 && (
-                      <div>
-                        <span className="text-yellow-400 text-sm font-medium">Efeito:</span>
-                        <div className="text-white text-sm mt-1 bg-black/30 p-3 rounded border border-yellow-400/20">
-                          {card.effects.description || 
-                           `${card.effects.type || 'Efeito'} ${card.effects.value || ''} ${card.effects.duration ? `(${card.effects.duration})` : ''}`.trim()
-                          }
-                        </div>
-                      </div>
-                    )}
-                    
-                    {card.lore && (
-                      <div>
-                        <span className="text-amber-400 text-sm">História:</span>
-                        <p className="text-white/90 text-sm mt-1 leading-relaxed italic">{card.lore}</p>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                      <div className="text-xs text-gray-400">
-                        {card.isTradeable === false ? '🔒 Não Trocável' : '💱 Trocável'}
-                      </div>
-                      {card.unlockCondition && (
-                        <div className="text-xs text-yellow-300">🔓 {card.unlockCondition}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : tab === 'detalhes' ? (
-            <CardModal card={card} onClose={null} mode="lore" />
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-        <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
-                <Image
-                  src={portrait}
-                  alt={`Retrato de ${card.nome || card.name}`}
-                  fill
-          className="object-contain"
-          sizes="(max-width:768px) 95vw, (max-width:1280px) 640px, 800px"
-          quality={98}
-                  priority
-                />
-              </div>
-              <div className="space-y-5 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-1">
-                <div>
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-3">Contos Folclóricos</h3>
-                  {loadingStories && <div className="text-sm text-gray-400">Carregando contos...</div>}
-                  {storiesError && <div className="text-sm text-red-400">Erro: {storiesError}</div>}
-                  {!loadingStories && !storiesError && stories.length === 0 && (
-                    <p className="text-sm text-gray-400">Nenhum conto cadastrado para esta carta ainda.</p>
-                  )}
-                  <div className="space-y-6">
-                    {stories.map(story => (
-                      <article key={story.id} className="bg-black/40 border border-white/10 p-4 rounded-lg">
-                        <h4 className="font-semibold text-amber-300 text-sm mb-1">{story.title}</h4>
-                        {story.subtitle && <div className="text-xs text-gray-400 mb-2">{story.subtitle}</div>}
-                        {story.summary && <p className="text-xs text-gray-400 mb-3 whitespace-pre-line">{story.summary}</p>}
-                        <div className="text-sm text-gray-200 whitespace-pre-line leading-relaxed">{story.body}</div>
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {story.tags?.map(t => (
-                            <span key={t} className="text-[10px] bg-gray-700/60 px-2 py-0.5 rounded">#{t}</span>
-                          ))}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-black/40 rounded-lg p-4 border border-white/10 text-xs text-gray-400 leading-relaxed">
-                  Este conteúdo integra o acervo educativo de Ka’aguy e promove o folclore brasileiro.
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CatalogoComContos() {
   const [selected, setSelected] = useState(null);
   const [selectedTab, setSelectedTab] = useState('cards'); // 'cards' | 'items'
@@ -315,6 +117,17 @@ export default function CatalogoComContos() {
     element: 'todos'
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  const isSelectedItem = useMemo(() => {
+    if (!selected) return false;
+    if (selected.itemType != null || selected.effects != null) return true;
+
+    const tipo = (selected.tipo || selected.type || selected.cardType || '').toString().toLowerCase();
+    if (tipo === 'item' || tipo === 'itens') return true;
+
+    const categoria = (selected.categoria || selected.category || '').toString().toLowerCase();
+    return categoria.includes('item') || categoria.includes('equipamento') || categoria.includes('consum') || categoria.includes('artefato');
+  }, [selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -755,7 +568,12 @@ export default function CatalogoComContos() {
         </div>
       </div>
 
-      <StoryModal card={selected} onClose={() => setSelected(null)} />
+      <CardModal
+        card={selected}
+        onClose={() => setSelected(null)}
+        mode={selectedTab === 'cards' ? 'museum' : 'museum-item'}
+        showStories={Boolean(selected) && !isSelectedItem}
+      />
     </LayoutDePagina>
   );
 }

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import LayoutDePagina from '../../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 
 // Quiz cultural do Museu
 export default function QuizCultural() {

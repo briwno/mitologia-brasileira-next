@@ -32,7 +32,10 @@ export async function POST(req) {
       version: 0,
       state: initial,
     });
-    if (error) throw error;
+    if (error) {
+      console.error('[Match API] Error creating match:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({ ok: true, state: initial });
   } catch (err) {
@@ -48,12 +51,15 @@ export async function GET(req) {
     const roomId = searchParams.get('roomId');
     if (!roomId) return NextResponse.json({ error: 'roomId é obrigatório' }, { status: 400 });
 
-  const supabase = requireSupabaseAdmin();
-  const { data, error } = await supabase.from('matches').select('state').eq('room_id', roomId).maybeSingle();
-  if (error) throw error;
-  const state = data?.state;
-  if (!state) return NextResponse.json({ error: 'Partida não encontrada' }, { status: 404 });
-  return NextResponse.json({ state });
+    const supabase = requireSupabaseAdmin();
+    const { data, error } = await supabase.from('matches').select('state').eq('room_id', roomId).maybeSingle();
+    if (error) {
+      console.error('[Match API] Error fetching match state:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
+    const state = data?.state;
+    if (!state) return NextResponse.json({ error: 'Partida não encontrada' }, { status: 404 });
+    return NextResponse.json({ state });
   } catch (err) {
     console.error('match GET error', err);
     return NextResponse.json({ error: 'Erro ao buscar estado' }, { status: 500 });
@@ -75,7 +81,10 @@ export async function PATCH(req) {
       .select('id, state, version, status')
       .eq('room_id', roomId)
       .maybeSingle();
-    if (getErr) throw getErr;
+    if (getErr) {
+      console.error('[Match API] Error fetching match:', getErr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!row) return NextResponse.json({ error: 'Partida não encontrada' }, { status: 404 });
 
     const current = row.state || {};
@@ -101,7 +110,10 @@ export async function PATCH(req) {
       .eq('version', currentVersion)
       .select('state, version, status')
       .maybeSingle();
-    if (upErr) throw upErr;
+    if (upErr) {
+      console.error('[Match API] Error updating match:', upErr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!updated) {
       return NextResponse.json({ error: 'Conflito de versão', state: current }, { status: 409 });
     }
@@ -133,7 +145,10 @@ export async function DELETE(req) {
       .from('matches')
       .update({ status: 'canceled', finished_at: new Date() })
       .eq('room_id', roomId);
-    if (error) throw error;
+    if (error) {
+      console.error('[Match API] Error deleting match:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('match DELETE error', err);

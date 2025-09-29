@@ -6,7 +6,7 @@ import Icon from '@/components/UI/Icon';
 import { getRarityFrameClasses, getCardTypeIcon } from '@/utils/cardUtils';
 
 // Detalhe da Carta com diferentes modos de exibição
-export default function DetalheDaCarta({ card, onClose = null, mode = 'battle' }) {
+export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', wrapperClassName = '' }) {
   if (!card) return null;
 
   // Usar função utilitária para cores de raridade
@@ -27,11 +27,14 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle' }
   // Usar função utilitária para ícones de tipo
   const obterIconeDoTipo = getCardTypeIcon;
 
+  const baseWrapperClasses = "bg-black/30 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-gray-600/30 w-full max-w-6xl xl:max-w-7xl overflow-y-auto";
+  const extraWrapperClasses = wrapperClassName && wrapperClassName.trim().length > 0 ? wrapperClassName : 'max-h-[90vh]';
+
   return (
-  <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-gray-600/30 w-full max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto">
+    <div className={`${baseWrapperClasses} ${extraWrapperClasses}`}>
       {/* Header com botão de fechar */}
       <div className="flex justify-between items-start mb-3 sm:mb-4">
-  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white pr-2">{card.nome}</h2>
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white pr-2">{card.nome}</h2>
         {onClose && (
           <button
             onClick={onClose}
@@ -42,8 +45,7 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle' }
         )}
       </div>
 
-  {true ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Coluna Esquerda: Habilidades */}
           <aside className="order-2 lg:order-1 lg:col-span-3 space-y-3">
             <div className="text-sm font-bold text-white/80">Habilidades</div>
@@ -242,8 +244,7 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle' }
               </div>
             )}
           </aside>
-        </div>
-  ) : null}
+      </div>
     </div>
   );
 }

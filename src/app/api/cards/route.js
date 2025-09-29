@@ -97,10 +97,10 @@ export async function GET(request) {
     query = query.order('name');
     
     const { data: cards, error } = await query;
-    
+
     if (error) {
-      console.error('Supabase error:', error);
-      throw error;
+      console.error('[Cards API] Error fetching cards:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Formatar cartas para a API
@@ -137,14 +137,20 @@ export async function POST(request) {
         const { data: player, error: playerError } = await supabase.from('players').select('id').eq('id', userId).single();
         if (playerError || !player) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
         const { data: collection, error: collectionError } = await supabase.from('collections').select('cards').eq('player_id', userId).single();
-        if (collectionError && collectionError.code !== 'PGRST116') throw collectionError;
+        if (collectionError && collectionError.code !== 'PGRST116') {
+          console.error('[Cards API] Error fetching collection:', collectionError);
+          return NextResponse.json({ error: 'database_error' }, { status: 500 });
+        }
         const currentCards = collection?.cards || [];
         if (currentCards.includes(cardId)) {
           return NextResponse.json({ message: 'Carta já desbloqueada', card: formatCardForAPI(card) });
         }
         const newCards = [...currentCards, cardId];
         const { error: updateError } = await supabase.from('collections').upsert({ player_id: userId, cards: newCards }, { onConflict: 'player_id' });
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('[Cards API] Error updating collection:', updateError);
+          return NextResponse.json({ error: 'database_error' }, { status: 500 });
+        }
       }
       return NextResponse.json({ message: `Carta ${card.name} desbloqueada!`, card: formatCardForAPI(card) });
     }
@@ -159,7 +165,7 @@ export async function POST(request) {
       category: payload.category || null,
       attack: payload.attack ?? 0,
       defense: payload.defense ?? 0,
-  health: payload.life ?? payload.health ?? 1,
+    health: payload.life ?? payload.health ?? 1,
       rarity: payload.rarity || 'comum',
       lore: payload.history || payload.lore || null,
       element: payload.element || null,
@@ -172,7 +178,10 @@ export async function POST(request) {
       is_starter: payload.isStarter ?? false
     };
     const { data, error } = await supabase.from('cards').insert(insert).select('*').single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Cards API] Error creating card:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ card: formatCardForAPI(data) }, { status: 201 });
   } catch (error) {
     console.error('Cards POST error:', error);
@@ -213,7 +222,10 @@ export async function DELETE(request) {
     if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
     const supabase = requireSupabaseAdmin();
     const { error } = await supabase.from('cards').delete().eq('id', id);
-    if (error) throw error;
+    if (error) {
+      console.error('[Cards API] Error deleting card:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('Cards DELETE error', e);

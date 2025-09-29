@@ -17,41 +17,41 @@ export async function GET(req) {
     console.log('[Collection API] uid parameter:', uid);
     if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
 
-  const supabase = requireSupabaseAdmin();
-  console.log('[Collection API] Querying players table for uid:', uid);
-  const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-  if (uerr) {
-    console.error('[Collection API] Error querying players:', uerr);
-    throw uerr;
-  }
-  if (!user) {
-    console.log('[Collection API] Player not found for uid:', uid);
-    return NextResponse.json({ error: 'player not found' }, { status: 404 });
-  }
+    const supabase = requireSupabaseAdmin();
+    console.log('[Collection API] Querying players table for uid:', uid);
+    const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
+    if (uerr) {
+      console.error('[Collection API] Error querying players:', uerr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
+    if (!user) {
+      console.log('[Collection API] Player not found for uid:', uid);
+      return NextResponse.json({ error: 'player not found' }, { status: 404 });
+    }
 
-  console.log(`[Collection API] Found player: uid=${uid} -> player_id=${user.id}`);
+    console.log(`[Collection API] Found player: uid=${uid} -> player_id=${user.id}`);
 
-  const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', user.id).maybeSingle();
-  if (error && error.code !== 'PGRST116') {
-    console.error('[Collection API] Error querying collections:', error);
-    throw error;
-  }
-  
-  console.log('[Collection API] Collection data:', row);
-  
-  // Converter formato: [{ id: 'cur001' }] -> ['cur001']
-  let cards = row?.cards || [];
-  if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-    cards = cards.map(c => c.id);
-  }
-  
-  let itemCards = row?.item_cards || [];
-  if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-    itemCards = itemCards.map(c => c.id);
-  }
-  
-  console.log('[Collection API] Returning response:', { cards, itemCards });
-  return NextResponse.json({ cards, itemCards });
+    const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', user.id).maybeSingle();
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Collection API] Error querying collections:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
+
+    console.log('[Collection API] Collection data:', row);
+
+    // Converter formato: [{ id: 'cur001' }] -> ['cur001']
+    let cards = row?.cards || [];
+    if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
+      cards = cards.map((c) => c.id);
+    }
+
+    let itemCards = row?.item_cards || [];
+    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
+      itemCards = itemCards.map((c) => c.id);
+    }
+
+    console.log('[Collection API] Returning response:', { cards, itemCards });
+    return NextResponse.json({ cards, itemCards });
   } catch (e) {
     console.error('[Collection API] ERROR in GET:', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
@@ -66,7 +66,10 @@ export async function POST(req) {
 
     const supabase = requireSupabaseAdmin();
     const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', parsed.data.uid).maybeSingle();
-    if (uerr) throw uerr;
+    if (uerr) {
+      console.error('[Collection API] Error finding player (POST):', uerr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
     const upsertData = { player_id: user.id, cards: parsed.data.cards };
@@ -79,22 +82,25 @@ export async function POST(req) {
       .upsert(upsertData, { onConflict: 'player_id' })
       .select('cards, item_cards')
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Collection API] Error upserting collection (POST):', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     
     // Converter resposta para formato esperado
     let cards = data.cards || [];
     if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-      cards = cards.map(c => c.id);
+      cards = cards.map((c) => c.id);
     }
     
     let itemCards = data.item_cards || [];
     if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-      itemCards = itemCards.map(c => c.id);
+      itemCards = itemCards.map((c) => c.id);
     }
     
     return NextResponse.json({ cards, itemCards, created: false });
   } catch (e) {
-    console.error('collection POST', e);
+    console.error('[Collection API] Unexpected error in POST:', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
   }
 }
@@ -105,21 +111,27 @@ export async function PATCH(req) {
     if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
     const supabase = requireSupabaseAdmin();
     const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-    if (uerr) throw uerr;
+    if (uerr) {
+      console.error('[Collection API] Error finding player (PATCH):', uerr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
     const { data: existing, error: exErr } = await supabase.from('collections').select('*').eq('player_id', user.id).maybeSingle();
-    if (exErr && exErr.code !== 'PGRST116') throw exErr;
+    if (exErr && exErr.code !== 'PGRST116') {
+      console.error('[Collection API] Error querying collections (PATCH):', exErr);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     
     // Converter formato existente: [{ id: 'cur001' }] -> ['cur001']
     let nextCards = existing?.cards || [];
     if (Array.isArray(nextCards) && nextCards.length > 0 && typeof nextCards[0] === 'object' && nextCards[0].id) {
-      nextCards = nextCards.map(c => c.id);
+      nextCards = nextCards.map((c) => c.id);
     }
 
     let nextItemCards = existing?.item_cards || [];
     if (Array.isArray(nextItemCards) && nextItemCards.length > 0 && typeof nextItemCards[0] === 'object' && nextItemCards[0].id) {
-      nextItemCards = nextItemCards.map(c => c.id);
+      nextItemCards = nextItemCards.map((c) => c.id);
     }
 
     // Operações com cards normais
@@ -152,22 +164,25 @@ export async function PATCH(req) {
       .upsert(upsertData, { onConflict: 'player_id' })
       .select('cards, item_cards')
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error('[Collection API] Error upserting collection (PATCH):', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     
     // Converter resposta para formato esperado
     let cards = data.cards || [];
     if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-      cards = cards.map(c => c.id);
+      cards = cards.map((c) => c.id);
     }
     
     let itemCards = data.item_cards || [];
     if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-      itemCards = itemCards.map(c => c.id);
+      itemCards = itemCards.map((c) => c.id);
     }
     
     return NextResponse.json({ cards, itemCards, created: !existing });
   } catch (e) {
-    console.error('collection PATCH', e);
+    console.error('[Collection API] Unexpected error in PATCH:', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
   }
 }

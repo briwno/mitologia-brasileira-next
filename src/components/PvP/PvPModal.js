@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/UI/Icon';
-import { nanoid } from 'nanoid';
 // ...existing code...
 
 function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, onClick }) {

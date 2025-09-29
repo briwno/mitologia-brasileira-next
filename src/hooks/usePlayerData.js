@@ -16,7 +16,11 @@ export function usePlayerData() {
   const fetchCurrencies = useCallback(async (playerId) => {
     try {
       const response = await fetch(`/api/currency?playerId=${playerId}`);
-      if (!response.ok) throw new Error('Failed to fetch currencies');
+      if (!response.ok) {
+        console.error('[usePlayerData] Falha ao buscar moedas:', response.status);
+        setError('Failed to fetch currencies');
+        return;
+      }
       const data = await response.json();
       setCurrencies(data.currencies);
     } catch (err) {
@@ -29,7 +33,11 @@ export function usePlayerData() {
   const fetchStats = useCallback(async (playerId) => {
     try {
       const response = await fetch(`/api/stats?playerId=${playerId}`);
-      if (!response.ok) throw new Error('Failed to fetch stats');
+      if (!response.ok) {
+        console.error('[usePlayerData] Falha ao buscar estatísticas:', response.status);
+        setError('Failed to fetch stats');
+        return;
+      }
       const data = await response.json();
       setStats(data.stats);
     } catch (err) {
@@ -42,7 +50,11 @@ export function usePlayerData() {
   const fetchAchievements = useCallback(async (playerId) => {
     try {
       const response = await fetch(`/api/achievements?playerId=${playerId}`);
-      if (!response.ok) throw new Error('Failed to fetch achievements');
+      if (!response.ok) {
+        console.error('[usePlayerData] Falha ao buscar conquistas:', response.status);
+        setError('Failed to fetch achievements');
+        return;
+      }
       const data = await response.json();
       setAchievements({
         unlocked: data.unlocked || [],
@@ -60,7 +72,11 @@ export function usePlayerData() {
   const fetchQuests = useCallback(async (playerId) => {
     try {
       const response = await fetch(`/api/quests?playerId=${playerId}`);
-      if (!response.ok) throw new Error('Failed to fetch quests');
+      if (!response.ok) {
+        console.error('[usePlayerData] Falha ao buscar missões:', response.status);
+        setError('Failed to fetch quests');
+        return;
+      }
       const data = await response.json();
       setQuests({
         active: data.active || [],
@@ -137,7 +153,7 @@ export function usePlayerData() {
   // Spend currencies with validation
   const spendCurrencies = async (costs, reason, metadata = {}) => {
     if (!user?.id || !isAuthenticated()) {
-      throw new Error('Not authenticated');
+      return Promise.reject(new Error('Not authenticated'));
     }
 
     try {
@@ -154,7 +170,9 @@ export function usePlayerData() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to spend currencies');
+        const err = new Error(error.error || 'Failed to spend currencies');
+        err.details = error;
+        return Promise.reject(err);
       }
 
       const data = await response.json();
@@ -162,14 +180,14 @@ export function usePlayerData() {
       return data;
     } catch (err) {
       console.error('Error spending currencies:', err);
-      throw err;
+      return Promise.reject(err);
     }
   };
 
   // Claim quest rewards
   const claimQuestReward = async (questId) => {
     if (!user?.id || !isAuthenticated()) {
-      throw new Error('Not authenticated');
+      return Promise.reject(new Error('Not authenticated'));
     }
 
     try {
@@ -184,7 +202,9 @@ export function usePlayerData() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to claim reward');
+        const err = new Error(error.error || 'Failed to claim reward');
+        err.details = error;
+        return Promise.reject(err);
       }
 
       const data = await response.json();
@@ -198,7 +218,7 @@ export function usePlayerData() {
       return data;
     } catch (err) {
       console.error('Error claiming quest reward:', err);
-      throw err;
+      return Promise.reject(err);
     }
   };
 

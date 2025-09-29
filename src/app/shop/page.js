@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import LayoutDePagina from '../../components/UI/PageLayout';
-import { getRaridades as obterRaridades } from '../../utils/constantsAPI';
+import LayoutDePagina from '@/components/UI/PageLayout';
+import { obterRaridades } from '@/utils/constantsAPI';
 
 // Tema visual por raridade (usando strings diretas por enquanto)
 const temaDeRaridade = {

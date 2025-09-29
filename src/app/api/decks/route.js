@@ -21,13 +21,19 @@ export async function GET(req) {
     const ownerId = searchParams.get('ownerId');
     if (ownerId) {
       const { data, error } = await supabase.from('decks').select('*').eq('owner_id', Number(ownerId));
-      if (error) throw error;
+      if (error) {
+        console.error('[Decks API] Error fetching decks by owner:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
       const mapped = (data || []).map((d) => ({ ...d, ownerId: d.owner_id }));
       mapped.forEach((m) => delete m.owner_id);
       return NextResponse.json({ decks: mapped });
     }
     const { data: all, error } = await supabase.from('decks').select('*');
-    if (error) throw error;
+    if (error) {
+      console.error('[Decks API] Error fetching decks:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     const mappedAll = (all || []).map((d) => ({ ...d, ownerId: d.owner_id }));
     mappedAll.forEach((m) => delete m.owner_id);
     return NextResponse.json({ decks: mappedAll });
@@ -49,10 +55,13 @@ export async function POST(req) {
       .insert({ owner_id: parsed.data.ownerId, name: parsed.data.name, cards: parsed.data.cards })
       .select('*')
       .single();
-  if (error) throw error;
-  const deck = { ...inserted, ownerId: inserted.owner_id };
-  delete deck.owner_id;
-  return NextResponse.json({ deck, created: true });
+    if (error) {
+      console.error('[Decks API] Error creating deck:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
+    const deck = { ...inserted, ownerId: inserted.owner_id };
+    delete deck.owner_id;
+    return NextResponse.json({ deck, created: true });
   } catch (e) {
     console.error('decks POST', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
@@ -73,10 +82,13 @@ export async function PUT(req) {
       .eq('id', Number(id))
       .select('*')
       .single();
-  if (error) throw error;
-  const deck = { ...res, ownerId: res.owner_id };
-  delete deck.owner_id;
-  return NextResponse.json({ deck });
+    if (error) {
+      console.error('[Decks API] Error updating deck:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
+    const deck = { ...res, ownerId: res.owner_id };
+    delete deck.owner_id;
+    return NextResponse.json({ deck });
   } catch (e) {
     console.error('decks PUT', e);
     return NextResponse.json({ error: 'internal' }, { status: 500 });
@@ -85,12 +97,15 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-  const supabase = requireSupabaseAdmin();
+    const supabase = requireSupabaseAdmin();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-  const { error } = await supabase.from('decks').delete().eq('id', Number(id));
-  if (error) throw error;
+    const { error } = await supabase.from('decks').delete().eq('id', Number(id));
+    if (error) {
+      console.error('[Decks API] Error deleting deck:', error);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('decks DELETE', e);

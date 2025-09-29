@@ -53,7 +53,7 @@ export default function DivulgarPage() {
   return (
     <main className="relative text-white">
       {/* Side Nav Dots */}
-      <nav className="hidden md:flex flex-col gap-3 fixed left-4 top-1/2 -translate-y-1/2 z-40">
+      <nav className="hidden md:flex flex-col gap-3 wwafixed left-4 top-1/2 -translate-y-1/2 z-40">
         {SECTIONS.map(s => (
           <button key={s.id} onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })} aria-label={s.label}
             className={`w-4 h-4 rounded-full border transition ${active===s.id? 'bg-emerald-400 border-emerald-300 scale-110':'border-white/40 hover:border-white/70'}`}></button>

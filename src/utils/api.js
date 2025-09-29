@@ -50,16 +50,20 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        const error = new Error(errorData.message || `HTTP ${response.status}`);
+        error.status = response.status;
+        error.details = errorData;
+        console.error('API request failed:', error);
+        return Promise.reject(error);
       }
 
       return await response.json();
     } catch (error) {
       console.error('API request failed:', error);
-      throw error;
+      return Promise.reject(error);
     }
   }
 
@@ -297,13 +301,16 @@ export const apiUtils = {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`);
+        const error = new Error(`Upload failed: ${response.status}`);
+        error.status = response.status;
+        console.error('Upload error:', error);
+        return Promise.reject(error);
       }
 
       return await response.json();
     } catch (error) {
       console.error('Upload error:', error);
-      throw error;
+      return Promise.reject(error);
     }
   },
 

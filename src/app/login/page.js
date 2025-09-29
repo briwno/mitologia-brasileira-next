@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import LayoutDePagina from '../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 
 export default function PaginaLogin() {
   const [modoLogin, definirModoLogin] = useState(true);

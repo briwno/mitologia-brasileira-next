@@ -33,7 +33,10 @@ export async function GET(req) {
         .is('claimed_at', null) // Only unclaimed quests
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Quests API] Error fetching player quests:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       // Separate active, completed, and expired quests
       const now = new Date();
@@ -66,7 +69,10 @@ export async function GET(req) {
         .eq('is_active', true)
         .order('quest_type', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Quests API] Error fetching quests:', error);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       return NextResponse.json({ quests });
     }
@@ -97,7 +103,10 @@ export async function POST(req) {
       .gte('assigned_at', todayStart.toISOString())
       .in('quest_id', ['daily_win_2', 'daily_play_5', 'daily_damage_500', 'daily_quiz_1']);
 
-    if (dailyError) throw dailyError;
+    if (dailyError) {
+      console.error('[Quests API] Error fetching daily quests:', dailyError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     const assignedQuests = [];
 
@@ -133,7 +142,10 @@ export async function POST(req) {
       .gte('assigned_at', weekStart.toISOString())
       .like('quest_id', 'weekly_%');
 
-    if (weeklyError) throw weeklyError;
+    if (weeklyError) {
+      console.error('[Quests API] Error fetching weekly quests:', weeklyError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     if (existingWeekly.length === 0 && now.getDay() === 1) { // Monday
       const weeklyQuests = ['weekly_ranked_5', 'weekly_collection', 'weekly_social'];
@@ -164,7 +176,10 @@ export async function POST(req) {
           quests (*)
         `);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[Quests API] Error assigning quests:', insertError);
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
 
       return NextResponse.json({
         message: `Assigned ${assignedQuests.length} new quests`,
@@ -217,7 +232,8 @@ export async function PUT(req) {
           { status: 404 }
         );
       }
-      throw questError;
+  console.error('[Quests API] Error fetching quest progress:', questError);
+  return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Don't update if already completed or expired
@@ -266,7 +282,10 @@ export async function PUT(req) {
       `)
       .single();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[Quests API] Error updating quest progress:', updateError);
+      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+    }
 
     return NextResponse.json({
       message: isCompleted ? 'Quest completed!' : 'Progress updated',
@@ -316,7 +335,8 @@ export async function CLAIM(req) {
           { status: 404 }
         );
       }
-      throw questError;
+  console.error('[Quests API] Error fetching completed quest:', questError);
+  return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
 
     // Award rewards

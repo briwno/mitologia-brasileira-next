@@ -10,14 +10,7 @@ import ItemCard from '@/components/Card/ItemCard';
 import CardModal from '@/components/Card/CardModal';
 import CardImage from '@/components/Card/CardImage';
 import { cardsAPI } from '@/utils/api';
-import { 
-  TRANSLATION_MAPS, 
-  translate, 
-  formatEnumLabel, 
-  mapApiCardToLocal, 
-  getRarityFrameClasses, 
-  filterCards 
-} from '@/utils/cardUtils';
+import { mapApiCardToLocal, getRarityFrameClasses } from '@/utils/cardUtils';
 
 export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
@@ -49,8 +42,12 @@ export default function PaginaInventarioDeCartas() {
 				
 				// Fetch items (ainda usando fetch pois não tem no API client)
 				const itemsRes = await fetch('/api/item-cards');
-				if (!itemsRes.ok) throw new Error('Falha ao carregar itens');
-				const itemsData = await itemsRes.json();
+				let itemsData = { itemCards: [] };
+				if (!itemsRes.ok) {
+					console.error('[CardInventory] Falha ao carregar itens:', itemsRes.status);
+				} else {
+					itemsData = await itemsRes.json();
+				}
 				
 				// Mapear cartas para compatibilidade com DeckBuilder
 				const mappedCards = (cardsData.cards || []).map(card => {
@@ -169,9 +166,13 @@ export default function PaginaInventarioDeCartas() {
 			
 			if (response.ok) {
 				alert('Deck salvo com sucesso!');
-			} else {
-				throw new Error('Erro ao salvar deck');
+				return;
 			}
+
+			const errorData = await response.json().catch(() => ({}));
+			const message = errorData.error || 'Erro ao salvar deck';
+			console.error('[CardInventory] Falha ao salvar deck:', response.status, message);
+			alert(message);
 		} catch (error) {
 			console.error('Erro ao salvar deck:', error);
 			alert('Erro ao salvar deck. Tente novamente.');

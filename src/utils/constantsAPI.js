@@ -3,53 +3,58 @@
 /**
  * Cache das constantes para evitar múltiplas chamadas à API
  */
-let constantsCache = null;
+let cacheConstantes = null;
 
 /**
  * Busca todas as constantes da API
  */
-export async function getConstants() {
-  if (constantsCache) {
-    return constantsCache;
+export async function obterConstantes() {
+  if (cacheConstantes) {
+    return cacheConstantes;
   }
 
   try {
-    const response = await fetch('/api/constants');
-    if (!response.ok) {
-      throw new Error('Erro ao buscar constantes');
+    const resposta = await fetch('/api/constants');
+    if (!resposta.ok) {
+      console.error('[constantsAPI] Resposta inválida ao buscar constantes:', resposta.status);
+      return obterFallbackConstantes();
     }
-    
-    constantsCache = await response.json();
-    return constantsCache;
-  } catch (error) {
-    console.error('Erro ao buscar constantes:', error);
-    // Fallback para caso a API falhe
-    return {
-      CATEGORIAS_CARTAS: {},
-      RARIDADES_CARTAS: {},
-      REGIOES: {},
-      TIPOS_CARTA: {},
-      ELEMENTOS: {},
-      ESTACOES: {},
-      COMBOS_CARTAS: {},
-      MULTIPLICADORES: {}
-    };
+
+    cacheConstantes = await resposta.json();
+    return cacheConstantes;
+  } catch (erro) {
+    console.error('Erro ao buscar constantes:', erro);
+    return obterFallbackConstantes();
   }
+}
+
+function obterFallbackConstantes() {
+  return {
+    CATEGORIAS_CARTAS: {},
+    RARIDADES_CARTAS: {},
+    REGIOES: {},
+    TIPOS_CARTA: {},
+    ELEMENTOS: {},
+    ESTACOES: {},
+    COMBOS_CARTAS: {},
+    MULTIPLICADORES: {}
+  };
 }
 
 /**
  * Busca um tipo específico de constante
  */
-export async function getConstantType(type) {
+export async function obterTipoConstante(tipo) {
   try {
-    const response = await fetch(`/api/constants?type=${type}`);
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar constante ${type}`);
+    const resposta = await fetch(`/api/constants?type=${tipo}`);
+    if (!resposta.ok) {
+      console.error(`[constantsAPI] Resposta inválida ao buscar constante ${tipo}:`, resposta.status);
+      return {};
     }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Erro ao buscar constante ${type}:`, error);
+
+    return await resposta.json();
+  } catch (erro) {
+    console.error(`Erro ao buscar constante ${tipo}:`, erro);
     return {};
   }
 }
@@ -57,54 +62,54 @@ export async function getConstantType(type) {
 /**
  * Força atualização do cache de constantes
  */
-export function clearConstantsCache() {
-  constantsCache = null;
+export function limparCacheConstantes() {
+  cacheConstantes = null;
 }
 
 /**
  * Exporta constantes individuais para compatibilidade
  */
-export async function getCategorias() {
-  const constants = await getConstants();
-  return constants.CATEGORIAS_CARTAS || {};
+export async function obterCategorias() {
+  const constantes = await obterConstantes();
+  return constantes.CATEGORIAS_CARTAS || {};
 }
 
-export async function getRaridades() {
-  const constants = await getConstants();
-  return constants.RARIDADES_CARTAS || {};
+export async function obterRaridades() {
+  const constantes = await obterConstantes();
+  return constantes.RARIDADES_CARTAS || {};
 }
 
-export async function getRegioes() {
-  const constants = await getConstants();
-  return constants.REGIOES || {};
+export async function obterRegioes() {
+  const constantes = await obterConstantes();
+  return constantes.REGIOES || {};
 }
 
-export async function getTiposCartas() {
-  const constants = await getConstants();
-  return constants.TIPOS_CARTA || {};
+export async function obterTiposCartas() {
+  const constantes = await obterConstantes();
+  return constantes.TIPOS_CARTA || {};
 }
 
-export async function getElementos() {
-  const constants = await getConstants();
-  return constants.ELEMENTOS || {};
+export async function obterElementos() {
+  const constantes = await obterConstantes();
+  return constantes.ELEMENTOS || {};
 }
 
-export async function getEstacoes() {
-  const constants = await getConstants();
-  return constants.ESTACOES || {};
+export async function obterEstacoes() {
+  const constantes = await obterConstantes();
+  return constantes.ESTACOES || {};
 }
 
-export async function getCombos() {
-  const constants = await getConstants();
-  return constants.COMBOS_CARTAS || {};
+export async function obterCombos() {
+  const constantes = await obterConstantes();
+  return constantes.COMBOS_CARTAS || {};
 }
 
-export async function getMultiplicadores() {
-  const constants = await getConstants();
-  return constants.MULTIPLICADORES || {};
+export async function obterMultiplicadores() {
+  const constantes = await obterConstantes();
+  return constantes.MULTIPLICADORES || {};
 }
 
-export async function getConstantesDeck() {
-  const constants = await getConstants();
-  return constants.CONSTANTES_DECK || {};
+export async function obterConstantesDeck() {
+  const constantes = await obterConstantes();
+  return constantes.CONSTANTES_DECK || {};
 }

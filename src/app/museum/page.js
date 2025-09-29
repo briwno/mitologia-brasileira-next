@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import LayoutDePagina from '../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 import ModalMuseu from '@/components/Museum/MuseumModal';
 
 export default function LobbyMuseu() {

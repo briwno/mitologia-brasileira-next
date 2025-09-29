@@ -1,7 +1,4 @@
-﻿// src/utils/botAI.js
-import { nanoid } from 'nanoid';
-
-export class BotAI {
+﻿export class BotAI {
   constructor(difficulty = 'normal', personality = 'balanced') {
     this.difficulty = difficulty;
     this.personality = personality;

@@ -4,8 +4,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useAuth as usarAutenticacao } from '../../hooks/useAuth';
-import LayoutDePagina from '../../components/UI/PageLayout';
+import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
+import LayoutDePagina from '@/components/UI/PageLayout';
 
 export default function PaginaPerfil() {
   const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
@@ -28,7 +28,11 @@ export default function PaginaPerfil() {
         const resposta = await fetch(`/api/profile?playerId=${usuario.id}`);
 
         if (!resposta.ok) {
-          throw new Error('Erro ao carregar dados do perfil');
+          const errorData = await resposta.json().catch(() => ({}));
+          const mensagem = errorData.error || 'Erro ao carregar dados do perfil';
+          console.error('[Perfil] Falha ao buscar dados:', resposta.status, mensagem);
+          definirErro(mensagem);
+          return;
         }
 
         const dados = await resposta.json();

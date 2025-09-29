@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import LayoutDePagina from '../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 import ModalPvP from '@/components/PvP/PvPModal';
 
 export default function LobbyPvP() {

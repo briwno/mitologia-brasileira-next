@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import LayoutDePagina from '../../components/UI/PageLayout';
+import LayoutDePagina from '@/components/UI/PageLayout';
 
 function linhaTabelaClasse(posicao) {
 	if (posicao === 1) return 'bg-yellow-500/10 border-yellow-400/40';
