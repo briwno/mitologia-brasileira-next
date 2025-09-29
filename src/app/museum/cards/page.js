@@ -1,15 +1,9 @@
 // src/app/museum/cards/page.js
 "use client";
-
-
-
 import { useState, useMemo, useEffect } from 'react';
-
-// Agora todos os mapas estão centralizados em cardUtils.js
 import Image from 'next/image';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
-// Removido bancoDeCartas: agora buscando da API /api/cards
 import CardModal from '@/components/Card/CardModal';
 import ItemCard from '@/components/Card/ItemCard';
 import { cardsAPI } from '@/utils/api';

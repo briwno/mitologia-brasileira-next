@@ -749,7 +749,7 @@ export default function BattleScreen({
   // Layout positions derived from the SVG (percentages of a 1920x1080 canvas)
   const POS = {
     // bottom side
-    playerBottom: posPercent({ x: 6, y: 92, useBottom: true }), // bottom-left
+    playerBottom: posPercent({ x: 2, y: 92, useBottom: true }), // bottom-left
     bankBottom: posPercent({ x: 16, y: 92, useBottom: true }), // bottom-left row
     itemsBottom: posPercent({ x: 50, y: 95, centerX: true, useBottom: true }), // bottom-center row
     activeBottom: posPercent({ x: 50, y: 65, centerX: true, centerY: true }), // centered
