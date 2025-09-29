@@ -192,7 +192,7 @@ function HandItems({ items, position = "bottom", onUseItem, posStyle }) {
 // Componente para exibir habilidades da carta ativa
 function CardSkills({ card, onSkillClick, posStyle }) {
   const normalizarElemento = (element) => {
-    if (!element) return "neutro";
+    if (!element) return "";
     return element
       .toString()
       .normalize("NFD")
@@ -215,6 +215,53 @@ function CardSkills({ card, onSkillClick, posStyle }) {
 
   const rawKind = (skill) =>
     (skill?.kind || skill?.type || "").toString().toLowerCase();
+
+  const getKindLabel = (skill) => {
+    const value = (skill?.kind || skill?.tipo || "").toString().toLowerCase();
+    if (!value) return null;
+
+    const labels = {
+      damage: "Dano",
+      debuff: "Enfraquecimento",
+      stun: "Atordoamento",
+      buff: "Fortalecimento",
+      heal: "Cura",
+      passive: "Passiva",
+      active: "Ativa",
+      basic: "Básica",
+      ultimate: "Ultimate",
+      support: "Suporte",
+      utility: "Utilidade",
+      shield: "Escudo",
+      energy: "Energia",
+      dot: "Dano Contínuo",
+      hot: "Regeneração",
+      summon: "Invocação",
+      status: "Status",
+    };
+
+    if (labels[value]) {
+      return labels[value];
+    }
+
+    return value
+      .split(/[-_ ]+/)
+      .filter(Boolean)
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(" ");
+  };
+
+  const getElementLabel = (skill) => {
+    const rawElement = (skill?.elemento ?? skill?.element ?? "")
+      .toString()
+      .trim();
+    if (!rawElement) return null;
+    const normalized = normalizarElemento(rawElement);
+    if (!normalized || ["neutro", "none", "nenhum"].includes(normalized)) {
+      return null;
+    }
+    return rawElement.toUpperCase();
+  };
 
   const getCardSkills = (card) => {
     if (!card) {
@@ -246,7 +293,7 @@ function CardSkills({ card, onSkillClick, posStyle }) {
       const tipo = inferirTipo(skill, index);
       const kind = rawKind(skill);
       const elementoOriginal =
-        skill.element || card.elemento || card.element || "Neutro";
+        skill.element || card.elemento || card.element || "";
       skills.push({
         id: skill.id || `skill${index + 1}`,
         nome: skill.name || skill.nome || `Habilidade ${index + 1}`,
@@ -273,7 +320,7 @@ function CardSkills({ card, onSkillClick, posStyle }) {
         abilities.basic &&
         (abilities.basic.name || abilities.basic.description)
       ) {
-        const elementoOriginal = card.elemento || card.element || "Neutro";
+        const elementoOriginal = card.elemento || card.element || "";
         skills.push({
           id: "basic",
           nome: abilities.basic.name,
@@ -292,7 +339,7 @@ function CardSkills({ card, onSkillClick, posStyle }) {
         abilities.ultimate &&
         (abilities.ultimate.name || abilities.ultimate.description)
       ) {
-        const elementoOriginal = card.elemento || card.element || "Neutro";
+        const elementoOriginal = card.elemento || card.element || "";
         skills.push({
           id: "ultimate",
           nome: abilities.ultimate.name,
@@ -314,7 +361,7 @@ function CardSkills({ card, onSkillClick, posStyle }) {
       (passive.name || passive.description || passive.nome || passive.descricao)
     ) {
       const elementoOriginal =
-        passive.element || card.elemento || card.element || "Neutro";
+        passive.element || card.elemento || card.element || "";
       skills.push({
         id: passive.id || "passive",
         nome: passive.name || passive.nome || "Passiva",
@@ -440,63 +487,84 @@ function CardSkills({ card, onSkillClick, posStyle }) {
   );
   const ultimateSkill = skills.find((s) => s.tipo === "ultimate");
   const passiveSkill = skills.find((s) => s.tipo === "passiva");
+  const ultimateKindLabel = ultimateSkill ? getKindLabel(ultimateSkill) : null;
+  const ultimateElementLabel = ultimateSkill
+    ? getElementLabel(ultimateSkill)
+    : null;
+  const passiveKindLabel = passiveSkill ? getKindLabel(passiveSkill) : null;
+  const passiveElementLabel = passiveSkill
+    ? getElementLabel(passiveSkill)
+    : null;
 
   return (
     <div className="absolute z-10" style={posStyle}>
       <div className="flex items-center justify-center gap-3">
         {/* Skills básicas e ativas */}
-        {basicSkills.map((skill, index) => (
-          <div key={skill.id} className="relative group">
-            <button
-              className={`${getSkillSize(
-                skill
-              )} rounded-full flex items-center justify-center text-white font-bold transition-all duration-300 ${getSkillColor(
-                skill
-              )}  
+        {basicSkills.map((skill) => {
+          const kindLabel = getKindLabel(skill);
+          const elementLabel = getElementLabel(skill);
+
+          return (
+            <div key={skill.id} className="relative group">
+              <button
+                className={`${getSkillSize(
+                  skill
+                )} rounded-full flex items-center justify-center text-white font-bold transition-all duration-300 ${getSkillColor(
+                  skill
+                )}  
 ${
   skill.disponivel
     ? "cursor-pointer hover:scale-110 hover:shadow-xl"
     : "cursor-not-allowed"
 }`}
-              onClick={() => skill.disponivel && onSkillClick?.(skill)}
-              disabled={!skill.disponivel}
-            >
-              {getSkillIcon(skill)}
-              {skill.cooldown > 0 && skill.cooldown < 10 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  {skill.cooldown}
-                </span>
-              )}
-            </button>
+                onClick={() => skill.disponivel && onSkillClick?.(skill)}
+                disabled={!skill.disponivel}
+              >
+                {getSkillIcon(skill)}
+                {skill.cooldown > 0 && skill.cooldown < 10 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    {skill.cooldown}
+                  </span>
+                )}
+              </button>
 
-            {/* Tooltip avançado */}
-            <div
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900/95 text-white text-sm rounded-lg p-3 shadow-xl border border-gray-600   
+              {/* Tooltip avançado */}
+              <div
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900/95 text-white text-sm rounded-lg p-3 shadow-xl border border-gray-600   
 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50"
-            >
-              <div className="font-bold text-center mb-1 text-yellow-400">
-                {skill.nome}
-              </div>
-              <div className="text-xs text-gray-300 mb-2 text-center">
-                {skill.tipo.toUpperCase()} •{" "}
-                {skill.elemento?.toUpperCase() || "NEUTRO"}
-              </div>
-              <div className="text-xs text-center">{skill.descricao}</div>
-              {skill.cooldown > 0 && (
-                <div className="text-xs text-red-400 text-center mt-1">
-                  Cooldown: {skill.cooldown} turnos
+              >
+                <div className="font-bold text-center mb-1 text-yellow-400">
+                  {skill.nome}
                 </div>
-              )}
-              {!skill.disponivel && (
-                <div className="text-xs text-red-500 text-center mt-1 font-bold">
-                  INDISPONÍVEL
-                </div>
-              )}
-              {/* Seta do tooltip */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95"></div>
+                {kindLabel && (
+                  <div className="text-[11px] text-emerald-200 text-center uppercase tracking-wide mb-1">
+                    {kindLabel}
+                  </div>
+                )}
+                {(skill.tipo || elementLabel) && (
+                  <div className="text-xs text-gray-300 mb-2 text-center">
+                    {skill.tipo ? skill.tipo.toUpperCase() : null}
+                    {skill.tipo && elementLabel ? " • " : ""}
+                    {elementLabel}
+                  </div>
+                )}
+                <div className="text-xs text-center">{skill.descricao}</div>
+                {skill.cooldown > 0 && (
+                  <div className="text-xs text-red-400 text-center mt-1">
+                    Cooldown: {skill.cooldown} turnos
+                  </div>
+                )}
+                {!skill.disponivel && (
+                  <div className="text-xs text-red-500 text-center mt-1 font-bold">
+                    INDISPONÍVEL
+                  </div>
+                )}
+                {/* Seta do tooltip */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95"></div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Ultimate (destaque central) */}
         {ultimateSkill && (
@@ -533,8 +601,14 @@ p-4 shadow-2xl border border-purple-500 opacity-0 group-hover:opacity-100 transi
               <div className="font-bold text-center mb-1 text-yellow-300 text-lg">
                 ⚡ {ultimateSkill.nome} ⚡
               </div>
+              {ultimateKindLabel && (
+                <div className="text-[11px] text-purple-200 text-center uppercase tracking-wide mb-1">
+                  {ultimateKindLabel}
+                </div>
+              )}
               <div className="text-xs text-purple-200 mb-2 text-center font-bold">
-                ULTIMATE • {ultimateSkill.elemento?.toUpperCase() || "SUPREMO"}
+                ULTIMATE
+                {ultimateElementLabel ? ` • ${ultimateElementLabel}` : ""}
               </div>
               <div className="text-sm text-center mb-2">
                 {ultimateSkill.descricao}
@@ -573,8 +647,14 @@ border-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-2
               <div className="font-bold text-center mb-1 text-amber-300">
                 🛡️ {passiveSkill.nome}
               </div>
+              {passiveKindLabel && (
+                <div className="text-[11px] text-amber-200 text-center uppercase tracking-wide mb-1">
+                  {passiveKindLabel}
+                </div>
+              )}
               <div className="text-xs text-amber-200 mb-2 text-center font-bold">
-                PASSIVA • SEMPRE ATIVA
+                SEMPRE ATIVA
+                {passiveElementLabel ? ` • ${passiveElementLabel}` : ""}
               </div>
               <div className="text-xs text-center">
                 {passiveSkill.descricao}

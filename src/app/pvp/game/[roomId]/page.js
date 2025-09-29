@@ -119,10 +119,12 @@ export default function BattleRoomPage() {
               defesa: card.defense || card.defesa || 0,
               vida: card.life || card.vida || 0,
               custo: finalCost,
-              tipo_item: card.category === 'item' ? (card.type_item || 'neutro') : null,
+              tipo_item: card.category === 'item' ? (card.type_item || '') : null,
               valor: card.value || card.valor || 1,
               habilidade: card.ability || card.habilidade,
-              descricao: card.description || card.descricao || card.history || card.historia
+              descricao: card.description || card.descricao || card.history || card.historia,
+              habilidades: card.abilities || card.habilidades || null,
+              abilities: card.abilities || null
             };
           })
           .filter(Boolean);

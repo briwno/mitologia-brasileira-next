@@ -436,6 +436,9 @@ export default function SelecaoDeDeck() {
           </button>
         </div>
 
+        {/*campo para rolagem */}
+        <div className="h-12"></div>
+
         
 
         {/* Deck Builder */}
