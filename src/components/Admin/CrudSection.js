@@ -22,6 +22,101 @@ function isEmptyValue(value) {
   return false;
 }
 
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj || {}, key);
+}
+
+const DEFAULT_SKILL_FIELDS = ['name', 'description', 'kind', 'base', 'cost', 'ppMax'];
+const DEFAULT_PASSIVE_FIELDS = ['name', 'description'];
+
+function getSkillKeys(field) {
+  if (Array.isArray(field.skillKeys) && field.skillKeys.length > 0) {
+    return field.skillKeys;
+  }
+  return ['skill1', 'skill2', 'skill3', 'skill4', 'skill5'];
+}
+
+function getSkillFields(field) {
+  if (Array.isArray(field.skillFields) && field.skillFields.length > 0) {
+    return field.skillFields;
+  }
+  return DEFAULT_SKILL_FIELDS;
+}
+
+function getPassiveFields(field) {
+  if (Array.isArray(field.passiveFields) && field.passiveFields.length > 0) {
+    return field.passiveFields;
+  }
+  return DEFAULT_PASSIVE_FIELDS;
+}
+
+function buildDefaultAbilities(field) {
+  const defaults = {};
+  const skillFields = getSkillFields(field);
+  const skillKeys = getSkillKeys(field);
+
+  skillKeys.forEach((key) => {
+    const base = {};
+    skillFields.forEach((fieldName) => {
+      base[fieldName] = '';
+    });
+    defaults[key] = base;
+  });
+
+  if (field.includePassive !== false) {
+    const passiveFields = getPassiveFields(field);
+    const passiveDefaults = {};
+    passiveFields.forEach((fieldName) => {
+      passiveDefaults[fieldName] = '';
+    });
+    defaults.passive = passiveDefaults;
+  }
+
+  return defaults;
+}
+
+function normalizeAbilitiesValue(field, rawValue) {
+  const defaults = buildDefaultAbilities(field);
+  if (!rawValue || typeof rawValue !== 'object') {
+    return defaults;
+  }
+
+  const skillFields = getSkillFields(field);
+  const passiveFields = getPassiveFields(field);
+
+  Object.entries(defaults).forEach(([key, defaultValue]) => {
+    const source = rawValue[key];
+    if (!source || typeof source !== 'object') {
+      defaults[key] = { ...defaultValue };
+      return;
+    }
+
+    const target = { ...defaultValue };
+    const fieldsToConsider = key === 'passive' ? passiveFields : skillFields;
+
+    fieldsToConsider.forEach((fieldName) => {
+      if (hasOwn(source, fieldName)) {
+        target[fieldName] = source[fieldName] ?? '';
+      }
+    });
+
+    defaults[key] = target;
+  });
+
+  return defaults;
+}
+
+function coerceAbilityNumber(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
 function getDefaultValue(field) {
   if (field.defaultValue !== undefined) {
     if (field.type === 'boolean') return Boolean(field.defaultValue);
@@ -44,6 +139,8 @@ function getDefaultValue(field) {
     case 'list':
     case 'multi-select':
       return [];
+    case 'abilities':
+      return buildDefaultAbilities(field);
     case 'object': {
       const obj = {};
       (field.fields || []).forEach((subField) => {
@@ -97,6 +194,9 @@ function formatFieldValue(field, raw, source) {
       });
       return obj;
     }
+    case 'abilities': {
+      return normalizeAbilitiesValue(field, raw);
+    }
     case 'number':
       return raw ?? '';
     default:
@@ -112,6 +212,8 @@ function FieldInput({ field, value, onChange, nested = false, loading = false })
       return <MultiSelectField field={field} value={value} onChange={onChange} loading={loading} />;
     case 'object':
       return <ObjectField field={field} value={value} onChange={onChange} />;
+    case 'abilities':
+      return <AbilitiesField field={field} value={value} onChange={onChange} />;
     default:
       return <BasicField field={field} value={value} onChange={onChange} nested={nested} />;
   }
@@ -457,6 +559,190 @@ function ObjectField({ field, value, onChange }) {
   );
 }
 
+function AbilitiesField({ field, value, onChange }) {
+  const skillKeys = getSkillKeys(field);
+  const kindOptions = (field.kindOptions || [
+    { value: 'damage', label: 'Dano' },
+    { value: 'heal', label: 'Cura' },
+    { value: 'buff', label: 'Buff' },
+    { value: 'debuff', label: 'Debuff' },
+    { value: 'support', label: 'Suporte' },
+    { value: 'utility', label: 'Utilitário' },
+    { value: 'stun', label: 'Atordoamento' },
+  ]).map((option) =>
+    typeof option === 'string'
+      ? { value: option, label: option }
+      : option
+  );
+
+  const normalized = useMemo(() => normalizeAbilitiesValue(field, value), [field, value]);
+
+  const updateSkill = useCallback(
+    (abilityKey, property, newValue) => {
+      onChange({
+        ...normalized,
+        [abilityKey]: {
+          ...normalized[abilityKey],
+          [property]: newValue,
+        },
+      });
+    },
+    [normalized, onChange]
+  );
+
+  const resetSkill = useCallback(
+    (abilityKey) => {
+      const defaults = buildDefaultAbilities(field);
+      onChange({
+        ...normalized,
+        [abilityKey]: defaults[abilityKey],
+      });
+    },
+    [field, normalized, onChange]
+  );
+
+  const renderNumberInput = (abilityKey, property, label) => {
+    const numericValue = normalized[abilityKey]?.[property];
+    return (
+      <div className="space-y-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+        <input
+          type="number"
+          value={numericValue === '' || numericValue === null || numericValue === undefined ? '' : numericValue}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            updateSkill(abilityKey, property, nextValue === '' ? '' : Number(nextValue));
+          }}
+          className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+        />
+      </div>
+    );
+  };
+
+  const renderSkillCard = (abilityKey, index) => {
+    const skill = normalized[abilityKey] || {};
+    const title = field.skillLabels?.[abilityKey] || `Habilidade ${index + 1}`;
+
+    return (
+      <div key={abilityKey} className="space-y-4 rounded-2xl border border-slate-800/70 bg-slate-900/30 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-100">{title}</h4>
+            <p className="text-xs text-slate-500">Preencha os detalhes da habilidade. Campos vazios serão ignorados.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => resetSkill(abilityKey)}
+            className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 transition hover:border-emerald-400/60 hover:text-emerald-200"
+          >
+            Limpar
+          </button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Nome</span>
+            <input
+              type="text"
+              value={skill.name ?? ''}
+              onChange={(event) => updateSkill(abilityKey, 'name', event.target.value)}
+              placeholder="Nome da habilidade"
+              className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            />
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tipo</span>
+            <select
+              value={skill.kind ?? ''}
+              onChange={(event) => updateSkill(abilityKey, 'kind', event.target.value)}
+              className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            >
+              <option value="">Selecione</option>
+              {kindOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {renderNumberInput(abilityKey, 'base', 'Base')}
+          {renderNumberInput(abilityKey, 'cost', 'Custo')}
+          {renderNumberInput(abilityKey, 'ppMax', 'PP Máx.')}
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Descrição</span>
+          <textarea
+            rows={3}
+            value={skill.description ?? ''}
+            onChange={(event) => updateSkill(abilityKey, 'description', event.target.value)}
+            placeholder="Explique o efeito da habilidade"
+            className="w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderPassive = () => {
+    if (field.includePassive === false || !normalized.passive) {
+      return null;
+    }
+
+    const passive = normalized.passive;
+
+    return (
+      <div className="space-y-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-amber-200">Habilidade Passiva</h4>
+            <p className="text-xs text-amber-200/80">Opcional. Se preenchida, será armazenada como <code>passive</code>.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => resetSkill('passive')}
+            className="rounded-lg border border-amber-400/60 px-3 py-1 text-xs font-semibold text-amber-100 transition hover:border-amber-300 hover:text-amber-50"
+          >
+            Limpar
+          </button>
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-amber-200">Nome</span>
+          <input
+            type="text"
+            value={passive.name ?? ''}
+            onChange={(event) => updateSkill('passive', 'name', event.target.value)}
+            placeholder="Nome da passiva"
+            className="w-full rounded-xl border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-50 placeholder:text-amber-200/60 focus:border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-200/40"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-amber-200">Descrição</span>
+          <textarea
+            rows={3}
+            value={passive.description ?? ''}
+            onChange={(event) => updateSkill('passive', 'description', event.target.value)}
+            placeholder="Explique o efeito passivo"
+            className="w-full rounded-xl border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-50 placeholder:text-amber-200/60 focus:border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-200/40"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {skillKeys.map((abilityKey, index) => renderSkillCard(abilityKey, index))}
+      {renderPassive()}
+    </div>
+  );
+}
+
 export default function CrudSection({ config }) {
   const {
     id: sectionId,
@@ -714,6 +1000,70 @@ export default function CrudSection({ config }) {
             }
           });
           return Object.keys(objectPayload).length ? objectPayload : null;
+        case 'abilities': {
+          if (!rawValue || typeof rawValue !== 'object') return null;
+          const result = {};
+          const skillFields = getSkillFields(field);
+          const passiveFields = getPassiveFields(field);
+
+          getSkillKeys(field).forEach((abilityKey) => {
+            const skillSource = rawValue[abilityKey];
+            if (!skillSource || typeof skillSource !== 'object') return;
+
+            const cleanedSkill = {};
+            skillFields.forEach((fieldName) => {
+              if (!hasOwn(skillSource, fieldName)) return;
+              const raw = skillSource[fieldName];
+              if (['base', 'cost', 'ppMax'].includes(fieldName)) {
+                const numeric = coerceAbilityNumber(raw);
+                if (numeric !== null) {
+                  cleanedSkill[fieldName] = numeric;
+                }
+                return;
+              }
+
+              if (typeof raw === 'string') {
+                const trimmed = raw.trim();
+                if (trimmed !== '') {
+                  cleanedSkill[fieldName] = trimmed;
+                }
+                return;
+              }
+
+              if (raw !== null && raw !== undefined && raw !== '') {
+                cleanedSkill[fieldName] = raw;
+              }
+            });
+
+            if (Object.keys(cleanedSkill).length > 0) {
+              result[abilityKey] = cleanedSkill;
+            }
+          });
+
+          if (field.includePassive !== false && rawValue.passive && typeof rawValue.passive === 'object') {
+            const passiveCleaned = {};
+            passiveFields.forEach((fieldName) => {
+              if (!hasOwn(rawValue.passive, fieldName)) return;
+              const raw = rawValue.passive[fieldName];
+              if (typeof raw === 'string') {
+                const trimmed = raw.trim();
+                if (trimmed !== '') {
+                  passiveCleaned[fieldName] = trimmed;
+                }
+                return;
+              }
+              if (raw !== null && raw !== undefined && raw !== '') {
+                passiveCleaned[fieldName] = raw;
+              }
+            });
+
+            if (Object.keys(passiveCleaned).length > 0) {
+              result.passive = passiveCleaned;
+            }
+          }
+
+          return Object.keys(result).length ? result : null;
+        }
         default:
           return rawValue ?? null;
       }

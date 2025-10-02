@@ -172,7 +172,22 @@ const CARD_FORM_FIELDS = [
     allowCustomOptions: true,
     helperText: 'Selecione marcadores sugeridos ou adicione novos termos.',
   },
-  { name: 'abilities', label: 'Habilidades (JSON)', type: 'json', helperText: 'Estrutura completa das habilidades.' },
+  {
+    name: 'abilities',
+    label: 'Habilidades',
+    type: 'abilities',
+    helperText: 'Preencha as habilidades ativas e passiva. Campos vazios não serão salvos.',
+    skillKeys: ['skill1', 'skill2', 'skill3', 'skill4', 'skill5'],
+    kindOptions: [
+      { value: 'damage', label: 'Dano' },
+      { value: 'heal', label: 'Cura' },
+      { value: 'buff', label: 'Buff' },
+      { value: 'debuff', label: 'Debuff' },
+      { value: 'stun', label: 'Atordoamento' },
+      { value: 'support', label: 'Suporte' },
+      { value: 'utility', label: 'Utilitário' },
+    ],
+  },
   { name: 'unlockCondition', label: 'Condição de desbloqueio', type: 'textarea', rows: 2 },
   {
     name: 'seasonalBonus',
@@ -246,12 +261,20 @@ export const ADMIN_SECTIONS = [
     primaryKey: 'id',
     columns: CARD_COLUMNS,
     formFields: CARD_FORM_FIELDS,
-    transformBeforeSubmit: (payload) => ({
-      ...payload,
-      attack: payload.attack ?? 0,
-      defense: payload.defense ?? 0,
-      health: payload.health ?? 1,
-    }),
+    transformBeforeSubmit: (payload) => {
+      const next = {
+        ...payload,
+        attack: payload.attack ?? 0,
+        defense: payload.defense ?? 0,
+        health: payload.health ?? 1,
+      };
+
+      if (!next.abilities) {
+        delete next.abilities;
+      }
+
+      return next;
+    },
     buildUpdateBody: (payload, current) => ({
       ...payload,
       id: current.id,
