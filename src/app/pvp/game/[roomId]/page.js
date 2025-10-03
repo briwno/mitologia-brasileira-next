@@ -7,8 +7,8 @@ import BattleScreen from '@/components/Game/BattleScreen';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameState } from '@/hooks/useGameState';
-import { cardsAPI } from '@/utils/api';
-import { inferCardPlayCost } from '@/utils/cardUtils';
+import { cardsAPI, itemCardsAPI } from '@/utils/api';
+import { inferirCustoParaJogar } from '@/utils/cardUtils';
 
 export default function BattleRoomPage() {
   const params = useParams();
@@ -87,7 +87,7 @@ export default function BattleRoomPage() {
         // Buscar cartas regulares e item cards
         const [cardsResponse, itemCardsResponse] = await Promise.all([
           cardsAPI.getAll(),
-          fetch('/api/item-cards').then(res => res.json())
+          itemCardsAPI.getAll()
         ]);
 
         const allAvailableCards = [
@@ -104,7 +104,7 @@ export default function BattleRoomPage() {
               return null;
             }
 
-            const inferredCost = inferCardPlayCost(card);
+            const inferredCost = inferirCustoParaJogar(card);
             const finalCost = typeof inferredCost === 'number'
               ? inferredCost
               : (card.value || card.valor || 1);

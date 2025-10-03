@@ -1,43 +1,22 @@
-// Mock: retorna todas as cartas do jogo (lendas e itens)
-export const getAllGameCards = () => [
-  // Lendas
-  {
-    id: 'lenda1', nome: 'Saci', category: 'lenda', type: 'lenda', ataque: 7, defesa: 5, vida: 20, raridade: 'EPIC', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
-  },
-  {
-    id: 'lenda2', nome: 'Curupira', category: 'lenda', type: 'lenda', ataque: 6, defesa: 6, vida: 22, raridade: 'LEGENDARY', elemento: 'EARTH', images: {}, habilidades: {}, cardType: 'creature',
-  },
-  {
-    id: 'lenda3', nome: 'Iara', category: 'lenda', type: 'lenda', ataque: 5, defesa: 7, vida: 18, raridade: 'MYTHIC', elemento: 'WATER', images: {}, habilidades: {}, cardType: 'creature',
-  },
-  {
-    id: 'lenda4', nome: 'Boitatá', category: 'lenda', type: 'lenda', ataque: 8, defesa: 4, vida: 19, raridade: 'EPIC', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
-  },
-  {
-    id: 'lenda5', nome: 'Mula sem Cabeça', category: 'lenda', type: 'lenda', ataque: 7, defesa: 5, vida: 21, raridade: 'LEGENDARY', elemento: 'FIRE', images: {}, habilidades: {}, cardType: 'creature',
-  },
-  // Itens
-  {
-    id: 'item1', nome: 'Poção de Cura', category: 'item', type: 'item', efeito: 'cura', raridade: 'EPIC', cardType: 'spell',
-  },
-  {
-    id: 'item2', nome: 'Machado Encantado', category: 'item', type: 'item', efeito: 'dano', raridade: 'LEGENDARY', cardType: 'artifact',
-  },
-  {
-    id: 'item3', nome: 'Amuleto da Sorte', category: 'item', type: 'item', efeito: 'buff', raridade: 'MYTHIC', cardType: 'artifact',
-  },
-  {
-    id: 'item4', nome: 'Escudo Protetor', category: 'item', type: 'item', efeito: 'defesa', raridade: 'EPIC', cardType: 'artifact',
-  },
-  {
-    id: 'item5', nome: 'Pergaminho Místico', category: 'item', type: 'item', efeito: 'dano', raridade: 'LEGENDARY', cardType: 'spell',
-  },
-];
 // src/utils/cardUtils.js
+
+import {
+  valorComPadrao,
+  primeiroValorDefinido,
+  valorFoiDefinido,
+  valorQuandoVerdadeiro,
+} from './valores';
 
 // Mapas de tradução (API -> PT-BR) centralizados
 export const TRANSLATION_MAPS = {
-  RARITY: { EPIC: 'Épico', LEGENDARY: 'Lendário', MYTHIC: 'Mítico' },
+  RARITY: { 
+    COMMON: 'Comum',
+    UNCOMMON: 'Incomum', 
+    RARE: 'Raro',
+    EPIC: 'Épico', 
+    LEGENDARY: 'Lendário', 
+    MYTHIC: 'Mítico' 
+  },
   REGION: { 
     AMAZONIA: 'Amazônia', 
     NORTHEAST: 'Nordeste', 
@@ -75,12 +54,26 @@ export const TRANSLATION_MAPS = {
   }
 };
  
-export const inferCardPlayCost = (card) => {
-  if (!card) return null;
-  const abilityCost = card.abilities?.skill1?.cost ?? card.abilities?.basic?.cost ?? card.abilities?.ultimate?.cost ?? null;
-  const fallback = card.cost ?? card.custo ?? null;
-  if (typeof abilityCost === 'number') return abilityCost;
-  return typeof fallback === 'number' ? fallback : null;
+export const inferirCustoParaJogar = (carta) => {
+  if (!carta) {
+    return null;
+  }
+
+  const habilidadePrincipal = carta.abilities && carta.abilities.skill1 ? carta.abilities.skill1.cost : null;
+  const habilidadeBasica = carta.abilities && carta.abilities.basic ? carta.abilities.basic.cost : null;
+  const habilidadeFinal = carta.abilities && carta.abilities.ultimate ? carta.abilities.ultimate.cost : null;
+  const custoInferido = primeiroValorDefinido(habilidadePrincipal, habilidadeBasica, habilidadeFinal);
+
+  if (typeof custoInferido === 'number') {
+    return custoInferido;
+  }
+
+  const custoAlternativo = primeiroValorDefinido(carta.cost, carta.custo);
+  if (typeof custoAlternativo === 'number') {
+    return custoAlternativo;
+  }
+
+  return null;
 };
 
 /**
@@ -89,16 +82,45 @@ export const inferCardPlayCost = (card) => {
  * @param {Object} map - Mapa de tradução
  * @returns {string} - Valor traduzido ou original se não encontrado
  */
-export const translate = (value, map) => map?.[value] || value;
+export const traduzirValor = (valor, mapa) => {
+  if (!valorFoiDefinido(valor)) {
+    return valor;
+  }
+  if (!mapa || typeof mapa !== 'object') {
+    return valor;
+  }
+  // Normalizar para MAIÚSCULAS para bater com as chaves do mapa
+  const chaveNormalizada = typeof valor === 'string' ? valor.toUpperCase() : valor;
+  if (valorFoiDefinido(mapa[chaveNormalizada])) {
+    return mapa[chaveNormalizada];
+  }
+  // Tentar busca direta caso não seja string
+  if (valorFoiDefinido(mapa[valor])) {
+    return mapa[valor];
+  }
+  return valor;
+};
 
 /**
  * Formatar labels de enum (ex: SOME_VALUE -> Some Value)
  * @param {string} value - Valor enum
  * @returns {string} - Label formatado
  */
-export const formatEnumLabel = (value) => {
-  if (typeof value !== 'string') return value;
-  return value.toLowerCase().split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+export const formatarRotuloEnum = (valor) => {
+  if (typeof valor !== 'string') {
+    return valor;
+  }
+  const minusculo = valor.toLowerCase();
+  const partes = minusculo.split('_');
+  const rotulo = partes.map((palavra) => {
+    if (palavra.length === 0) {
+      return palavra;
+    }
+    const primeiraLetra = palavra.charAt(0).toUpperCase();
+    const restante = palavra.slice(1);
+    return `${primeiraLetra}${restante}`;
+  });
+  return rotulo.join(' ');
 };
 
 /**
@@ -106,17 +128,18 @@ export const formatEnumLabel = (value) => {
  * @param {string} rarity - Raridade da carta
  * @returns {string} - Classes CSS
  */
-export const getRarityFrameClasses = (rarity) => {
-  switch (rarity) {
-    case TRANSLATION_MAPS.RARITY.MYTHIC:
-      return 'border-red-500 text-red-400 bg-red-900/20';
-    case TRANSLATION_MAPS.RARITY.LEGENDARY:
-      return 'border-yellow-500 text-yellow-400 bg-yellow-900/20';
-    case TRANSLATION_MAPS.RARITY.EPIC:
-      return 'border-purple-500 text-purple-400 bg-purple-900/20';
-    default:
-      return 'border-gray-500 text-gray-400 bg-gray-900/20';
+export const obterClassesDeRaridade = (raridade) => {
+  const valor = raridade;
+  if (valor === TRANSLATION_MAPS.RARITY.MYTHIC) {
+    return 'border-red-500 text-red-400 bg-red-900/20';
   }
+  if (valor === TRANSLATION_MAPS.RARITY.LEGENDARY) {
+    return 'border-yellow-500 text-yellow-400 bg-yellow-900/20';
+  }
+  if (valor === TRANSLATION_MAPS.RARITY.EPIC) {
+    return 'border-purple-500 text-purple-400 bg-purple-900/20';
+  }
+  return 'border-gray-500 text-gray-400 bg-gray-900/20';
 };
 
 /**
@@ -124,17 +147,18 @@ export const getRarityFrameClasses = (rarity) => {
  * @param {string} rarity - Raridade da carta
  * @returns {string} - Classes de gradiente
  */
-export const getRarityGradient = (rarity) => {
-  switch (rarity) {
-    case TRANSLATION_MAPS.RARITY.MYTHIC:
-      return 'from-red-400/20 to-red-600/30 border-red-400/50';
-    case TRANSLATION_MAPS.RARITY.LEGENDARY:
-      return 'from-yellow-400/20 to-yellow-600/30 border-yellow-400/50';
-    case TRANSLATION_MAPS.RARITY.EPIC:
-      return 'from-purple-400/20 to-purple-600/30 border-purple-400/50';
-    default:
-      return 'from-gray-400/20 to-gray-600/30 border-gray-400/50';
+export const obterGradienteDeRaridade = (raridade) => {
+  const valor = raridade;
+  if (valor === TRANSLATION_MAPS.RARITY.MYTHIC) {
+    return 'from-red-400/20 to-red-600/30 border-red-400/50';
   }
+  if (valor === TRANSLATION_MAPS.RARITY.LEGENDARY) {
+    return 'from-yellow-400/20 to-yellow-600/30 border-yellow-400/50';
+  }
+  if (valor === TRANSLATION_MAPS.RARITY.EPIC) {
+    return 'from-purple-400/20 to-purple-600/30 border-purple-400/50';
+  }
+  return 'from-gray-400/20 to-gray-600/30 border-gray-400/50';
 };
 
 /**
@@ -142,38 +166,71 @@ export const getRarityGradient = (rarity) => {
  * @param {Object} apiCard - Carta no formato da API
  * @returns {Object} - Carta no formato local
  */
-export const mapApiCardToLocal = (apiCard) => {
-  if (!apiCard) return null;
+export const mapearCartaDaApi = (cartaApi) => {
+  if (!cartaApi) {
+    return null;
+  }
 
-  const seasonalBonus = apiCard.seasonalBonus || apiCard.seasonal_bonus;
-  const seasonKey = seasonalBonus?.season || seasonalBonus?.estacao;
-  const bonusSazonal = seasonalBonus ? {
-    estacao: translate(seasonKey, TRANSLATION_MAPS.SEASON) || formatEnumLabel(seasonKey),
-    descricao: seasonalBonus.description || seasonalBonus.descricao || seasonalBonus.text || '',
-    multiplicador: seasonalBonus.multiplier || seasonalBonus.multiplicador || seasonalBonus.bonus || null
-  } : null;
+  const bonusSazonalBruto = valorComPadrao(cartaApi.seasonalBonus, cartaApi.seasonal_bonus);
+  let detalhesBonus = null;
+  if (bonusSazonalBruto) {
+    const chaveEstacao = valorComPadrao(bonusSazonalBruto.season, bonusSazonalBruto.estacao);
+    const estacaoTraduzida = traduzirValor(chaveEstacao, TRANSLATION_MAPS.SEASON);
+    const estacaoFinal = valorFoiDefinido(estacaoTraduzida) ? estacaoTraduzida : formatarRotuloEnum(chaveEstacao);
+    const descricao = primeiroValorDefinido(
+      bonusSazonalBruto.description,
+      bonusSazonalBruto.descricao,
+      bonusSazonalBruto.text,
+      ''
+    );
+    const multiplicador = primeiroValorDefinido(
+      bonusSazonalBruto.multiplier,
+      bonusSazonalBruto.multiplicador,
+      bonusSazonalBruto.bonus
+    );
+    detalhesBonus = {
+      estacao: estacaoFinal,
+      descricao,
+      multiplicador: multiplicador,
+    };
+  }
 
-  const inferredCost = inferCardPlayCost(apiCard);
+  const custoInferido = inferirCustoParaJogar(cartaApi);
+  let custoFinal = null;
+  if (typeof custoInferido === 'number') {
+    custoFinal = custoInferido;
+  }
+
+  const descricao = primeiroValorDefinido(
+    cartaApi.description,
+    cartaApi.lore,
+    cartaApi.history
+  );
+
+  const imagens = valorQuandoVerdadeiro(cartaApi.images, {});
+  const habilidades = valorQuandoVerdadeiro(cartaApi.abilities, {});
+  const tipo = primeiroValorDefinido(cartaApi.cardType, cartaApi.card_type, 'creature');
+  const vida = primeiroValorDefinido(cartaApi.life, cartaApi.health, 0);
 
   return {
-    id: apiCard.id,
-    nome: apiCard.name,
-    regiao: translate(apiCard.region, TRANSLATION_MAPS.REGION),
-    categoria: translate(apiCard.category, TRANSLATION_MAPS.CATEGORY),
-    raridade: translate(apiCard.rarity, TRANSLATION_MAPS.RARITY),
-    elemento: translate(apiCard.element, TRANSLATION_MAPS.ELEMENT),
-    ataque: apiCard.attack || 0,
-    defesa: apiCard.defense || 0,
-    vida: apiCard.life || apiCard.health || 0,
-    custo: typeof inferredCost === 'number' ? inferredCost : null,
-    descricao: apiCard.description || apiCard.lore || apiCard.history,
-    imagens: apiCard.images || {},
-    habilidades: apiCard.abilities || {},
-    tipo: apiCard.cardType || apiCard.card_type || 'creature',
-    tags: apiCard.tags || [],
-    bonusSazonal,
-    isStarter: apiCard.is_starter || false,
-    condicaoDesbloqueio: apiCard.unlock_condition || apiCard.unlockCondition
+    id: cartaApi.id,
+    nome: cartaApi.name,
+    regiao: traduzirValor(cartaApi.region, TRANSLATION_MAPS.REGION),
+    categoria: traduzirValor(cartaApi.category, TRANSLATION_MAPS.CATEGORY),
+    raridade: traduzirValor(cartaApi.rarity, TRANSLATION_MAPS.RARITY),
+    elemento: traduzirValor(cartaApi.element, TRANSLATION_MAPS.ELEMENT),
+    ataque: valorComPadrao(cartaApi.attack, 0),
+    defesa: valorComPadrao(cartaApi.defense, 0),
+    vida,
+    custo: custoFinal,
+    descricao,
+    imagens,
+    habilidades,
+    tipo,
+    tags: valorQuandoVerdadeiro(cartaApi.tags, []),
+    bonusSazonal: detalhesBonus,
+    isStarter: valorComPadrao(cartaApi.is_starter, false),
+    condicaoDesbloqueio: valorComPadrao(cartaApi.unlock_condition, cartaApi.unlockCondition),
   };
 };
 
@@ -181,8 +238,9 @@ export const mapApiCardToLocal = (apiCard) => {
  * Obter classes CSS para wrapper modal padrão
  * @returns {string} - Classes CSS do modal
  */
-export const getModalClasses = () => 
-  "fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4";
+export const obterClassesDeModal = () => {
+  return 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+};
 
 /**
  * Filtrar cartas baseado em critérios
@@ -190,21 +248,42 @@ export const getModalClasses = () =>
  * @param {Object} filters - Filtros aplicados
  * @returns {Array} - Cartas filtradas
  */
-export const filterCards = (cards, filters = {}) => {
-  if (!Array.isArray(cards)) return [];
+export const filtrarCartas = (cartas, filtros = {}) => {
+  if (!Array.isArray(cartas)) {
+    return [];
+  }
 
-  return cards.filter(card => {
-    const matchesSearch = !filters.search || 
-      card.nome?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      card.regiao?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      card.categoria?.toLowerCase().includes(filters.search.toLowerCase());
+  return cartas.filter((carta) => {
+    let condicaoBusca = true;
+    if (filtros.search) {
+      const termo = filtros.search.toLowerCase();
+      const nome = valorComPadrao(carta.nome, '').toLowerCase();
+      const regiao = valorComPadrao(carta.regiao, '').toLowerCase();
+      const categoria = valorComPadrao(carta.categoria, '').toLowerCase();
+      condicaoBusca = nome.includes(termo) || regiao.includes(termo) || categoria.includes(termo);
+    }
 
-    const matchesRegion = !filters.region || filters.region === 'all' || card.regiao === filters.region;
-    const matchesCategory = !filters.category || filters.category === 'all' || card.categoria === filters.category;
-    const matchesRarity = !filters.rarity || filters.rarity === 'all' || card.raridade === filters.rarity;
-    const matchesElement = !filters.element || filters.element === 'all' || card.elemento === filters.element;
+    let condicaoRegiao = true;
+    if (filtros.region && filtros.region !== 'all') {
+      condicaoRegiao = carta.regiao === filtros.region;
+    }
 
-    return matchesSearch && matchesRegion && matchesCategory && matchesRarity && matchesElement;
+    let condicaoCategoria = true;
+    if (filtros.category && filtros.category !== 'all') {
+      condicaoCategoria = carta.categoria === filtros.category;
+    }
+
+    let condicaoRaridade = true;
+    if (filtros.rarity && filtros.rarity !== 'all') {
+      condicaoRaridade = carta.raridade === filtros.rarity;
+    }
+
+    let condicaoElemento = true;
+    if (filtros.element && filtros.element !== 'all') {
+      condicaoElemento = carta.elemento === filtros.element;
+    }
+
+    return condicaoBusca && condicaoRegiao && condicaoCategoria && condicaoRaridade && condicaoElemento;
   });
 };
 
@@ -213,12 +292,16 @@ export const filterCards = (cards, filters = {}) => {
  * @param {string} cardType - Tipo da carta
  * @returns {string} - Emoji do tipo
  */
-export const getCardTypeIcon = (cardType) => {
-  const type = (cardType || '').toString().toLowerCase();
-  switch (type) {
-    case 'creature': return '👾';
-    case 'spell': return '✨';
-    case 'artifact': return '⚱️';
-    default: return '👾';
+export const obterIconeTipoCarta = (tipoCarta) => {
+  let texto = '';
+  if (valorFoiDefinido(tipoCarta)) {
+    texto = tipoCarta.toString().toLowerCase();
   }
+  if (texto === 'spell') {
+    return '✨';
+  }
+  if (texto === 'artifact') {
+    return '⚱️';
+  }
+  return '👾';
 };

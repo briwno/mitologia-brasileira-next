@@ -8,7 +8,7 @@ import CardModal from '@/components/Card/CardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useCollection';
 import { cardsAPI } from '@/utils/api';
-import { mapApiCardToLocal, getRarityGradient } from '@/utils/cardUtils';
+import { mapearCartaDaApi, obterGradienteDeRaridade } from '@/utils/cardUtils';
 import BrazilMap from '@/components/Museum/BrazilMap';
 
 export default function MapaInterativo() {
@@ -52,7 +52,7 @@ export default function MapaInterativo() {
         const cardsData = await cardsAPI.getAll();
 
         // Usar função utilitária para mapear cartas
-        const mappedCards = (cardsData.cards || []).map(mapApiCardToLocal);
+  const mappedCards = (cardsData.cards || []).map(mapearCartaDaApi);
 
         if (!cancelled) {
           setCards(mappedCards);
@@ -176,7 +176,7 @@ export default function MapaInterativo() {
     const imgSrc = fullSrc || portrait || '/images/placeholder.svg';
 
     const bgColor = isCollected 
-      ? getRarityGradient(card.raridade)
+      ? obterGradienteDeRaridade(card.raridade)
       : 'from-gray-600/10 to-gray-800/20 border-gray-600/30';
 
     return (

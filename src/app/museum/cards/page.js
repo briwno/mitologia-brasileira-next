@@ -1,26 +1,46 @@
 // src/app/museum/cards/page.js
 "use client";
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
 import CardModal from '@/components/Card/CardModal';
-import { cardsAPI } from '@/utils/api';
+import { carregarDadosDeCartas } from '@/services/cartasServico';
 import {
   TRANSLATION_MAPS,
-  translate,
-  formatEnumLabel
+  traduzirValor,
+  formatarRotuloEnum
 } from '@/utils/cardUtils';
+import {
+  primeiroValorDefinido,
+  valorComPadrao,
+  valorFoiDefinido,
+  valorQuandoVerdadeiro
+} from '@/utils/valores';
 
 // Card estilo "story quest"
 function StoryCard({ card, onClick, idx = 0 }) {
-  // Escolhe a melhor fonte disponível: preferir a imagem completa se existir (maior resolução), senão retrato
-  const fullSrc = card.images?.completa || card.imagens?.completa || card.images?.full || card.imagens?.full;
-  const portrait = card.images?.retrato || card.imagens?.retrato || card.images?.portrait || card.imagens?.portrait || card.image || card.imagem;
-  const imgSrc = fullSrc || portrait || '/images/placeholder.svg';
-  const normalizeRarityKey = (value) => {
-    if (!value) return '';
-    return value
+  const imagensBrutas = valorQuandoVerdadeiro(card?.imagens, card?.images);
+  const imagensNormalizadas = valorQuandoVerdadeiro(imagensBrutas, {});
+  const imagemCompleta = primeiroValorDefinido(
+    imagensNormalizadas.completa,
+    imagensNormalizadas.full
+  );
+  const imagemRetrato = primeiroValorDefinido(
+    imagensNormalizadas.retrato,
+    imagensNormalizadas.portrait
+  );
+  const imgSrc = primeiroValorDefinido(
+    imagemCompleta,
+    imagemRetrato,
+    card?.imagem,
+    card?.image,
+    '/images/placeholder.svg'
+  );
+
+  const normalizarChaveRaridade = (valor) => {
+    const texto = valorComPadrao(valor, '');
+    return texto
       .toString()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -33,27 +53,42 @@ function StoryCard({ card, onClick, idx = 0 }) {
     MITICO: 'from-rose-500/60 to-rose-900/60 border-rose-400/40'
   };
 
-  const rare = card.raridade || card.rarity;
-  const rareKey = normalizeRarityKey(rare);
+  const raridadeExibida = valorComPadrao(
+    primeiroValorDefinido(card?.raridade, card?.rarity),
+    'Comum'
+  );
+  const rareKey = normalizarChaveRaridade(raridadeExibida);
   const style = rarityStyles[rareKey] || 'from-slate-400/30 to-slate-800/60 border-slate-400/30';
   const isMythic = rareKey === 'MITICO' || rareKey === 'MYTHIC';
 
   const isItem = (() => {
     if (!card) return false;
-    if (card.itemType != null || card.effects != null) return true;
-    const tipo = (card.tipo || card.type || card.cardType || '').toString().toLowerCase();
+    if (valorFoiDefinido(card.tipo_item)) return true;
+    const tipo = valorComPadrao(primeiroValorDefinido(card.tipo, card.type, card.cardType), '').toString().toLowerCase();
     if (tipo.includes('item')) return true;
-    const categoria = (card.categoria || card.category || '').toString().toLowerCase();
+    const categoria = valorComPadrao(primeiroValorDefinido(card.categoria, card.category), '').toString().toLowerCase();
     return categoria.includes('item') || categoria.includes('equipamento') || categoria.includes('consum') || categoria.includes('artefato');
   })();
 
   const topLabel = isItem
-    ? (card.itemType || card.tipo || card.category || card.categoria || 'Item Especial')
-    : (card.regiao || card.region || '—');
+    ? valorComPadrao(
+        traduzirValor(
+          primeiroValorDefinido(card.tipo_item, card.itemType, card.categoria, card.category, card.tipo),
+          TRANSLATION_MAPS.ITEM_TYPE
+        ),
+        'Item Especial'
+      )
+    : valorComPadrao(
+        traduzirValor(
+          primeiroValorDefinido(card.regiao, card.region),
+          TRANSLATION_MAPS.REGION
+        ),
+        '—'
+      );
 
   // Build a CSS gradient matching rarityStyles colors for the OUTER animated border
   const getRarityGradient = (r) => {
-    const key = normalizeRarityKey(r);
+    const key = normalizarChaveRaridade(r);
     if (key === 'MITICO' || key === 'MYTHIC') {
       return 'linear-gradient(135deg, rgba(244,63,94,0.6), rgba(255, 0, 0, 0.6))'; 
     }
@@ -66,7 +101,7 @@ function StoryCard({ card, onClick, idx = 0 }) {
     return 'linear-gradient(135deg, rgba(148,163,184,0.3), rgba(51,65,85,0.6))'; 
   };
   const borderStyle = {
-    backgroundImage: getRarityGradient(rare),
+  backgroundImage: getRarityGradient(raridadeExibida),
     backgroundSize: isMythic ? '200% 200%' : undefined,
     animation: isMythic ? 'mb-gradient-shift 6s linear infinite' : undefined,
   };
@@ -93,7 +128,7 @@ function StoryCard({ card, onClick, idx = 0 }) {
       </div>
       <Image
         src={imgSrc}
-        alt={card.nome || card.name}
+  alt={valorComPadrao(primeiroValorDefinido(card?.nome, card?.name), 'Carta desconhecida')}
         fill
         className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
         sizes="(min-width:1536px) 22vw, (min-width:1280px) 24vw, (min-width:1024px) 28vw, (min-width:640px) 44vw, 92vw"
@@ -106,8 +141,8 @@ function StoryCard({ card, onClick, idx = 0 }) {
   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/75" />
       <div className="absolute bottom-0 inset-x-0 p-3 flex flex-col gap-1 text-left">
   <span className="text-[10px] tracking-wide font-semibold text-white/60 uppercase line-clamp-1">{topLabel}</span>
-  <h3 className="text-sm font-bold leading-snug drop-shadow-sm line-clamp-2">{card.nome || card.name}</h3>
-  <span className="text-[10px] font-semibold text-white/70 tracking-wide">{card.raridade || card.rarity}</span>
+  <h3 className="text-sm font-bold leading-snug drop-shadow-sm line-clamp-2">{valorComPadrao(primeiroValorDefinido(card?.nome, card?.name), 'Carta desconhecida')}</h3>
+  <span className="text-[10px] font-semibold text-white/70 tracking-wide">{valorComPadrao(traduzirValor(raridadeExibida, TRANSLATION_MAPS.RARITY), raridadeExibida)}</span>
       </div>
       {card.novo && (
         <div className="absolute top-2 right-2 bg-orange-600 text-[10px] px-2 py-1 rounded-full font-bold shadow">NOVO</div>
@@ -136,6 +171,15 @@ export default function CatalogoComContos() {
   });
   const [showFilters, setShowFilters] = useState(false);
 
+  const normalizarTexto = useCallback((valor) => {
+    const texto = valorComPadrao(valor, '');
+    return texto
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }, []);
+
   const isSelectedItem = useMemo(() => {
     if (!selected) return false;
     if (selected.itemType != null || selected.effects != null) return true;
@@ -148,157 +192,189 @@ export default function CatalogoComContos() {
   }, [selected]);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelado = false;
+
     (async () => {
       try {
         setLoading(true);
-        
-        // Fetch regular cards usando API client
-        const cardsData = await cardsAPI.getAll();
-        
-        // Fetch item cards
-        const itemsRes = await fetch('/api/item-cards');
-        if (!itemsRes.ok) throw new Error('Falha ao carregar itens');
-        const itemsData = await itemsRes.json();
 
-        const mappedCards = (cardsData.cards || []).map((c, idx) => {
-          const sb = c.seasonalBonus || c.seasonal_bonus;
-          const seasonKey = sb?.season || sb?.estacao;
-          const bonusSazonal = sb ? {
-            estacao: translate(seasonKey, TRANSLATION_MAPS.SEASON) || formatEnumLabel(seasonKey),
-            descricao: sb.description || sb.descricao || sb.text || '',
-            multiplicador: sb.multiplier || sb.multiplicador || sb.bonus || null
-          } : null;
-          return {
-            id: c.id,
-            nome: c.name,
-            regiao: translate(c.region, TRANSLATION_MAPS.REGION),
-            categoria: translate(c.category, TRANSLATION_MAPS.CATEGORY),
-            raridade: translate(c.rarity, TRANSLATION_MAPS.RARITY),
-            historia: c.history,
-            imagens: c.images,
-            imagem: c.image,
-            elemento: translate(c.element, TRANSLATION_MAPS.ELEMENT),
-            habilidades: c.abilities || {},
-            tipo: (c.cardType || c.card_type || 'CREATURE').toString().toLowerCase(),
-            novo: idx == 5,
-            tags: c.tags,
-            bonusSazonal
-          };
-        });
+        const dados = await carregarDadosDeCartas();
+        if (cancelado) {
+          return;
+        }
 
-        // Mapear os item cards para tradução
-        const mappedItems = (itemsData.itemCards || []).map((item, idx) => {
-          const translatedType = translate(item.itemType, TRANSLATION_MAPS.ITEM_TYPE) || item.itemType;
-          const translatedRarity = translate(item.rarity, TRANSLATION_MAPS.RARITY) || item.rarity;
-          const imagens = item.images || item.imagens || {};
-          const imagemPrincipal =
-            imagens.completa ||
-            imagens.full ||
-            imagens.retrato ||
-            imagens.portrait ||
-            item.image ||
-            item.imagem ||
-            '/images/placeholder.svg';
+        const cartasNormalizadas = valorQuandoVerdadeiro(dados?.cartas, []).map((carta, indice) => {
+          const imagensBrutas = valorQuandoVerdadeiro(carta.imagens, carta.images);
+          const imagens = valorQuandoVerdadeiro(imagensBrutas, {});
+          const imagemPrincipal = primeiroValorDefinido(
+            imagens.completa,
+            imagens.full,
+            imagens.retrato,
+            imagens.portrait,
+            carta.imagem,
+            carta.image,
+            '/images/placeholder.svg'
+          );
+          const tipoNormalizado = valorComPadrao(
+            primeiroValorDefinido(carta.tipo, carta.cardType, carta.card_type),
+            'creature'
+          ).toString().toLowerCase();
+          const bonusBruto = valorQuandoVerdadeiro(carta.bonusSazonal, null);
+          let bonusSazonal = null;
+          if (bonusBruto) {
+            const chaveEstacao = primeiroValorDefinido(bonusBruto.estacao, bonusBruto.season);
+            bonusSazonal = {
+              ...bonusBruto,
+              estacao: valorComPadrao(
+                traduzirValor(chaveEstacao, TRANSLATION_MAPS.SEASON),
+                formatarRotuloEnum(chaveEstacao)
+              ),
+            };
+          }
 
           return {
-            ...item,
-            id: item.id,
-            name: item.name || item.nome,
-            nome: item.name || item.nome,
-            description: item.description || item.descricao,
-            descricao: item.description || item.descricao,
-            itemType: translatedType,
-            tipo: (item.itemType || item.tipo || 'item').toString().toLowerCase(),
-            categoria: translatedType || 'Item de Batalha',
-            rarity: translatedRarity,
-            raridade: translatedRarity,
-            effects: item.effects || item.efeito || null,
-            efeito: item.effects || item.efeito || null,
-            images: imagens,
+            ...carta,
             imagens,
             image: imagemPrincipal,
             imagem: imagemPrincipal,
-            novo: item.novo === true,
-            unlockCondition: item.unlockCondition,
-            condicaoDesbloqueio: item.unlockCondition || item.condicaoDesbloqueio,
+            tipo: tipoNormalizado,
+            raridade: valorComPadrao(carta.raridade, traduzirValor(carta.rarity, TRANSLATION_MAPS.RARITY)),
+            regiao: valorComPadrao(carta.regiao, traduzirValor(carta.region, TRANSLATION_MAPS.REGION)),
+            categoria: valorComPadrao(carta.categoria, traduzirValor(carta.category, TRANSLATION_MAPS.CATEGORY)),
+            elemento: valorComPadrao(carta.elemento, traduzirValor(carta.element, TRANSLATION_MAPS.ELEMENT)),
+            bonusSazonal,
+            novo: valorComPadrao(carta.novo, indice === 5),
           };
         });
 
-        if (!cancelled) {
-          setCards(mappedCards);
-          setItemCards(mappedItems);
+        const itensNormalizados = valorQuandoVerdadeiro(dados?.itens, []).map((item, indice) => {
+          const imagensBrutas = valorQuandoVerdadeiro(item.imagens, item.images);
+          const imagens = valorQuandoVerdadeiro(imagensBrutas, {});
+          const imagemPrincipal = primeiroValorDefinido(
+            imagens.completa,
+            imagens.full,
+            imagens.retrato,
+            imagens.portrait,
+            item.imagem,
+            item.image,
+            '/images/placeholder.svg'
+          );
+          const tipoOriginal = primeiroValorDefinido(item.tipo_item, item.itemType, item.tipo);
+          const tipoTraduzido = valorComPadrao(
+            traduzirValor(tipoOriginal, TRANSLATION_MAPS.ITEM_TYPE),
+            valorComPadrao(tipoOriginal, 'Item')
+          );
+          const raridadeOriginal = primeiroValorDefinido(item.raridade, item.rarity);
+          const raridadeTraduzida = valorComPadrao(
+            traduzirValor(raridadeOriginal, TRANSLATION_MAPS.RARITY),
+            valorComPadrao(raridadeOriginal, 'Comum')
+          );
+
+          return {
+            ...item,
+            tipo: 'item',
+            tipo_item: tipoTraduzido,
+            itemType: tipoTraduzido,
+            categoria: valorComPadrao(item.categoria, tipoTraduzido, 'Item de Batalha'),
+            raridade: raridadeTraduzida,
+            rarity: raridadeTraduzida,
+            descricao: valorComPadrao(item.descricao, item.description),
+            description: valorComPadrao(item.description, item.descricao),
+            efeito: valorComPadrao(item.efeito, item.effects),
+            effects: valorComPadrao(item.effects, item.efeito),
+            imagens,
+            images: imagens,
+            imagem: imagemPrincipal,
+            image: imagemPrincipal,
+            novo: valorComPadrao(item.novo, indice < 4),
+          };
+        });
+
+        setCards(cartasNormalizadas);
+        setItemCards(itensNormalizados);
+      } catch (erro) {
+        if (!cancelado) {
+          setError(erro.message);
         }
-      } catch (e) {
-        if (!cancelled) setError(e.message);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelado) {
+          setLoading(false);
+        }
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   // Filtrar cartas baseado nos filtros selecionados
   const filteredCards = useMemo(() => {
-    let filtered = [...cards];
-    
-    // Filtro de busca por nome
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(card => 
-        (card.nome || '').toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Filtro por raridade
-    if (filters.rarity !== 'todas') {
-      filtered = filtered.filter(card => card.raridade === filters.rarity);
-    }
-    
-    // Filtro por região
-    if (filters.region !== 'todas') {
-      filtered = filtered.filter(card => card.regiao === filters.region);
-    }
-    
-    // Filtro por categoria
-    if (filters.category !== 'todas') {
-      filtered = filtered.filter(card => card.categoria === filters.category);
-    }
-    
-    // Filtro por elemento
-    if (filters.element !== 'todos') {
-      filtered = filtered.filter(card => card.elemento === filters.element);
-    }
-    
-    // Coloca cartas marcadas como "novo" no topo; mantém ordem relativa para o restante
-    filtered.sort((a, b) => (b.novo === true) - (a.novo === true));
-    return filtered;
-  }, [cards, filters]);
+    const termoBusca = normalizarTexto(filters.search);
+    const filtroRaridadeAtivo = filters.rarity !== 'todas';
+    const chaveRaridade = normalizarTexto(filters.rarity);
+    const filtroRegiaoAtivo = filters.region !== 'todas';
+    const chaveRegiao = normalizarTexto(filters.region);
+    const filtroCategoriaAtivo = filters.category !== 'todas';
+    const chaveCategoria = normalizarTexto(filters.category);
+    const filtroElementoAtivo = filters.element !== 'todos';
+    const chaveElemento = normalizarTexto(filters.element);
+
+    const resultado = cards.filter((carta) => {
+      const nomeNormalizado = normalizarTexto(carta.nome);
+      const historiaNormalizada = normalizarTexto(carta.historia);
+      if (termoBusca && !nomeNormalizado.includes(termoBusca) && !historiaNormalizada.includes(termoBusca)) {
+        return false;
+      }
+
+      if (filtroRaridadeAtivo && normalizarTexto(carta.raridade) !== chaveRaridade) {
+        return false;
+      }
+
+      if (filtroRegiaoAtivo && normalizarTexto(carta.regiao) !== chaveRegiao) {
+        return false;
+      }
+
+      if (filtroCategoriaAtivo && normalizarTexto(carta.categoria) !== chaveCategoria) {
+        return false;
+      }
+
+      if (filtroElementoAtivo && normalizarTexto(carta.elemento) !== chaveElemento) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return resultado.sort((a, b) => (b.novo === true) - (a.novo === true));
+  }, [cards, filters, normalizarTexto]);
 
   // Filtrar itens baseado nos filtros selecionados
   const filteredItems = useMemo(() => {
-    let filtered = [...itemCards];
-    
-    // Filtro de busca por nome
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(item => 
-        (item.name || item.nome || '').toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Filtro por raridade
-    if (filters.rarity !== 'todas') {
-      filtered = filtered.filter(item => item.rarity === filters.rarity);
-    }
-    
-    // Filtro por tipo de item
-    if (filters.itemType !== 'todos') {
-      filtered = filtered.filter(item => item.itemType === filters.itemType);
-    }
-    
-    return filtered;
-  }, [itemCards, filters]);
+    const termoBusca = normalizarTexto(filters.search);
+    const filtroRaridadeAtivo = filters.rarity !== 'todas';
+    const chaveRaridade = normalizarTexto(filters.rarity);
+    const filtroTipoAtivo = filters.itemType !== 'todos';
+    const chaveTipo = normalizarTexto(filters.itemType);
+
+    return itemCards.filter((item) => {
+      const nomeItem = normalizarTexto(primeiroValorDefinido(item.nome, item.name));
+      const descricaoItem = normalizarTexto(primeiroValorDefinido(item.descricao, item.description));
+      if (termoBusca && !nomeItem.includes(termoBusca) && !descricaoItem.includes(termoBusca)) {
+        return false;
+      }
+
+      if (filtroRaridadeAtivo && normalizarTexto(item.raridade) !== chaveRaridade) {
+        return false;
+      }
+
+      if (filtroTipoAtivo && normalizarTexto(item.itemType) !== chaveTipo) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [itemCards, filters, normalizarTexto]);
 
   const displayItems = selectedTab === 'items' ? filteredItems : filteredCards;
 

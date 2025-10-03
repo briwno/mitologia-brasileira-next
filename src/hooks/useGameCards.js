@@ -2,8 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { cardsAPI } from '@/utils/api';
-import { mapApiCardToLocal, inferCardPlayCost } from '@/utils/cardUtils';
+import { carregarDadosDeCartas } from '@/services/cartasServico';
 
 export function useGameCards() {
   const [cards, setCards] = useState({
@@ -19,64 +18,10 @@ export function useGameCards() {
         setLoading(true);
         setError(null);
 
-        // Carregar cartas principais (lendas) da API
-        const cardsResponse = await cardsAPI.getAll();
-        
-        // Carregar itens da API
-        const itemsResponse = await fetch('/api/item-cards');
-        let itemsData = { items: [] };
-        if (!itemsResponse.ok) {
-          console.error('[useGameCards] Falha ao carregar itens:', itemsResponse.status);
-        } else {
-          itemsData = await itemsResponse.json();
-        }
-        
-        // Mapear cartas para formato local
-        const mappedCards = (cardsResponse.cards || []).map(card => {
-          const localCard = mapApiCardToLocal(card);
-          return {
-            ...localCard,
-            // Garantir compatibilidade com BattleCard
-            imagem: localCard.imagens?.retrato || localCard.imagens?.completa || localCard.image || card.image || '/images/placeholder.svg',
-            nome: localCard.nome || card.name,
-            ataque: localCard.ataque || card.attack || 3,
-            defesa: localCard.defesa || card.defense || 3,
-            vida: localCard.vida || card.life || localCard.defesa || 3,
-            elemento: localCard.elemento || card.element,
-            raridade: localCard.raridade || card.rarity || 'Comum',
-            // Garantir que as estruturas de imagem estão corretas para CardImage
-            imagens: {
-              retrato: localCard.imagens?.retrato || card.images?.portrait || card.image,
-              completa: localCard.imagens?.completa || card.images?.full || card.images?.completa
-            },
-            images: {
-              portrait: localCard.imagens?.retrato || card.images?.portrait || card.image,
-              full: localCard.imagens?.completa || card.images?.full || card.images?.completa
-            }
-          };
-        });
-
-        // Mapear itens para formato local
-        const mappedItems = (itemsData.items || []).map(item => {
-          const inferredCost = inferCardPlayCost(item);
-          const finalCost = typeof inferredCost === 'number' ? inferredCost : (item.value || 1);
-          return {
-            id: item.id,
-            nome: item.name,
-            imagem: item.image || '/images/placeholder.svg',
-            tipo: 'item',
-            tipo_item: item.type || 'consumível',
-            efeito: item.effect,
-            valor: item.value || 1,
-            raridade: item.rarity || 'Comum',
-            custo: finalCost,
-            descricao: item.description
-          };
-        });
-
+        const dados = await carregarDadosDeCartas();
         setCards({
-          lendas: mappedCards,
-          items: mappedItems
+          lendas: dados.cartas,
+          items: dados.itens,
         });
 
       } catch (err) {

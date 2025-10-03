@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import CardDetail from './CardDetail';
 import Icon from '@/components/UI/Icon';
-import { getModalClasses } from '@/utils/cardUtils';
+import { obterClassesDeModal } from '@/utils/cardUtils';
 
 const isItemCard = (card) => {
   if (!card) return false;
@@ -182,7 +182,7 @@ export default function CardModal({
     );
 
   return (
-    <div className={getModalClasses()} onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
+  <div className={obterClassesDeModal()} onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
       <div
         className="relative w-full max-w-7xl bg-[#101b28] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}

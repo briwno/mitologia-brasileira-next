@@ -13,7 +13,7 @@ import {
 import { MotorDeJogo } from "@/utils/gameLogic";
 import { useGameCards } from "@/hooks/useGameCards";
 import { cardsAPI } from "@/utils/api";
-import { mapApiCardToLocal } from "@/utils/cardUtils";
+import { mapearCartaDaApi } from "@/utils/cardUtils";
 
 // Card size scaling relative to stage (approx based on SVG):
 // small ≈ 4.5% width x 7% height, medium ≈ 5.5% x 8.5%, large ≈ 8.5% x 12%
@@ -1002,7 +1002,7 @@ export default function BattleScreen({
 
       if (cardInput.abilities && Object.keys(cardInput.abilities).length > 0) {
         return {
-          ...mapApiCardToLocal(cardInput),
+          ...mapearCartaDaApi(cardInput),
           ...cardInput,
           habilidades: cardInput.abilities,
         };
@@ -1028,7 +1028,7 @@ export default function BattleScreen({
         };
       }
 
-      const mapped = mapApiCardToLocal(cardInput);
+  const mapped = mapearCartaDaApi(cardInput);
       if (mapped) {
         return {
           ...mapped,
@@ -1057,7 +1057,7 @@ export default function BattleScreen({
 
         const mappedCards = apiCards
           .map((card) => {
-            const localCard = mapApiCardToLocal(card);
+            const localCard = mapearCartaDaApi(card);
             if (!localCard) return null;
             return {
               ...localCard,

@@ -3,14 +3,14 @@
 
 import CardImage from './CardImage';
 import Icon from '@/components/UI/Icon';
-import { getRarityFrameClasses, getCardTypeIcon } from '@/utils/cardUtils';
+import { obterClassesDeRaridade, obterIconeTipoCarta } from '@/utils/cardUtils';
 
 // Detalhe da Carta com diferentes modos de exibição
 export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', wrapperClassName = '' }) {
   if (!card) return null;
 
   // Usar função utilitária para cores de raridade
-  const obterCorDeRaridade = getRarityFrameClasses;
+  const obterCorDeRaridade = obterClassesDeRaridade;
 
   const obterPPMaximoPadrao = (indice) => {
     // índice começa em 0 para skill1..skill5
@@ -25,7 +25,7 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
   };
 
   // Usar função utilitária para ícones de tipo
-  const obterIconeDoTipo = getCardTypeIcon;
+  const obterIconeDoTipo = obterIconeTipoCarta;
 
   const isItemCard = (() => {
     if (!card) return false;
@@ -116,68 +116,82 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
               ) : card.habilidades ? (
                 <>
                   {(() => {
-                    const abilities = card.habilidades;
-                    const usesNew = abilities.skill1 || abilities.skill2 || abilities.skill3 || abilities.skill4 || abilities.skill5;
-                    if (usesNew) {
-                      const skillBlocks = [abilities.skill1, abilities.skill2, abilities.skill3, abilities.skill4, abilities.skill5].filter(Boolean);
-                      const palettes = [
-                        { box: 'bg-blue-900/30 border-blue-500/30', label: 'text-blue-400' },
-                        { box: 'bg-cyan-900/30 border-cyan-500/30', label: 'text-cyan-400' },
-                        { box: 'bg-purple-900/30 border-purple-500/30', label: 'text-purple-400' },
-                        { box: 'bg-amber-900/30 border-amber-500/30', label: 'text-amber-400' },
-                        { box: 'bg-red-900/30 border-red-500/30', label: 'text-red-400' },
+                    const habilidades = card.habilidades;
+                    const possuiNovaEstrutura = Boolean(
+                      habilidades.skill1 ||
+                      habilidades.skill2 ||
+                      habilidades.skill3 ||
+                      habilidades.skill4 ||
+                      habilidades.skill5
+                    );
+
+                    if (possuiNovaEstrutura) {
+                      const blocos = [
+                        habilidades.skill1,
+                        habilidades.skill2,
+                        habilidades.skill3,
+                        habilidades.skill4,
+                        habilidades.skill5,
+                      ].filter(Boolean);
+
+                      const paletas = [
+                        { caixa: 'bg-blue-900/30 border-blue-500/30', rotulo: 'text-blue-400' },
+                        { caixa: 'bg-cyan-900/30 border-cyan-500/30', rotulo: 'text-cyan-400' },
+                        { caixa: 'bg-purple-900/30 border-purple-500/30', rotulo: 'text-purple-400' },
+                        { caixa: 'bg-amber-900/30 border-amber-500/30', rotulo: 'text-amber-400' },
+                        { caixa: 'bg-red-900/30 border-red-500/30', rotulo: 'text-red-400' },
                       ];
+
                       return (
                         <>
-                          {skillBlocks.map((s, idx) => {
-                            const pal = palettes[idx] || palettes[0];
+                          {blocos.map((habilidade, indice) => {
+                            const paleta = paletas[indice] || paletas[0];
+                            const ppMaximo = typeof habilidade.ppMax === 'number' ? habilidade.ppMax : obterPPMaximoPadrao(indice);
+                            const ppAtual = typeof habilidade.pp === 'number' ? habilidade.pp : ppMaximo;
+
                             return (
-                              <div key={`skill-${idx}`} className={`${pal.box} p-2 sm:p-3 rounded border border-white/10`}>
+                              <div key={`skill-${indice}`} className={`${paleta.caixa} p-2 sm:p-3 rounded border border-white/10`}>
                                 <div className="flex justify-between items-center mb-1">
-                                  <div className={`text-xs sm:text-sm font-semibold ${pal.label}`}>
-                                    {idx === 4 ? '🌟 Ultimate' : `Habilidade ${idx + 1}`}
+                                  <div className={`text-xs sm:text-sm font-semibold ${paleta.rotulo}`}>
+                                    {indice === 4 ? '🌟 Ultimate' : `Habilidade ${indice + 1}`}
                                   </div>
-                                  {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
-                                    <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
-                                  ) : s.ppMax ? (
-                                    <div className="text-xs text-yellow-400">PP {s.ppMax}/{s.ppMax}</div>
-                                  ) : (
-                                    <div className="text-xs text-yellow-400">PP {obterPPMaximoPadrao(idx)}/{obterPPMaximoPadrao(idx)}</div>
-                                  )}
+                                  <div className="text-xs text-yellow-400">PP {ppAtual}/{ppMaximo}</div>
                                 </div>
-                                <div className="font-semibold mb-1 text-sm sm:text-base">{s.name}</div>
-                                <div className="text-xs sm:text-sm text-gray-300">{s.description}</div>
+                                <div className="font-semibold mb-1 text-sm sm:text-base">{habilidade.name}</div>
+                                <div className="text-xs sm:text-sm text-gray-300">{habilidade.description}</div>
                               </div>
                             );
                           })}
                         </>
                       );
                     }
-                    // Fallback antigo: básica e ultimate
+
                     return (
                       <>
-                        {abilities.basic && (
+                        {habilidades.basic && (
                           <div className="bg-blue-900/30 p-2 sm:p-3 rounded border border-white/10">
                             <div className="flex justify-between items-center mb-1">
                               <div className="text-xs sm:text-sm text-blue-400 font-semibold">⚡ Habilidade Básica</div>
-                              <div className="text-xs text-yellow-400">💎{abilities.basic.cost}</div>
+                              <div className="text-xs text-yellow-400">💎{habilidades.basic.cost}</div>
                             </div>
-                            <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.basic.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-300">{abilities.basic.description}</div>
-                            {abilities.basic.cooldown > 0 && (
-                              <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.basic.cooldown} turno(s)</div>
+                            <div className="font-semibold mb-1 text-sm sm:text-base">{habilidades.basic.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-300">{habilidades.basic.description}</div>
+                            {habilidades.basic.cooldown > 0 && (
+                              <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {habilidades.basic.cooldown} turno(s)</div>
                             )}
                           </div>
                         )}
-                        {abilities.ultimate && (
+                        {habilidades.ultimate && (
                           <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-white/10">
                             <div className="flex justify-between items-center mb-1">
                               <div className="text-xs sm:text-sm text-purple-400 font-semibold">🌟 Ultimate</div>
-                              <div className="text-xs text-yellow-400">💎{abilities.ultimate.cost}</div>
+                              <div className="text-xs text-yellow-400">💎{habilidades.ultimate.cost}</div>
                             </div>
-                            <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.ultimate.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-300">{abilities.ultimate.description}</div>
-                            <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.ultimate.cooldown} turno(s)</div>
+                            <div className="font-semibold mb-1 text-sm sm:text-base">{habilidades.ultimate.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-300">{habilidades.ultimate.description}</div>
+                            {habilidades.ultimate.cooldown > 0 && (
+                              <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {habilidades.ultimate.cooldown} turno(s)</div>
+                            )}
                           </div>
                         )}
                       </>

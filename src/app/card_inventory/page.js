@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
 import DeckBuilder from '@/components/Deck/DeckBuilder';
@@ -9,8 +9,16 @@ import { useCollection } from '@/hooks/useCollection';
 import ItemCard from '@/components/Card/ItemCard';
 import CardModal from '@/components/Card/CardModal';
 import CardImage from '@/components/Card/CardImage';
-import { cardsAPI } from '@/utils/api';
-import { mapApiCardToLocal, getRarityFrameClasses } from '@/utils/cardUtils';
+import { obterClassesDeRaridade } from '@/utils/cardUtils';
+import { carregarDadosDeCartas } from '@/services/cartasServico';
+import { primeiroValorDefinido, valorComPadrao, valorFoiDefinido } from '@/utils/valores';
+import { 
+	normalizarTextoParaComparacao, 
+	normalizarRaridade, 
+	normalizarTipoItem,
+	ehCartaDeLenda,
+	ehCartaDeItem 
+} from '@/utils/normalizadores';
 
 export default function PaginaInventarioDeCartas() {
 	const { user, isAuthenticated } = useAuth();
@@ -36,38 +44,12 @@ export default function PaginaInventarioDeCartas() {
 		(async () => {
 			try {
 				setLoadingCards(true);
-				
-				// Fetch cards usando API client
-				const cardsData = await cardsAPI.getAll();
-				
-				// Fetch items (ainda usando fetch pois não tem no API client)
-				const itemsRes = await fetch('/api/item-cards');
-				let itemsData = { itemCards: [] };
-				if (!itemsRes.ok) {
-					console.error('[CardInventory] Falha ao carregar itens:', itemsRes.status);
-				} else {
-					itemsData = await itemsRes.json();
-				}
-				
-				// Mapear cartas para compatibilidade com DeckBuilder
-				const mappedCards = (cardsData.cards || []).map(card => {
-					const localCard = mapApiCardToLocal(card);
-					// Garantir compatibilidade de campos para DeckBuilder
-					return {
-						...localCard,
-						name: localCard.nome || card.name,
-						category: localCard.categoria || card.category,
-						region: localCard.regiao || card.region,
-						rarity: localCard.raridade || card.rarity,
-						attack: localCard.ataque || card.attack,
-						defense: localCard.defesa || card.defense,
-						life: localCard.vida || card.life
-					};
-				});
-				
+
+				const dados = await carregarDadosDeCartas();
+
 				if (!cancelled) {
-					setAllCards(mappedCards);
-					setAllItems(itemsData.itemCards || []);
+					setAllCards(dados.cartas);
+					setAllItems(dados.itens);
 				}
 			} catch (e) {
 				if (!cancelled) setCardsError(e.message);
@@ -81,31 +63,142 @@ export default function PaginaInventarioDeCartas() {
 	// Mapear coleção real a partir dos IDs possuídos
 	const byId = useMemo(() => new Map(allCards.map(c => [c.id, c])), [allCards]);
 	const ownedCards = useMemo(() => {
-		if (!isAuthenticated() || !ownedIds?.length) return [];
-		return ownedIds.map(id => byId.get(id)).filter(Boolean);
+		if (!isAuthenticated()) {
+			return [];
+		}
+		if (!Array.isArray(ownedIds)) {
+			return [];
+		}
+		if (ownedIds.length === 0) {
+			return [];
+		}
+		return ownedIds.map((id) => byId.get(id)).filter(Boolean);
 	}, [ownedIds, isAuthenticated, byId]);
 
 	// Filtros derivados dinamicamente das cartas carregadas
-	const allRegions = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.regiao).filter(Boolean)))], [allCards]);
-	const allCategories = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.categoria).filter(Boolean)))], [allCards]);
-	const allRarities = useMemo(() => ['all', ...Array.from(new Set(allCards.map(c => c.raridade).filter(Boolean)))], [allCards]);
+	const allRegions = useMemo(() => {
+		const regioes = allCards
+			.map((carta) => normalizarTextoParaComparacao(primeiroValorDefinido(carta.regiao, carta.region, null)))
+			.filter(Boolean);
+		const mapaOriginal = new Map();
+		allCards.forEach((carta) => {
+			const chave = normalizarTextoParaComparacao(primeiroValorDefinido(carta.regiao, carta.region));
+			if (chave) {
+				mapaOriginal.set(chave, primeiroValorDefinido(carta.regiao, carta.region));
+			}
+		});
+		const semDuplicatas = Array.from(new Set(regioes));
+		return ['all', ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave)];
+	}, [allCards]);
+
+	const allCategories = useMemo(() => {
+		const categorias = allCards
+			.map((carta) => normalizarTextoParaComparacao(primeiroValorDefinido(carta.categoria, carta.category, null)))
+			.filter(Boolean);
+		const mapaOriginal = new Map();
+		allCards.forEach((carta) => {
+			const chave = normalizarTextoParaComparacao(primeiroValorDefinido(carta.categoria, carta.category));
+			if (chave) {
+				mapaOriginal.set(chave, primeiroValorDefinido(carta.categoria, carta.category));
+			}
+		});
+		const semDuplicatas = Array.from(new Set(categorias));
+		return ['all', ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave)];
+	}, [allCards]);
+
+	const allRarities = useMemo(() => {
+		const raridades = allCards
+			.map((carta) => normalizarRaridade(primeiroValorDefinido(carta.raridade, carta.rarity, null)))
+			.filter(Boolean);
+		const mapaOriginal = new Map();
+		allCards.forEach((carta) => {
+			const chave = normalizarRaridade(primeiroValorDefinido(carta.raridade, carta.rarity));
+			if (chave) {
+				mapaOriginal.set(chave, primeiroValorDefinido(carta.raridade, carta.rarity));
+			}
+		});
+		const semDuplicatas = Array.from(new Set(raridades));
+		return ['all', ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave)];
+	}, [allCards]);
 
 	const filteredCards = useMemo(() => {
-		const pool = ownedCards;
-		const term = search.trim().toLowerCase();
-		return pool.filter(c => {
-			if (region !== 'all' && (c.regiao || c.region) !== region) return false;
-			if (category !== 'all' && (c.categoria || c.category) !== category) return false;
-			if (rarity !== 'all' && (c.raridade || c.rarity) !== rarity) return false;
-			if (term && !((c.nome || c.name || '').toLowerCase().includes(term) || (c.historia || c.lore || '').toLowerCase().includes(term))) return false;
-			
-			// Filtro por tipo de carta (lenda/item)
-			if (cardTypeFilter === 'lendas' && !isLegendCard(c)) return false;
-			if (cardTypeFilter === 'itens' && !isItemCard(c)) return false;
-			
+		const termoNormalizado = normalizarTextoParaComparacao(search);
+		const filtroRegiaoAtivo = region !== 'all';
+		const filtroCategoriaAtivo = category !== 'all';
+		const filtroRaridadeAtivo = rarity !== 'all';
+		const regiaoNormalizada = normalizarTextoParaComparacao(region);
+		const categoriaNormalizada = normalizarTextoParaComparacao(category);
+		const raridadeNormalizada = normalizarRaridade(rarity);
+
+		return ownedCards.filter((carta) => {
+			const regiaoCarta = normalizarTextoParaComparacao(primeiroValorDefinido(carta.regiao, carta.region));
+			if (filtroRegiaoAtivo && regiaoCarta !== regiaoNormalizada) {
+				return false;
+			}
+
+			const categoriaCarta = normalizarTextoParaComparacao(primeiroValorDefinido(carta.categoria, carta.category));
+			if (filtroCategoriaAtivo && categoriaCarta !== categoriaNormalizada) {
+				return false;
+			}
+
+			const raridadeCarta = normalizarRaridade(primeiroValorDefinido(carta.raridade, carta.rarity));
+			if (filtroRaridadeAtivo && raridadeCarta !== raridadeNormalizada) {
+				return false;
+			}
+
+			if (termoNormalizado) {
+				const nomeCarta = normalizarTextoParaComparacao(primeiroValorDefinido(carta.nome, carta.name));
+				const historiaCarta = normalizarTextoParaComparacao(primeiroValorDefinido(carta.historia, carta.lore));
+				if (!nomeCarta.includes(termoNormalizado) && !historiaCarta.includes(termoNormalizado)) {
+					return false;
+				}
+			}
+
+			if (cardTypeFilter === 'lendas' && !ehCartaDeLenda(carta)) {
+				return false;
+			}
+			if (cardTypeFilter === 'itens' && !ehCartaDeItem(carta)) {
+				return false;
+			}
+
 			return true;
 		});
 	}, [ownedCards, region, category, rarity, search, cardTypeFilter]);
+
+	const filteredItems = useMemo(() => {
+		const termoNormalizado = normalizarTextoParaComparacao(search);
+		const raridadeFiltro = normalizarRaridade(rarity);
+		const categoriaCalculada = normalizarTipoItem(category);
+		const categoriasValidas = new Set(['item', 'itens', 'consumivel', 'equipamento', 'artefato', 'reliquia', 'pergaminho']);
+		const aplicarFiltroRaridade = activeTab === 'items' && rarity !== 'all';
+		const aplicarFiltroCategoria = activeTab === 'items' && category !== 'all' && categoriasValidas.has(categoriaCalculada);
+
+		return allItems.filter((item) => {
+			if (termoNormalizado) {
+				const nomeItem = normalizarTextoParaComparacao(primeiroValorDefinido(item.nome, item.name));
+				const descricaoItem = normalizarTextoParaComparacao(primeiroValorDefinido(item.descricao, item.description));
+				if (!nomeItem.includes(termoNormalizado) && !descricaoItem.includes(termoNormalizado)) {
+					return false;
+				}
+			}
+
+			if (aplicarFiltroRaridade) {
+				const raridadeItem = normalizarRaridade(primeiroValorDefinido(item.raridade, item.rarity));
+				if (raridadeItem !== raridadeFiltro) {
+					return false;
+				}
+			}
+
+			if (aplicarFiltroCategoria) {
+				const categoriaItem = normalizarTipoItem(primeiroValorDefinido(item.tipo_item, item.itemType, item.tipo));
+				if (categoriaItem !== categoriaCalculada) {
+					return false;
+				}
+			}
+
+			return true;
+		});
+	}, [allItems, search, rarity, category, activeTab]);
 
 	const totalAvailable = allCards.length;
 	const totalOwned = ownedCards.length;
@@ -113,41 +206,20 @@ export default function PaginaInventarioDeCartas() {
 	const [selectedCard, setSelectedCard] = useState(null);
 	const [showDeckBuilder, setShowDeckBuilder] = useState(false);
 
-	// Função para identificar tipo de carta
-	const isLegendCard = (card) => {
-		const category = (card.category || card.categoria || '').toLowerCase();
-		const type = (card.type || card.tipo || '').toLowerCase();
-		const cardType = (card.cardType || card.card_type || '').toLowerCase();
-		
-		return category === 'lenda' || type === 'lenda' || 
-			   category === 'legend' || type === 'legend' ||
-			   cardType === 'lenda' || cardType === 'legend' ||
-			   // Outras categorias que podem ser lendas
-			   category.includes('lenda') || category.includes('legend');
-	};
-
-	const isItemCard = (card) => {
-		const category = (card.category || card.categoria || '').toLowerCase();
-		const type = (card.type || card.tipo || '').toLowerCase();
-		const cardType = (card.cardType || card.card_type || '').toLowerCase();
-		
-		return category === 'item' || type === 'item' || 
-			   category === 'itens' || type === 'itens' ||
-			   cardType === 'item' || cardType === 'itens' ||
-			   // Outras categorias que podem ser itens
-			   category.includes('item') || category.includes('equipamento') ||
-			   category.includes('consumivel') || category.includes('artefato');
-	};
-
 	// Estatísticas para o deck builder
-	const legendsCount = useMemo(() => ownedCards.filter(isLegendCard).length, [ownedCards]);
-	const itemsCount = useMemo(() => ownedCards.filter(isItemCard).length, [ownedCards]);
+	const legendsCount = useMemo(() => ownedCards.filter(ehCartaDeLenda).length, [ownedCards]);
+	const itemsCount = useMemo(() => ownedCards.filter(ehCartaDeItem).length, [ownedCards]);
 	const canBuildDeck = legendsCount >= 5 && itemsCount >= 20;
+	const exibindoCarregamento = [loadingCards, loadingCollection].some(Boolean);
 
 	// Handler para salvar deck
 	const handleSaveDeck = async (cardIds) => {
 		try {
-			if (!isAuthenticated() || !user?.id) {
+			if (!isAuthenticated()) {
+				alert('Você precisa estar logado para salvar decks!');
+				return;
+			}
+			if (!valorFoiDefinido(user?.id)) {
 				alert('Você precisa estar logado para salvar decks!');
 				return;
 			}
@@ -170,7 +242,7 @@ export default function PaginaInventarioDeCartas() {
 			}
 
 			const errorData = await response.json().catch(() => ({}));
-			const message = errorData.error || 'Erro ao salvar deck';
+			const message = valorComPadrao(errorData.error, 'Erro ao salvar deck');
 			console.error('[CardInventory] Falha ao salvar deck:', response.status, message);
 			alert(message);
 		} catch (error) {
@@ -310,7 +382,7 @@ export default function PaginaInventarioDeCartas() {
 											</select>
 										</div>
 
-										{(loadingCards || loadingCollection) ? (
+										{exibindoCarregamento ? (
 											<div className="text-center text-gray-400">Carregando cartas e coleção...</div>
 										) : (cardsError) ? (
 											<div className="text-center py-12 text-red-400">Erro ao carregar cartas: {cardsError}</div>
@@ -323,11 +395,20 @@ export default function PaginaInventarioDeCartas() {
 										) : (
 											<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 												{filteredCards.map((card) => {
-													const frame = getRarityFrameClasses(card.raridade || card.rarity);
-													const frameText = frame.split(' ')[1] || 'text-gray-400';
+													const rotuloRaridade = valorComPadrao(primeiroValorDefinido(card.raridade, card.rarity), 'Comum');
+													const frame = obterClassesDeRaridade(rotuloRaridade);
+													const classesFrame = frame.split(' ');
+													const frameText = valorComPadrao(classesFrame[1], 'text-gray-400');
 													const isLegend = isLegendCard(card);
 													const isItem = isItemCard(card);
-													
+													const nomeCarta = valorComPadrao(primeiroValorDefinido(card.nome, card.name), 'Carta desconhecida');
+													const regiaoCarta = valorComPadrao(primeiroValorDefinido(card.regiao, card.region), 'Região misteriosa');
+													const categoriaCarta = valorComPadrao(primeiroValorDefinido(card.categoria, card.category), 'Categoria desconhecida');
+													const possuiStatus = [card.ataque, card.attack, card.defesa, card.defense, card.vida, card.life].some(valorFoiDefinido);
+													const ataqueCarta = valorComPadrao(primeiroValorDefinido(card.ataque, card.attack), '-');
+													const defesaCarta = valorComPadrao(primeiroValorDefinido(card.defesa, card.defense), '-');
+													const vidaCarta = valorComPadrao(primeiroValorDefinido(card.vida, card.life), '-');
+
 													return (
 														<div
 															key={card.id}
@@ -348,14 +429,14 @@ export default function PaginaInventarioDeCartas() {
 																<div className="mb-3">
 																	<CardImage card={card} size="medium" className="mx-auto" />
 																</div>
-																<h4 className="text-sm font-bold mb-1">{card.nome || card.name}</h4>
-																<div className="text-xs text-gray-400 mb-1">{card.regiao || card.region} • {card.categoria || card.category}</div>
-																<div className={`text-xs font-semibold mb-2 ${frameText}`}>{card.raridade || card.rarity}</div>
-																{(card.ataque != null || card.attack != null || card.defesa != null || card.defense != null || card.vida != null || card.life != null) && (
+																<h4 className="text-sm font-bold mb-1">{nomeCarta}</h4>
+																<div className="text-xs text-gray-400 mb-1">{regiaoCarta} • {categoriaCarta}</div>
+																<div className={`text-xs font-semibold mb-2 ${frameText}`}>{rotuloRaridade}</div>
+																{possuiStatus && (
 																	<div className="grid grid-cols-3 gap-1 text-xs">
-																		<div className="bg-red-900/40 p-1 rounded">ATQ: {card.ataque ?? card.attack ?? '-'}</div>
-																		<div className="bg-blue-900/40 p-1 rounded">DEF: {card.defesa ?? card.defense ?? '-'}</div>
-																		<div className="bg-green-900/40 p-1 rounded">VIDA: {card.vida ?? card.life ?? '-'}</div>
+																		<div className="bg-red-900/40 p-1 rounded">ATQ: {ataqueCarta}</div>
+																		<div className="bg-blue-900/40 p-1 rounded">DEF: {defesaCarta}</div>
+																		<div className="bg-green-900/40 p-1 rounded">VIDA: {vidaCarta}</div>
 																	</div>
 																)}
 																{/* Badge específica do inventário */}
@@ -427,16 +508,12 @@ export default function PaginaInventarioDeCartas() {
 										) : cardsError ? (
 											<div className="text-center py-12 text-red-400">Erro ao carregar itens: {cardsError}</div>
 										) : allItems.length === 0 ? (
-											<div className="text-center py-12 text-gray-400">Nenhum item encontrado.</div>
+											<div className="text-center py-12 text-gray-400">Nenhum item disponível para exibição.</div>
+										) : filteredItems.length === 0 ? (
+											<div className="text-center py-12 text-gray-400">Nenhum item atende aos filtros atuais.</div>
 										) : (
 											<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-												{allItems
-													.filter(item => {
-														if (search && !item.name?.toLowerCase().includes(search.toLowerCase()) && !item.description?.toLowerCase().includes(search.toLowerCase())) return false;
-														if (rarity !== 'all' && item.rarity !== rarity) return false;
-														if (category !== 'all' && item.itemType !== category) return false;
-														return true;
-													})
+												{filteredItems
 													.map((item) => (
 														<ItemCard
 															key={item.id}

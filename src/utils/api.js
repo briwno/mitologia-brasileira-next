@@ -127,6 +127,17 @@ export const cardsAPI = {
   removeFromFavorites: (cardId) => apiClient.delete(`/cards/favorites/${cardId}`),
 };
 
+// Cartas de Item
+export const itemCardsAPI = {
+  getAll: (filters = {}) => apiClient.get('/item-cards', filters),
+  getById: (id) => apiClient.get(`/item-cards/${id}`),
+  getByRarity: (rarity) => apiClient.get('/item-cards', { rarity }),
+  getByType: (itemType) => apiClient.get('/item-cards', { itemType }),
+  create: (itemData) => apiClient.post('/item-cards', itemData),
+  update: (id, itemData) => apiClient.put('/item-cards', { ...itemData, id }),
+  delete: (id) => apiClient.delete(`/item-cards?id=${id}`),
+};
+
 // Coleção
 export const collectionAPI = {
   get: (uid) => apiClient.get(`/collection?uid=${encodeURIComponent(uid)}`),

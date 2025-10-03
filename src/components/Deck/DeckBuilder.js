@@ -1,11 +1,11 @@
 "use client";
 // src/components/Deck/DeckBuilder.js
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { cardsAPI } from '@/utils/api';
+import { cardsAPI, itemCardsAPI } from '@/utils/api';
 import { DECK_RULES } from '@/utils/deckValidation';
 import ImagemDaCarta from '@/components/Card/CardImage';
 import { useCollection } from '@/hooks/useCollection';
-import { mapApiCardToLocal, inferCardPlayCost } from '@/utils/cardUtils';
+import { mapearCartaDaApi, inferirCustoParaJogar } from '@/utils/cardUtils';
 
 const DECK_MIN_SIZE = DECK_RULES.MIN_SIZE; // 25
 const DECK_MAX_SIZE = DECK_RULES.MAX_SIZE; // 25
@@ -40,17 +40,17 @@ export default function DeckBuilder({
         // Buscar tanto cartas regulares quanto item cards
         const [cardsResponse, itemCardsResponse] = await Promise.all([
           cardsAPI.getAll(),
-          fetch('/api/item-cards').then(res => res.json())
+          itemCardsAPI.getAll()
         ]);
         
         console.log('[DeckBuilder] API Responses:', { cardsResponse, itemCardsResponse });
         
         let allCardsData = [];
         
-        // Adicionar cartas regulares (lendas) usando mapApiCardToLocal para consistência
+  // Adicionar cartas regulares (lendas) usando mapearCartaDaApi para consistência
         if (cardsResponse?.cards) {
           const mappedCards = cardsResponse.cards.map(card => {
-            const localCard = mapApiCardToLocal(card);
+            const localCard = mapearCartaDaApi(card);
             // Garantir compatibilidade de campos para DeckBuilder e marcar como lenda
             return {
               ...localCard,
@@ -162,7 +162,7 @@ export default function DeckBuilder({
   const [searchFilter, setSearchFilter] = useState('');
   const [previewCard, setPreviewCard] = useState(null);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
-  const previewCost = useMemo(() => inferCardPlayCost(previewCard), [previewCard]);
+  const previewCost = useMemo(() => inferirCustoParaJogar(previewCard), [previewCard]);
 
   const deckCount = useMemo(() => 
     deckCards.reduce((sum, card) => sum + card.quantity, 0), 
