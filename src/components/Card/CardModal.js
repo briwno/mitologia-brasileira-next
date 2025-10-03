@@ -33,77 +33,6 @@ const getCardPortrait = (card) => {
   );
 };
 
-function ItemDetail({ card }) {
-  if (!card) return null;
-
-  const portrait = getCardPortrait(card);
-
-  return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="relative w-full aspect-[3/4] md:aspect-auto md:h-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
-        <Image
-          src={portrait}
-          alt={`Retrato do item ${card.name || card.nome}`}
-          fill
-          className="object-contain"
-          sizes="(max-width:768px) 95vw, (max-width:1280px) 640px, 800px"
-          quality={98}
-          priority
-        />
-      </div>
-      <div className="space-y-5 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-1">
-        <div>
-          <h3 className="text-lg font-semibold text-purple-400 mb-3">Detalhes do Item</h3>
-          <div className="bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-400">Tipo:</span>
-                <div className="text-white font-medium">{card.itemType || card.tipo}</div>
-              </div>
-              <div>
-                <span className="text-gray-400">Raridade:</span>
-                <div className="text-white font-medium">{card.rarity || card.raridade}</div>
-              </div>
-            </div>
-
-            {card.description && (
-              <div>
-                <span className="text-gray-400 text-sm">Descrição:</span>
-                <p className="text-white text-sm mt-1 leading-relaxed">{card.description}</p>
-              </div>
-            )}
-
-            {card.effects && Object.keys(card.effects).length > 0 && (
-              <div>
-                <span className="text-yellow-400 text-sm font-medium">Efeito:</span>
-                <div className="text-white text-sm mt-1 bg-black/30 p-3 rounded border border-yellow-400/20">
-                  {card.effects.description ||
-                    `${card.effects.type || 'Efeito'} ${card.effects.value || ''} ${card.effects.duration ? `(${card.effects.duration})` : ''}`.trim()
-                  }
-                </div>
-              </div>
-            )}
-
-            {card.lore && (
-              <div>
-                <span className="text-amber-400 text-sm">História:</span>
-                <p className="text-white/90 text-sm mt-1 leading-relaxed italic">{card.lore}</p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs text-gray-400">
-              <div>{card.isTradeable === false ? '🔒 Não Trocável' : '💱 Trocável'}</div>
-              {(card.unlockCondition || card.condicaoDesbloqueio) && (
-                <div className="text-yellow-300">🔓 {card.unlockCondition || card.condicaoDesbloqueio}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function StoriesSection({ card, stories, loading, error, onRetry }) {
   if (!card) return null;
 
@@ -240,30 +169,28 @@ export default function CardModal({
     setReloadStoriesKey((key) => key + 1);
   };
 
-  const modalContent = itemCard
-    ? <ItemDetail card={card} />
-    : shouldShowStoriesTab && activeTab === 'contos'
-      ? <StoriesSection card={card} stories={stories} loading={loadingStories} error={storiesError} onRetry={storiesError ? handleRetryStories : null} />
-      : (
-        <CardDetail
-          card={card}
-          onClose={null}
-          mode={mode}
-          wrapperClassName="max-h-full"
-          {...props}
-        />
-      );
+  const modalContent = shouldShowStoriesTab && activeTab === 'contos'
+    ? <StoriesSection card={card} stories={stories} loading={loadingStories} error={storiesError} onRetry={storiesError ? handleRetryStories : null} />
+    : (
+      <CardDetail
+        card={card}
+        onClose={null}
+        mode={mode}
+        wrapperClassName="max-h-full"
+        {...props}
+      />
+    );
 
   return (
-    <div className={getModalClasses()} onClick={handleOverlayClick} role="dialog" aria-modal="true">
+    <div className={getModalClasses()} onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
       <div
         className="relative w-full max-w-7xl bg-[#101b28] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/30">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>{itemCard ? '⚔️ Item' : '🃏 Carta'}</span>
+            <h2 id="card-modal-title" className="text-xl font-bold text-white flex items-center gap-2">
+              <span>{itemCard ? '🎁 Item' : '🃏 Carta'}</span>
               <span className="text-cyan-300">{card.nome || card.name}</span>
             </h2>
             {shouldShowStoriesTab && (

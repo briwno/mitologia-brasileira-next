@@ -1,86 +1,82 @@
-# Ka'aguy — Next.js App
+# Ka'aguy — Jogo de Cartas de Mitologia Brasileira
 
-Embarque no folclore brasileiro em um card game moderno: PvP dinâmico, exploração cultural e uma interface elegante.
-
-![last commit](https://img.shields.io/github/last-commit/briwno/mitologia-brasileira-next?style=for-the-badge)
-![top language](https://img.shields.io/github/languages/top/briwno/mitologia-brasileira-next?style=for-the-badge)
-![languages count](https://img.shields.io/github/languages/count/briwno/mitologia-brasileira-next?style=for-the-badge)
-
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
-![React](https://img.shields.io/badge/React-20232a?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
----
+![Logo Ka'aguy](./public/images/logo.svg)
 
 ## Sumário
 
-- [Visão geral](#visão-geral)
-- [Principais funcionalidades](#principais-funcionalidades)
-- [Tech stack](#tech-stack)
-- [Arquitetura e organização](#arquitetura-e-organização)
-	- [Módulos-chave](#módulos-chave)
-	- [Decisões de arquitetura](#decisões-de-arquitetura)
-- [Autenticação e coleção](#autenticação-e-coleção)
-- [Estilo e UI](#estilo-e-ui)
-- [Licença / Créditos](#licença--créditos)
+- [Visão Geral](#visão-geral)
+- [Recursos Principais](#recursos-principais)
+- [Tecnologias e Stack](#tecnologias-e-stack)
+- [Arquitetura e Fluxos](#arquitetura-e-fluxos)
+- [Estrutura de Pastas](#estrutura-de-pastas)
+- [Começando](#começando)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Banco de Dados Supabase](#banco-de-dados-supabase)
+- [UI, Design e Identidade](#ui-design-e-identidade)
+- [Testes e Garantia de Qualidade](#testes-e-garantia-de-qualidade)
+- [Roadmap e Próximos Passos](#roadmap-e-próximos-passos)
+- [Contribuição](#contribuição)
+- [Licença](#licença)
 
----
+## Visão Geral
 
-## Visão geral
+Ka'aguy é um card game digital focado na cultura folclórica brasileira. O projeto combina batalhas PvP rápidas, exploração cultural (Museu, Quiz e Mapa das Lendas) e progressão competitiva. A aplicação foi construída em **Next.js 15**, priorizando navegação fluida sem recarregar páginas, persistência com **Supabase** e estilização com **Tailwind CSS**.
 
-Experiência focada em dois eixos: combate PvP rápido e exploração cultural. O projeto prioriza fluidez de navegação (modais contextuais), identidade visual consistente e arquitetura simples para iteração rápida.
+## Recursos Principais
 
-## Principais funcionalidades
+- **Batalhas PvP assíncronas e ranqueadas** com fases, turnos e itens inspirados em lendas brasileiras.
+- **Museu interativo** com cards, contos, mapa regional e quizzes educativos.
+- **Sistema de progressão** com conquistas, ranking, moedas e missão diárias.
+- **Coleção de cartas e itens** com raridades, elementos, habilidades e histórias.
+- **Modais contextuais** (PvP, Museu, Perfil, Ranking) para manter o jogador no fluxo.
+- **API Routes** organizadas para cards, decks, batalhas, conquistas, ranking e profile.
 
-- Home com cards de navegação e ambientação temática.
-- PvP como modal de seleção de modo (Normal, Ranqueada, Personalizada) com editor de deck embutido e criação de sala.
-- Museu como modal com três seções: Catálogo de Cartas, Quiz Cultural e Mapa das Lendas.
-- Barra de navegação global:
-	- Mobile: tab bar fixa no rodapé em todas as páginas.
-	- Desktop: barra flutuante central inferior para alternar entre páginas.
-	- Oculta automaticamente na tela de partida (`/pvp/game/[roomId]`).
-- Editor de deck simples (limite 30 cartas, 1 cópia por carta neste protótipo) com salvamento em `/api/decks` (Supabase).
+## Tecnologias e Stack
 
-## Tech stack
+- **Framework**: Next.js 15 (App Router) com React 19.
+- **Estilos**: Tailwind CSS 4 + componentes customizados.
+- **Backend-as-a-Service**: Supabase (autenticação, banco Postgres e storage).
+- **ORM utilitário**: Drizzle ORM (planos futuros de persistência tipada).
+- **Validações**: Zod em rotas e formulários.
+- **Infraestrutura Vercel**: deploy automatizado, KV/Postgres opcionais.
+- **Linguagem**: Projeto 100% em português brasileiro (código e UI).
 
-- Next.js 15 (App Router)
-- React 19
-- Tailwind CSS 4
-- Supabase JS SDK (@supabase/supabase-js)
+## Arquitetura e Fluxos
 
-## Arquitetura e organização
+- **Modal-First Navigation**: modais dinâmicos carregados com fallback (`LoadingSpinner`) mantendo o contexto do usuário (`src/app/page.js`).
+- **Estado do Jogo**: `useGameState` orquestra o `MotorDeJogo` (`src/utils/gameLogic.js`), respeitando as fases (`INICIO → COMPRA → ACAO → COMBATE → FINAL`) e zonas (`ZONAS_CAMPO`).
+- **Hooks Personalizados**: `useAuth`, `usePlayerData`, `useCollection` encapsulam autenticação, dados do jogador e inventário.
+- **API Routes**: organização por domínio em `src/app/api/*` seguindo padrão com `requireSupabaseAdmin()` e respostas padronizadas.
+- **Dados Estáticos**: cartas, quizzes, contos e seeding em `src/data/` e `src/utils/gameDataSeeder.js`.
+- **Design System**: especificado em `src/lib/design.md`, garantindo consistência entre telas.
 
-- App Router (src/app): páginas e API routes no mesmo espaço, favorecendo DX e prototipagem.
-- Componentes reutilizáveis (src/components): UI, PvP e Museu em modais para reduzir navegação e manter contexto.
-- Dados locais (src/data) e hooks (src/hooks) para autenticação e coleção.
-- Integração leve com Supabase (src/lib/supabase) para persistência de decks.
+### Fluxo de Jogo (resumo)
 
-### Módulos-chave
+1. Jogador acessa a tela inicial e abre o modal PvP.
+2. Modal cria/entra em sala (`/api/battle-rooms`) e inicializa `MotorDeJogo`.
+3. Jogadores alternam turnos acionando ações via UI (`BattleScreen` → hooks → `MotorDeJogo`).
+4. Logs, conquistas e estatísticas são persistidos via Supabase.
 
-- GlobalNav: barra global (mobile tab + desktop flutuante), oculta em `/pvp/game/*` para foco total durante a partida.
-- PvPModal: seleção de modo (Normal/Ranqueada/Personalizada) + editor de deck.
-- MuseumModal: entrada às seções Catálogo, Quiz e Mapa.
-- LoadingSpinner + app/loading: experiência de loading consistente globalmente e em imports dinâmicos.
+## Estrutura de Pastas
 
-### Decisões de arquitetura
+```text
+src/
+  app/              # Páginas, modais e rotas API (App Router)
+  components/       # Componentes modulares (Game, UI, Museum, PvP, etc.)
+  hooks/            # Hooks customizados para auth, estado, coleção
+  utils/            # Motor de jogo, constantes, AI de bot e helpers
+  lib/              # Configurações (Supabase), design system, assets
+  data/             # Scripts SQL, seeds e dados estáticos
+public/
+  images/           # Logos, cartas, banners, avatares e playmat
+```
 
-- Modais para navegação rápida sem troca de página, mantendo o “flow” do usuário.
-- Estado local simples e hooks dedicados para evitar complexidade prematura.
-- APIs em memória para simulação rápida de salas/partidas, com caminho claro para evolução.
+## Contribuição
 
-## Autenticação e coleção
+1. Faça um fork do projeto.
+2. Commit suas alterações com mensagens descritivas.
+3. Abra um pull request descrevendo o contexto, screenshots e passos de teste.
 
-- Hook `useAuth` gerencia estado básico de sessão no client.
-- Hook `useCollection` carrega IDs de cartas do jogador via `/api/collection` (protótipo).
-- `PvPModal` deriva visualização de coleção a partir de `cardsDatabase` + IDs do usuário.
+## Licença
 
-## Estilo e UI
-
-- Tailwind classes para molduras, gradientes e efeitos (e.g., moldura dourada e “diamond emblem”).
-- `next/image` para imagens de fundo responsivas nos cards.
-- Modais com `dynamic()` e fallback de loading usando `LoadingSpinner`.
-
-## Licença / Créditos
-
-Projeto educacional para prototipação. As imagens usadas são placeholders/demonstrativas; substitua por assets licenciados para produção.
-
+Licença em definição. Até lá, uso autorizado apenas para fins de prototipagem e avaliação interna da equipe Ka'aguy.

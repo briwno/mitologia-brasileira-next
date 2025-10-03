@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
 import CardModal from '@/components/Card/CardModal';
-import ItemCard from '@/components/Card/ItemCard';
 import { cardsAPI } from '@/utils/api';
 import {
   TRANSLATION_MAPS,
@@ -19,24 +18,49 @@ function StoryCard({ card, onClick, idx = 0 }) {
   const fullSrc = card.images?.completa || card.imagens?.completa || card.images?.full || card.imagens?.full;
   const portrait = card.images?.retrato || card.imagens?.retrato || card.images?.portrait || card.imagens?.portrait || card.image || card.imagem;
   const imgSrc = fullSrc || portrait || '/images/placeholder.svg';
-  const rarityStyles = {
-    'Épico': 'from-purple-500/50 to-purple-900/60 border-purple-400/40' ,
-    'Lendário': 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
-    'Mítico': 'from-rose-500/60 to-rose-900/60 border-rose-400/40'
+  const normalizeRarityKey = (value) => {
+    if (!value) return '';
+    return value
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
   };
+
+  const rarityStyles = {
+    EPICO: 'from-purple-500/50 to-purple-900/60 border-purple-400/40',
+    LENDARIO: 'from-amber-400/60 to-amber-800/60 border-amber-400/40',
+    MITICO: 'from-rose-500/60 to-rose-900/60 border-rose-400/40'
+  };
+
   const rare = card.raridade || card.rarity;
-  const style = rarityStyles[rare] || 'from-slate-400/30 to-slate-800/60 border-slate-400/30';
-  const isMythic = rare === 'Mítico' || rare === 'MYTHIC';
+  const rareKey = normalizeRarityKey(rare);
+  const style = rarityStyles[rareKey] || 'from-slate-400/30 to-slate-800/60 border-slate-400/30';
+  const isMythic = rareKey === 'MITICO' || rareKey === 'MYTHIC';
+
+  const isItem = (() => {
+    if (!card) return false;
+    if (card.itemType != null || card.effects != null) return true;
+    const tipo = (card.tipo || card.type || card.cardType || '').toString().toLowerCase();
+    if (tipo.includes('item')) return true;
+    const categoria = (card.categoria || card.category || '').toString().toLowerCase();
+    return categoria.includes('item') || categoria.includes('equipamento') || categoria.includes('consum') || categoria.includes('artefato');
+  })();
+
+  const topLabel = isItem
+    ? (card.itemType || card.tipo || card.category || card.categoria || 'Item Especial')
+    : (card.regiao || card.region || '—');
 
   // Build a CSS gradient matching rarityStyles colors for the OUTER animated border
   const getRarityGradient = (r) => {
-    if (r === 'Mítico' || r === 'MYTHIC') {
+    const key = normalizeRarityKey(r);
+    if (key === 'MITICO' || key === 'MYTHIC') {
       return 'linear-gradient(135deg, rgba(244,63,94,0.6), rgba(255, 0, 0, 0.6))'; 
     }
-    if (r === 'Lendário' || r === 'LEGENDARY') {
+    if (key === 'LENDARIO' || key === 'LEGENDARY') {
       return 'linear-gradient(135deg, rgba(231, 178, 2, 0.97), rgba(255, 180, 67, 0.6))'; 
     }
-    if (r === 'Épico' || r === 'EPIC') {
+    if (key === 'EPICO' || key === 'EPIC') {
       return 'linear-gradient(135deg, rgba(168,85,247,0.5), rgba(144, 0, 255, 0.6))'; 
     }
     return 'linear-gradient(135deg, rgba(148,163,184,0.3), rgba(51,65,85,0.6))'; 
@@ -81,7 +105,7 @@ function StoryCard({ card, onClick, idx = 0 }) {
       />
   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/75" />
       <div className="absolute bottom-0 inset-x-0 p-3 flex flex-col gap-1 text-left">
-  <span className="text-[10px] tracking-wide font-semibold text-white/60 uppercase line-clamp-1">{card.regiao || card.region || '—'}</span>
+  <span className="text-[10px] tracking-wide font-semibold text-white/60 uppercase line-clamp-1">{topLabel}</span>
   <h3 className="text-sm font-bold leading-snug drop-shadow-sm line-clamp-2">{card.nome || card.name}</h3>
   <span className="text-[10px] font-semibold text-white/70 tracking-wide">{card.raridade || card.rarity}</span>
       </div>
@@ -164,11 +188,42 @@ export default function CatalogoComContos() {
         });
 
         // Mapear os item cards para tradução
-        const mappedItems = (itemsData.itemCards || []).map((item) => ({
-          ...item,
-          itemType: translate(item.itemType, TRANSLATION_MAPS.ITEM_TYPE),
-          rarity: translate(item.rarity, TRANSLATION_MAPS.RARITY),
-        }));
+        const mappedItems = (itemsData.itemCards || []).map((item, idx) => {
+          const translatedType = translate(item.itemType, TRANSLATION_MAPS.ITEM_TYPE) || item.itemType;
+          const translatedRarity = translate(item.rarity, TRANSLATION_MAPS.RARITY) || item.rarity;
+          const imagens = item.images || item.imagens || {};
+          const imagemPrincipal =
+            imagens.completa ||
+            imagens.full ||
+            imagens.retrato ||
+            imagens.portrait ||
+            item.image ||
+            item.imagem ||
+            '/images/placeholder.svg';
+
+          return {
+            ...item,
+            id: item.id,
+            name: item.name || item.nome,
+            nome: item.name || item.nome,
+            description: item.description || item.descricao,
+            descricao: item.description || item.descricao,
+            itemType: translatedType,
+            tipo: (item.itemType || item.tipo || 'item').toString().toLowerCase(),
+            categoria: translatedType || 'Item de Batalha',
+            rarity: translatedRarity,
+            raridade: translatedRarity,
+            effects: item.effects || item.efeito || null,
+            efeito: item.effects || item.efeito || null,
+            images: imagens,
+            imagens,
+            image: imagemPrincipal,
+            imagem: imagemPrincipal,
+            novo: item.novo === true,
+            unlockCondition: item.unlockCondition,
+            condicaoDesbloqueio: item.unlockCondition || item.condicaoDesbloqueio,
+          };
+        });
 
         if (!cancelled) {
           setCards(mappedCards);
@@ -530,29 +585,27 @@ export default function CatalogoComContos() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {selectedTab === 'cards' ? (
-                filteredCards.map((card, i) => (
-                  <StoryCard
-                    key={card.id}
-                    card={card}
-                    idx={i}
-                    onClick={() => {
-                      setSelected(card);
-                    }}
-                  />
-                ))
-              ) : (
-                filteredItems.map((item, i) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onClick={() => {
-                      setSelected(item);
-                    }}
-                    className="aspect-[3/4]"
-                  />
-                ))
-              )}
+              {selectedTab === 'cards'
+                ? filteredCards.map((card, i) => (
+                    <StoryCard
+                      key={card.id}
+                      card={card}
+                      idx={i}
+                      onClick={() => {
+                        setSelected(card);
+                      }}
+                    />
+                  ))
+                : filteredItems.map((item, i) => (
+                    <StoryCard
+                      key={item.id}
+                      card={item}
+                      idx={i}
+                      onClick={() => {
+                        setSelected(item);
+                      }}
+                    />
+                  ))}
             </div>
           </>
         )}

@@ -27,6 +27,41 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
   // Usar função utilitária para ícones de tipo
   const obterIconeDoTipo = getCardTypeIcon;
 
+  const isItemCard = (() => {
+    if (!card) return false;
+    if (card.itemType != null || card.effects != null) return true;
+    const tipo = (card.tipo || card.type || card.cardType || '').toString().toLowerCase();
+    if (tipo.includes('item')) return true;
+    const categoria = (card.categoria || card.category || '').toString().toLowerCase();
+    return categoria.includes('item') || categoria.includes('equipamento') || categoria.includes('consum') || categoria.includes('artefato');
+  })();
+
+  const itemEffect = card?.effects || card?.efeito || null;
+  const getEffectDescription = () => {
+    if (!itemEffect) return null;
+    if (typeof itemEffect === 'string') return itemEffect;
+    return (
+      itemEffect.description ||
+      itemEffect.descricao ||
+      itemEffect.text ||
+      itemEffect.effect ||
+      null
+    );
+  };
+
+  const getEffectMeta = () => {
+    if (!itemEffect || typeof itemEffect === 'string') return {};
+    return {
+      type: itemEffect.type || itemEffect.tipo || null,
+      value: itemEffect.value || itemEffect.valor || null,
+      duration: itemEffect.duration || itemEffect.duracao || null,
+      trigger: itemEffect.trigger || itemEffect.condicao || null,
+    };
+  };
+
+  const effectDescription = getEffectDescription();
+  const effectMeta = getEffectMeta();
+
   const baseWrapperClasses = "bg-black/30 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-gray-600/30 w-full max-w-6xl xl:max-w-7xl overflow-y-auto";
   const extraWrapperClasses = wrapperClassName && wrapperClassName.trim().length > 0 ? wrapperClassName : 'max-h-[90vh]';
 
@@ -48,88 +83,120 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Coluna Esquerda: Habilidades */}
           <aside className="order-2 lg:order-1 lg:col-span-3 space-y-3">
-            <div className="text-sm font-bold text-white/80">Habilidades</div>
-            {card.habilidades && (
-              <div className="space-y-2">
-                {(() => {
-                  const abilities = card.habilidades;
-                  const usesNew = abilities.skill1 || abilities.skill2 || abilities.skill3 || abilities.skill4 || abilities.skill5;
-                  if (usesNew) {
-                    const skillBlocks = [abilities.skill1, abilities.skill2, abilities.skill3, abilities.skill4, abilities.skill5].filter(Boolean);
-                    const palettes = [
-                      { box: 'bg-blue-900/30 border-blue-500/30', label: 'text-blue-400' },
-                      { box: 'bg-cyan-900/30 border-cyan-500/30', label: 'text-cyan-400' },
-                      { box: 'bg-purple-900/30 border-purple-500/30', label: 'text-purple-400' },
-                      { box: 'bg-amber-900/30 border-amber-500/30', label: 'text-amber-400' },
-                      { box: 'bg-red-900/30 border-red-500/30', label: 'text-red-400' },
-                    ];
+            <div className="text-sm font-bold text-white/80">{isItemCard ? 'Efeito do Item' : 'Habilidades'}</div>
+            <div className="space-y-2">
+              {isItemCard ? (
+                <>
+                  {effectDescription ? (
+                    <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-white/10">
+                      <div className="text-xs sm:text-sm text-purple-300 font-semibold mb-1">✨ Efeito Principal</div>
+                      {effectMeta.type && (
+                        <div className="text-[11px] uppercase tracking-wide text-purple-200 mb-1">{effectMeta.type}</div>
+                      )}
+                      <div className="text-xs sm:text-sm text-gray-200 leading-relaxed">{effectDescription}</div>
+                      <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-gray-300">
+                        {effectMeta.value && <div className="text-yellow-300">⚙️ Valor: {effectMeta.value}</div>}
+                        {effectMeta.duration && <div className="text-cyan-300">⏱️ Duração: {effectMeta.duration}</div>}
+                        {effectMeta.trigger && <div className="text-orange-300">🔁 Condição: {effectMeta.trigger}</div>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400">Nenhum efeito configurado para este item.</div>
+                  )}
+
+                  {(card.description || card.descricao || card.lore) && (
+                    <div className="bg-black/40 p-3 rounded border border-white/10">
+                      <div className="text-xs sm:text-sm text-purple-300 font-semibold mb-1">📜 Descrição</div>
+                      <div className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                        {card.description || card.descricao || card.lore}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : card.habilidades ? (
+                <>
+                  {(() => {
+                    const abilities = card.habilidades;
+                    const usesNew = abilities.skill1 || abilities.skill2 || abilities.skill3 || abilities.skill4 || abilities.skill5;
+                    if (usesNew) {
+                      const skillBlocks = [abilities.skill1, abilities.skill2, abilities.skill3, abilities.skill4, abilities.skill5].filter(Boolean);
+                      const palettes = [
+                        { box: 'bg-blue-900/30 border-blue-500/30', label: 'text-blue-400' },
+                        { box: 'bg-cyan-900/30 border-cyan-500/30', label: 'text-cyan-400' },
+                        { box: 'bg-purple-900/30 border-purple-500/30', label: 'text-purple-400' },
+                        { box: 'bg-amber-900/30 border-amber-500/30', label: 'text-amber-400' },
+                        { box: 'bg-red-900/30 border-red-500/30', label: 'text-red-400' },
+                      ];
+                      return (
+                        <>
+                          {skillBlocks.map((s, idx) => {
+                            const pal = palettes[idx] || palettes[0];
+                            return (
+                              <div key={`skill-${idx}`} className={`${pal.box} p-2 sm:p-3 rounded border border-white/10`}>
+                                <div className="flex justify-between items-center mb-1">
+                                  <div className={`text-xs sm:text-sm font-semibold ${pal.label}`}>
+                                    {idx === 4 ? '🌟 Ultimate' : `Habilidade ${idx + 1}`}
+                                  </div>
+                                  {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
+                                    <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
+                                  ) : s.ppMax ? (
+                                    <div className="text-xs text-yellow-400">PP {s.ppMax}/{s.ppMax}</div>
+                                  ) : (
+                                    <div className="text-xs text-yellow-400">PP {obterPPMaximoPadrao(idx)}/{obterPPMaximoPadrao(idx)}</div>
+                                  )}
+                                </div>
+                                <div className="font-semibold mb-1 text-sm sm:text-base">{s.name}</div>
+                                <div className="text-xs sm:text-sm text-gray-300">{s.description}</div>
+                              </div>
+                            );
+                          })}
+                        </>
+                      );
+                    }
+                    // Fallback antigo: básica e ultimate
                     return (
                       <>
-                        {skillBlocks.map((s, idx) => {
-                          const pal = palettes[idx] || palettes[0];
-                          return (
-                            <div key={`skill-${idx}`} className={`${pal.box} p-2 sm:p-3 rounded border border-white/10`}>
-                              <div className="flex justify-between items-center mb-1">
-                                <div className={`text-xs sm:text-sm font-semibold ${pal.label}`}>
-                                  {idx === 4 ? '🌟 Ultimate' : `Habilidade ${idx + 1}`}
-                                </div>
-                                {typeof s.ppMax === 'number' && typeof s.pp === 'number' ? (
-                                  <div className="text-xs text-yellow-400">PP {s.pp}/{s.ppMax}</div>
-                                ) : s.ppMax ? (
-                                  <div className="text-xs text-yellow-400">PP {s.ppMax}/{s.ppMax}</div>
-                                ) : (
-                                  <div className="text-xs text-yellow-400">PP {obterPPMaximoPadrao(idx)}/{obterPPMaximoPadrao(idx)}</div>
-                                )}
-                              </div>
-                              <div className="font-semibold mb-1 text-sm sm:text-base">{s.name}</div>
-                              <div className="text-xs sm:text-sm text-gray-300">{s.description}</div>
+                        {abilities.basic && (
+                          <div className="bg-blue-900/30 p-2 sm:p-3 rounded border border-white/10">
+                            <div className="flex justify-between items-center mb-1">
+                              <div className="text-xs sm:text-sm text-blue-400 font-semibold">⚡ Habilidade Básica</div>
+                              <div className="text-xs text-yellow-400">💎{abilities.basic.cost}</div>
                             </div>
-                          );
-                        })}
+                            <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.basic.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-300">{abilities.basic.description}</div>
+                            {abilities.basic.cooldown > 0 && (
+                              <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.basic.cooldown} turno(s)</div>
+                            )}
+                          </div>
+                        )}
+                        {abilities.ultimate && (
+                          <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-white/10">
+                            <div className="flex justify-between items-center mb-1">
+                              <div className="text-xs sm:text-sm text-purple-400 font-semibold">🌟 Ultimate</div>
+                              <div className="text-xs text-yellow-400">💎{abilities.ultimate.cost}</div>
+                            </div>
+                            <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.ultimate.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-300">{abilities.ultimate.description}</div>
+                            <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.ultimate.cooldown} turno(s)</div>
+                          </div>
+                        )}
                       </>
                     );
-                  }
-                  // Fallback antigo: básica e ultimate
-                  return (
-                    <>
-                      {abilities.basic && (
-                        <div className="bg-blue-900/30 p-2 sm:p-3 rounded border border-white/10">
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="text-xs sm:text-sm text-blue-400 font-semibold">⚡ Habilidade Básica</div>
-                            <div className="text-xs text-yellow-400">💎{abilities.basic.cost}</div>
-                          </div>
-                          <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.basic.name}</div>
-                          <div className="text-xs sm:text-sm text-gray-300">{abilities.basic.description}</div>
-                          {abilities.basic.cooldown > 0 && (
-                            <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.basic.cooldown} turno(s)</div>
-                          )}
-                        </div>
-                      )}
-                      {abilities.ultimate && (
-                        <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-white/10">
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="text-xs sm:text-sm text-purple-400 font-semibold">🌟 Ultimate</div>
-                            <div className="text-xs text-yellow-400">💎{abilities.ultimate.cost}</div>
-                          </div>
-                          <div className="font-semibold mb-1 text-sm sm:text-base">{abilities.ultimate.name}</div>
-                          <div className="text-xs sm:text-sm text-gray-300">{abilities.ultimate.description}</div>
-                          <div className="text-xs text-orange-400 mt-1">⏱️ Recarga: {abilities.ultimate.cooldown} turno(s)</div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                  })()}
 
-                {/* Habilidade Passiva */}
-                {card.habilidades.passive && (
-                  <div className="bg-green-900/30 p-2 sm:p-3 rounded border border-white/10">
-                    <div className="text-xs sm:text-sm text-green-400 font-semibold mb-1">🔮 Passiva</div>
-                    <div className="font-semibold mb-1 text-sm sm:text-base">{card.habilidades.passive.name}</div>
-                    <div className="text-xs sm:text-sm text-gray-300">{card.habilidades.passive.description}</div>
-                  </div>
-                )}
-              </div>
-            )}
+                  {/* Habilidade Passiva */}
+                  {card.habilidades.passive && (
+                    <div className="bg-green-900/30 p-2 sm:p-3 rounded border border-white/10">
+                      <div className="text-xs sm:text-sm text-green-400 font-semibold mb-1">🔮 Passiva</div>
+                      <div className="font-semibold mb-1 text-sm sm:text-base">{card.habilidades.passive.name}</div>
+                      <div className="text-xs sm:text-sm text-gray-300">{card.habilidades.passive.description}</div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-xs text-gray-400">Nenhuma habilidade cadastrada.</div>
+              )}
+            </div>
           </aside>
 
           {/* Coluna Central: Imagem */}
@@ -145,11 +212,11 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <div className="text-xs sm:text-sm text-gray-400">Região</div>
-                <div className="font-semibold text-sm sm:text-base">{card.regiao}</div>
+                <div className="font-semibold text-sm sm:text-base">{card.regiao || '—'}</div>
               </div>
               <div>
                 <div className="text-xs sm:text-sm text-gray-400">Categoria</div>
-                <div className="font-semibold text-sm sm:text-base">{card.categoria}</div>
+                <div className="font-semibold text-sm sm:text-base">{card.categoria || (isItemCard ? card.itemType || 'Item' : '—')}</div>
               </div>
             </div>
 
@@ -158,7 +225,7 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
               <div>
                 <div className="text-xs sm:text-sm text-gray-400">Tipo</div>
                 <div className="font-semibold text-sm sm:text-base">
-                  {obterIconeDoTipo(card.tipo || card.type)} {(card.tipo || card.type || 'creature') === 'creature' ? 'Criatura' : (card.tipo || card.type) === 'spell' ? 'Feitiço' : 'Artefato'} 
+                  {isItemCard ? '🎁' : obterIconeDoTipo(card.tipo || card.type)} {isItemCard ? (card.itemType || 'Item') : (card.tipo || card.type || 'creature') === 'creature' ? 'Criatura' : (card.tipo || card.type) === 'spell' ? 'Feitiço' : 'Artefato'} 
                 </div>
               </div>
               <div>
@@ -207,10 +274,10 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
             )}
 
             {/* Condição de Desbloqueio */}
-            {card.condicaoDesbloqueio && (
+            {(card.condicaoDesbloqueio || card.unlockCondition) && (
               <div className="bg-black/40 p-3 rounded">
                 <div className="text-sm text-orange-400 mb-1">🔓 Desbloqueio</div>
-                <div className="text-sm text-gray-300">{card.condicaoDesbloqueio}</div>
+                <div className="text-sm text-gray-300">{card.condicaoDesbloqueio || card.unlockCondition}</div>
               </div>
             )}
 
@@ -225,10 +292,10 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
             )}
 
             {/* Lore */}
-            {card.historia && (
+            {(card.historia || card.lore) && (
               <div className="bg-black/40 p-3 rounded">
                 <div className="text-sm text-cyan-400 mb-1">História</div>
-                <div className="text-sm text-gray-300 italic">{card.historia}</div>
+                <div className="text-sm text-gray-300 italic">{card.historia || card.lore}</div>
               </div>
             )}
 
