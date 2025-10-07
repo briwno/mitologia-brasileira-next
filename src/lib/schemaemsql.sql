@@ -21,7 +21,6 @@ CREATE TABLE public.cards (
   region text NOT NULL,
   category text NOT NULL,
   card_type text NOT NULL,
-  cost integer NOT NULL,
   attack integer,
   defense integer,
   health integer,
@@ -41,8 +40,8 @@ CREATE TABLE public.cards (
 CREATE TABLE public.collections (
   player_id bigint NOT NULL,
   cards jsonb NOT NULL DEFAULT '[]'::jsonb,
-  item_cards jsonb NOT NULL DEFAULT '[]'::jsonb,
   updated_at timestamp with time zone DEFAULT now(),
+  item_cards jsonb NOT NULL DEFAULT '[]'::jsonb,
   CONSTRAINT collections_pkey PRIMARY KEY (player_id),
   CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
@@ -149,7 +148,6 @@ CREATE TABLE public.matches (
   player_a_id bigint NOT NULL,
   player_b_id bigint NOT NULL,
   winner_id bigint,
-  match_type text NOT NULL DEFAULT 'casual'::text,
   status text NOT NULL DEFAULT 'active'::text,
   version integer NOT NULL DEFAULT 0,
   state jsonb NOT NULL,
@@ -167,7 +165,7 @@ CREATE TABLE public.player_achievements (
   achievement_id text NOT NULL,
   unlocked_at timestamp with time zone DEFAULT now(),
   progress jsonb DEFAULT '{}'::jsonb,
-  CONSTRAINT player_achievements_pkey PRIMARY KEY (achievement_id, player_id),
+  CONSTRAINT player_achievements_pkey PRIMARY KEY (player_id, achievement_id),
   CONSTRAINT player_achievements_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
   CONSTRAINT player_achievements_achievement_id_fkey FOREIGN KEY (achievement_id) REFERENCES public.achievements(id)
 );
@@ -180,6 +178,26 @@ CREATE TABLE public.player_currencies (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT player_currencies_pkey PRIMARY KEY (player_id),
   CONSTRAINT player_currencies_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.player_pull_history (
+  id bigint NOT NULL DEFAULT nextval('player_pull_history_id_seq'::regclass),
+  player_id bigint NOT NULL,
+  pity_epico integer DEFAULT 0,
+  pity_lendario integer DEFAULT 0,
+  pity_mitico integer DEFAULT 0,
+  total_pulls integer DEFAULT 0,
+  pulls_comum integer DEFAULT 0,
+  pulls_incomum integer DEFAULT 0,
+  pulls_raro integer DEFAULT 0,
+  pulls_epico integer DEFAULT 0,
+  pulls_lendario integer DEFAULT 0,
+  pulls_mitico integer DEFAULT 0,
+  moedas integer DEFAULT 500,
+  boosters_disponiveis integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT player_pull_history_pkey PRIMARY KEY (id),
+  CONSTRAINT player_pull_history_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
 CREATE TABLE public.player_quests (
   player_id bigint NOT NULL,
@@ -228,7 +246,22 @@ CREATE TABLE public.players (
   last_login_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  coins integer,
   CONSTRAINT players_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.pull_records (
+  id bigint NOT NULL DEFAULT nextval('pull_records_id_seq'::regclass),
+  player_id bigint NOT NULL,
+  card_id text,
+  item_card_id text,
+  raridade character varying NOT NULL,
+  booster_type character varying NOT NULL,
+  pity_counter_at_pull integer DEFAULT 0,
+  pulled_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT pull_records_pkey PRIMARY KEY (id),
+  CONSTRAINT pull_records_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT pull_records_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.cards(id),
+  CONSTRAINT pull_records_item_card_id_fkey FOREIGN KEY (item_card_id) REFERENCES public.item_cards(id)
 );
 CREATE TABLE public.quests (
   id text NOT NULL,
@@ -243,6 +276,15 @@ CREATE TABLE public.quests (
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT quests_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.quizzes (
+  id bigint NOT NULL DEFAULT nextval('quizzes_id_seq'::regclass),
+  title text NOT NULL,
+  description text,
+  questions jsonb NOT NULL,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT quizzes_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.seasons (
   id bigint NOT NULL DEFAULT nextval('seasons_id_seq'::regclass),
