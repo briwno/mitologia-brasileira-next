@@ -131,7 +131,7 @@ export default function PvPModal({ onClose }) {
               imageSrc="/images/banners/menubatalha.png"
             />
             <CartaoDeModo
-              title="Ranqueada"
+              title="Online Ranqueada"
               iconName="trophy"
               subtitle="Valendo pontos de ranking"
               onClick={() => startMatch('ranked')}

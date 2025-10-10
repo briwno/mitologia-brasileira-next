@@ -55,6 +55,18 @@ function prepararItemParaJogo(itemBruto) {
   }
   
   const estruturaImagens = normalizarEstruturaDeImagens(itemBruto);
+  
+  // Prepare efeito ensuring it's either a string or an object with valid description
+  const efeitoRaw = primeiroValorDefinido(itemBruto.effect, itemBruto.efeito, itemBruto.effects);
+  let efeito = null;
+  
+  if (efeitoRaw) {
+    if (typeof efeitoRaw === 'string') {
+      efeito = efeitoRaw;
+    } else if (typeof efeitoRaw === 'object' && (efeitoRaw.descricao || efeitoRaw.description)) {
+      efeito = efeitoRaw;
+    }
+  }
 
   return {
     id: itemBruto.id,
@@ -68,7 +80,7 @@ function prepararItemParaJogo(itemBruto) {
       ),
       'Consumível'
     ),
-    efeito: primeiroValorDefinido(itemBruto.effect, itemBruto.efeito, itemBruto.effects, {}),
+    efeito: efeito,
     valor: valorFinal,
     raridade: valorComPadrao(
       traduzirValor(

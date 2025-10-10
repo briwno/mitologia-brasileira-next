@@ -47,7 +47,7 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
         {!imageError ? (
           <Image
             src={imgSrc}
-            alt={item.name}
+            alt={`${item.nome || item.name || 'Item'} - ${item.tipo_item || item.tipo || 'Item de jogo'} ${rarity}`}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-110"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -108,7 +108,10 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
           <div className="text-xs">
             <div className="text-yellow-300 font-medium mb-1">Efeito:</div>
             <div className="text-white/90">
-              {item.efeito.descricao || item.efeito}
+              {typeof item.efeito === 'string' 
+                ? item.efeito 
+                : item.efeito.descricao || item.efeito.description || 'Efeito especial'
+              }
             </div>
           </div>
         )}

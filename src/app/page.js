@@ -331,6 +331,7 @@ export default function Inicio() {
                 </div>
               </div>
             </Link>
+            <div className="w-12 h-20"/>
           </div>
         </div>
 

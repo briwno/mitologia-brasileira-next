@@ -5,7 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
+import { useMMR } from '@/hooks/useMMR';
 import LayoutDePagina from '@/components/UI/PageLayout';
+import { calcularRankingPorMMR, calcularProgressoRanking, obterIconeRanking, obterCorRanking } from '@/utils/mmrUtils';
 
 export default function PaginaPerfil() {
   const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
@@ -14,6 +16,9 @@ export default function PaginaPerfil() {
   const [erro, definirErro] = useState(null);
   const contextoAutenticacao = usarAutenticacao();
   const { user: usuario, isAuthenticated: verificarAutenticacao } = contextoAutenticacao || {};
+  
+  // Hook de MMR para dados de ranking
+  const { ranking: dadosRanking, mmr: mmrDoHook, level: levelDoHook } = useMMR();
 
   useEffect(() => {
     const carregarDadosPerfil = async () => {
@@ -25,7 +30,8 @@ export default function PaginaPerfil() {
 
       try {
         definirCarregando(true);
-        const resposta = await fetch(`/api/profile?playerId=${usuario.id}`);
+        // Busca dados do player pela API simplificada
+        const resposta = await fetch(`/api/players?id=${usuario.id}`);
 
         if (!resposta.ok) {
           const errorData = await resposta.json().catch(() => ({}));
@@ -36,7 +42,8 @@ export default function PaginaPerfil() {
         }
 
         const dados = await resposta.json();
-        definirDadosPerfil(dados.profile);
+        // A API /api/players retorna { player: {...} }
+        definirDadosPerfil(dados.player);
       } catch (erroCarregamento) {
         console.error('Erro ao buscar dados do perfil:', erroCarregamento);
         definirErro(erroCarregamento.message);
@@ -105,6 +112,14 @@ export default function PaginaPerfil() {
   const conquistas = dadosPerfil.achievementsList || [];
   const cartasFavoritas = dadosPerfil.favoriteCards || [];
 
+  // Calcular ranking baseado no MMR (priorizar dados do hook)
+  const mmrJogador = mmrDoHook || estatisticasJogador?.mmr || 0;
+  const levelJogador = levelDoHook || estatisticasJogador?.level || 1;
+  const rankingAtual = dadosRanking?.ranking || calcularRankingPorMMR(mmrJogador);
+  const progressoRanking = dadosRanking?.progresso || calcularProgressoRanking(mmrJogador);
+  const iconeRanking = dadosRanking?.icone || obterIconeRanking(rankingAtual);
+  const corRanking = dadosRanking?.cor || obterCorRanking(rankingAtual);
+
   const obterClasseTaxaVitoria = (taxa) => {
     if (taxa >= 70) return 'text-green-400';
     if (taxa >= 50) return 'text-yellow-400';
@@ -146,7 +161,7 @@ export default function PaginaPerfil() {
               </div>
               {/* Badge de nível */}
               <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full">
-                Nv. {estatisticasJogador?.level || 1}
+                Nv. {levelJogador}
               </div>
             </div>
             
@@ -154,7 +169,12 @@ export default function PaginaPerfil() {
             <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
               {estatisticasJogador?.username || usuario?.username || 'Jogador'}
             </h1>
-            
+
+            {/* UID */}
+            <p className="text-sm text-gray-400 mb-2">
+              UID: {estatisticasJogador?.uid || usuario?.uid || 'Desconhecido'}
+            </p>
+
             {/* Email e informações adicionais */}
             {(usuario?.email || estatisticasJogador?.email) && (
               <p className="text-sm text-gray-400 mb-2">
@@ -162,14 +182,33 @@ export default function PaginaPerfil() {
               </p>
             )}
             
-            {/* Rank */}
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-lg font-semibold text-yellow-400">
-                {estatisticasJogador?.rank || 'Bronze I'}
-              </span>
-              <span className="text-sm text-gray-400">
-                ({estatisticasJogador?.rankPoints || 0} pontos)
-              </span>
+            {/* Ranking MMR */}
+            <div className="flex flex-col items-center gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{iconeRanking}</span>
+                <span className={`text-lg font-semibold ${corRanking}`}>
+                  {rankingAtual}
+                </span>
+              </div>
+              <div className="text-sm text-gray-400">
+                MMR: {mmrJogador} / {progressoRanking.mmrProximo !== mmrJogador ? progressoRanking.mmrProximo : '∞'}
+              </div>
+              {/* Barra de progresso para próximo ranking */}
+              {progressoRanking.proximo !== 'Lenda Máxima' && (
+                <div className="w-full max-w-xs">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>{rankingAtual}</span>
+                    <span>{progressoRanking.progresso}%</span>
+                    <span>{progressoRanking.proximo}</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progressoRanking.progresso}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Botão de editar perfil */}
@@ -200,10 +239,10 @@ export default function PaginaPerfil() {
                 {/* Nível e XP */}
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Nível {estatisticasJogador.level}</span>
+                    <span>Nível {levelJogador}</span>
                     <span>
-                      {estatisticasJogador.xp}/
-                      {estatisticasJogador.xp + estatisticasJogador.xpToNext} XP
+                      {estatisticasJogador?.xp || 0}/
+                      {(estatisticasJogador?.xp || 0) + (estatisticasJogador?.xpToNext || 1000)} XP
                     </span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2">

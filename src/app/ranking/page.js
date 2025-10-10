@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import LayoutDePagina from '@/components/UI/PageLayout';
+import { calcularRankingPorMMR, obterIconeRanking, obterCorRanking } from '@/utils/mmrUtils';
 
 function linhaTabelaClasse(posicao) {
 	if (posicao === 1) return 'bg-yellow-500/10 border-yellow-400/40';
@@ -23,13 +24,15 @@ export default function PaginaRanking() {
 		async function carregarRanking() {
 			try {
 				definirCarregando(true);
-				const resposta = await fetch(`/api/user?action=ranking&escopo=${filtro}`);
+				// Busca top 100 jogadores ordenados por MMR
+				const resposta = await fetch('/api/players');
 				if (!resposta.ok) {
 					throw new Error('Não foi possível carregar o ranking');
 				}
 				const dados = await resposta.json();
 				if (!cancelado) {
-					definirRanking(dados.ranking || []);
+					// A API /api/players já retorna ordenado por MMR DESC
+					definirRanking(dados.players || []);
 				}
 			} catch (erroCarregamento) {
 				if (!cancelado) {
@@ -50,14 +53,25 @@ export default function PaginaRanking() {
 	}, [filtro]);
 
 	const rankingFormatado = useMemo(() => {
-		return ranking.map((registro) => ({
-			posicao: registro.rank,
-			nomeUsuario: registro.username,
-			pontos: registro.points,
-			faixa: registro.tier,
-			taxaVitoria: registro.winRate,
-			regiao: registro.region,
-		}));
+		return ranking.map((registro, index) => {
+			const mmr = registro.mmr || 0;
+			const rank = calcularRankingPorMMR(mmr);
+			const icone = obterIconeRanking(rank);
+			const cor = obterCorRanking(rank);
+			
+			return {
+				posicao: index + 1, // Posição baseada na ordem do array (já ordenado por MMR)
+				nomeUsuario: registro.username || 'Anônimo',
+				mmr: mmr,
+				pontos: mmr, // MMR como pontos
+				faixa: rank,
+				icone: icone,
+				cor: cor,
+				taxaVitoria: registro.winRate || 0,
+				regiao: registro.region || 'Nacional',
+				level: registro.level || 1
+			};
+		});
 	}, [ranking]);
 
 	return (
@@ -100,11 +114,11 @@ export default function PaginaRanking() {
 				</div>
 
 				<div className="bg-black/20 border border-white/10 rounded-xl overflow-hidden">
-					<div className="grid grid-cols-6 gap-4 px-6 py-3 bg-white/5 text-xs font-semibold text-white/70 uppercase tracking-wide">
+					<div className="grid grid-cols-7 gap-4 px-6 py-3 bg-white/5 text-xs font-semibold text-white/70 uppercase tracking-wide">
 						<span className="col-span-1">Posição</span>
 						<span className="col-span-2">Jogador</span>
-						<span className="col-span-1 text-right">Pontos</span>
-						<span className="col-span-1 text-center">Faixa</span>
+						<span className="col-span-1 text-right">MMR</span>
+						<span className="col-span-2 text-center">Ranking</span>
 						<span className="col-span-1 text-right">Taxa (%)</span>
 					</div>
 
@@ -121,17 +135,20 @@ export default function PaginaRanking() {
 							{rankingFormatado.map((registro) => (
 								<li
 									key={`${registro.posicao}-${registro.nomeUsuario}`}
-									className={`grid grid-cols-6 gap-4 px-6 py-4 border-l-4 ${linhaTabelaClasse(registro.posicao)}`}
+									className={`grid grid-cols-7 gap-4 px-6 py-4 border-l-4 ${linhaTabelaClasse(registro.posicao)}`}
 								>
 									<span className="col-span-1 font-bold text-white/90">#{registro.posicao}</span>
 									<div className="col-span-2 flex flex-col">
 										<span className="font-semibold text-white">{registro.nomeUsuario}</span>
-										<span className="text-xs text-white/50">{registro.regiao || 'Nacional'}</span>
+										<span className="text-xs text-white/50">Nv. {registro.level} • {registro.regiao}</span>
 									</div>
-									<span className="col-span-1 text-right font-semibold text-emerald-300">
-										{registro.pontos}
+									<span className="col-span-1 text-right font-semibold text-blue-300">
+										{registro.mmr}
 									</span>
-									<span className="col-span-1 text-center text-sm text-white/80">{registro.faixa}</span>
+									<div className="col-span-2 flex items-center justify-center gap-2">
+										<span className="text-lg">{registro.icone}</span>
+										<span className={`text-sm font-semibold ${registro.cor}`}>{registro.faixa}</span>
+									</div>
 									<span className="col-span-1 text-right text-sm text-white/70">
 										{registro.taxaVitoria}%
 									</span>

@@ -45,6 +45,44 @@ export const ESTACOES = {
   CHRISTMAS: 'Natal'
 };
 
+export const PONTOS_RANKING = {
+  VITORIA: 15,
+  DERROTA: -10,
+  EMPATE: 2,
+  // Multiplicadores baseados na diferença de MMR
+  MMR_ADVANTAGE_MULTIPLIER: 0.8, // Reduz ganho se adversário tem MMR menor
+  MMR_DISADVANTAGE_MULTIPLIER: 1.2, // Aumenta ganho se adversário tem MMR maior
+  MIN_MMR_CHANGE: 5,
+  MAX_MMR_CHANGE: 25
+};
+
+export const mmr_rankings = [
+  { min: 0, max: 33, rank: 'Bronze 1' },
+  { min: 34, max: 66, rank: 'Bronze 2' },
+  { min: 67, max: 99, rank: 'Bronze 3' },
+
+  { min: 100, max: 166, rank: 'Prata 1' },
+  { min: 167, max: 233, rank: 'Prata 2' },
+  { min: 234, max: 299, rank: 'Prata 3' },
+
+  { min: 300, max: 366, rank: 'Ouro 1' },
+  { min: 367, max: 433, rank: 'Ouro 2' },
+  { min: 434, max: 499, rank: 'Ouro 3' },
+
+  { min: 500, max: 599, rank: 'Platina 1' },
+  { min: 600, max: 699, rank: 'Platina 2' },
+  { min: 700, max: 799, rank: 'Platina 3' },
+
+  { min: 800, max: 899, rank: 'Diamante 1' },
+  { min: 900, max: 999, rank: 'Diamante 2' },
+  { min: 1000, max: 1200, rank: 'Diamante 3' },
+
+  { min: 1201, max: 1350, rank: 'Mestre' },
+  { min: 1351, max: 1650, rank: 'Grão-Mestre' },
+  { min: 1651, max: Infinity, rank: 'Lenda' },
+];
+
+
 // Combos especiais
 export const COMBOS_CARTAS = {
   FOREST_GUARDIANS: {
@@ -143,7 +181,9 @@ export async function GET(request) {
       ESTACOES,
       COMBOS_CARTAS,
       MULTIPLICADORES,
-      CONSTANTES_DECK
+      CONSTANTES_DECK,
+      PONTOS_RANKING,
+      MMR_RANKINGS: mmr_rankings
     };
 
     // Se um tipo específico for solicitado, retorna apenas ele

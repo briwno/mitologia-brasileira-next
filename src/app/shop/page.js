@@ -29,7 +29,8 @@ export default function PaginaShopBoosters() {
 	const [processando, setProcessando] = useState(false);
 	const [erro, setErro] = useState(null);
 
-	const [saldo, setSaldo] = useState(0); // players.coin
+	const [saldo, setSaldo] = useState(0); // players.coins
+
 	const [boostersDisponiveis, setBoostersDisponiveis] = useState(0);
 	const [pity, setPity] = useState({ epico: 0, lendario: 0, mitico: 0 });
 
@@ -53,10 +54,10 @@ export default function PaginaShopBoosters() {
 			const r = await fetch(`/api/boosters?playerId=${user.id}`);
 			const json = await r.json();
 			if (!r.ok) throw new Error(json.error || 'Falha ao carregar dados do shop');
-			const ph = json.pullHistory;
-			setSaldo(ph.moedas || 0);
-			setBoostersDisponiveis(ph.boostersDisponiveis || 0);
-			setPity(ph.pityCounters || { epico: 0, lendario: 0, mitico: 0 });
+			// API retorna apenas { coins }
+			setSaldo(json.coins || 0);
+			setBoostersDisponiveis(0); // Temporário até implementar sistema completo
+			setPity({ epico: 0, lendario: 0, mitico: 0 }); // Temporário
 		} catch (e) {
 			console.error('[Shop] load error', e);
 			setErro(e.message);
@@ -73,16 +74,8 @@ export default function PaginaShopBoosters() {
 		setProcessando(true);
 		setErro(null);
 		try {
-			const r = await fetch('/api/boosters', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ playerId: user.id, acao: 'COMPRAR', tamanhoBooster: tamanho })
-			});
-			const json = await r.json();
-			if (!r.ok) throw new Error(json.error || 'Falha na compra');
-			const ph = json.pullHistory;
-			setSaldo(ph.moedas || 0);
-			setBoostersDisponiveis(ph.boostersDisponiveis || 0);
+			// TODO: Implementar sistema de compra de boosters
+			setErro('Sistema de compra em desenvolvimento');
 		} catch (e) {
 			setErro(e.message);
 		} finally {
@@ -96,19 +89,8 @@ export default function PaginaShopBoosters() {
 		setProcessando(true);
 		setErro(null);
 		try {
-			const r = await fetch('/api/boosters', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ playerId: user.id, acao: 'ABRIR', tamanhoBooster: tamanho })
-			});
-			const json = await r.json();
-			if (!r.ok) throw new Error(json.error || 'Falha ao abrir booster');
-			const ph = json.pullHistory;
-			setSaldo(ph.moedas || 0);
-			setBoostersDisponiveis(ph.boostersDisponiveis || 0);
-			setPity(ph.pityCounters || pity);
-			setResultadoAbertura({ cartas: json.cartas || [], estatisticas: json.estatisticas || {} });
-			setMostrarResultado(true);
+			// TODO: Implementar sistema de abertura de boosters
+			setErro('Sistema de abertura em desenvolvimento');
 		} catch (e) {
 			setErro(e.message);
 		} finally {
@@ -190,6 +172,12 @@ export default function PaginaShopBoosters() {
 					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">Saldo: <span className="font-semibold">🪙 {saldo}</span></div>
 					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">Boosters: <span className="font-semibold">{boostersDisponiveis}</span></div>
 					{erro && <div className="px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">{erro}</div>}
+				</div>
+
+				{/* Aviso de desenvolvimento */}
+				<div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-center">
+					<p className="text-yellow-300 font-semibold">⚠️ Sistema de Boosters em Desenvolvimento</p>
+					<p className="text-yellow-200 text-sm">As funcionalidades de compra e abertura de pacotes serão implementadas em breve!</p>
 				</div>
 
 				{/* Deck de boosters (3 tamanhos) */}

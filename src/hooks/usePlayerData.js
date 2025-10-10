@@ -3,289 +3,152 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 
 export function usePlayerData() {
-  const [currencies, setCurrencies] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [achievements, setAchievements] = useState({ unlocked: [], available: [] });
-  const [quests, setQuests] = useState({ active: [], completed: [] });
+  const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   const { user, isAuthenticated } = useAuth() || {};
 
-  // Fetch player currencies
-  const fetchCurrencies = useCallback(async (playerId) => {
+  // Fetch player coins (da tabela players)
+  const fetchCoins = useCallback(async () => {
+    if (!user?.id) return;
+
     try {
-      const response = await fetch(`/api/currency?playerId=${playerId}`);
-      if (!response.ok) {
-        console.error('[usePlayerData] Falha ao buscar moedas:', response.status);
-        setError('Failed to fetch currencies');
-        return;
+      setLoading(true);
+      setError(null);
+
+      // Buscar coins direto do user (já vem no useAuth)
+      if (user.coins !== undefined) {
+        setCoins(user.coins);
+      } else {
+        // Fallback: buscar da API se necessário
+        const response = await fetch('/api/auth', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCoins(data.user?.coins || 0);
+        } else {
+          console.error('[usePlayerData] Falha ao buscar moedas:', response.status);
+          setError('Falha ao buscar moedas');
+        }
       }
-      const data = await response.json();
-      setCurrencies(data.currencies);
     } catch (err) {
-      console.error('Error fetching currencies:', err);
-      setError(err.message);
-    }
-  }, []);
-
-  // Fetch player statistics
-  const fetchStats = useCallback(async (playerId) => {
-    try {
-      const response = await fetch(`/api/stats?playerId=${playerId}`);
-      if (!response.ok) {
-        console.error('[usePlayerData] Falha ao buscar estatísticas:', response.status);
-        setError('Failed to fetch stats');
-        return;
-      }
-      const data = await response.json();
-      setStats(data.stats);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-      setError(err.message);
-    }
-  }, []);
-
-  // Fetch player achievements
-  const fetchAchievements = useCallback(async (playerId) => {
-    try {
-      const response = await fetch(`/api/achievements?playerId=${playerId}`);
-      if (!response.ok) {
-        console.error('[usePlayerData] Falha ao buscar conquistas:', response.status);
-        setError('Failed to fetch achievements');
-        return;
-      }
-      const data = await response.json();
-      setAchievements({
-        unlocked: data.unlocked || [],
-        available: data.available || [],
-        totalUnlocked: data.totalUnlocked || 0,
-        totalAvailable: data.totalAvailable || 0
-      });
-    } catch (err) {
-      console.error('Error fetching achievements:', err);
-      setError(err.message);
-    }
-  }, []);
-
-  // Fetch player quests
-  const fetchQuests = useCallback(async (playerId) => {
-    try {
-      const response = await fetch(`/api/quests?playerId=${playerId}`);
-      if (!response.ok) {
-        console.error('[usePlayerData] Falha ao buscar missões:', response.status);
-        setError('Failed to fetch quests');
-        return;
-      }
-      const data = await response.json();
-      setQuests({
-        active: data.active || [],
-        completed: data.completed || [],
-        expired: data.expired || []
-      });
-    } catch (err) {
-      console.error('Error fetching quests:', err);
-      setError(err.message);
-    }
-  }, []);
-
-  // Load all player data
-  const loadPlayerData = useCallback(async () => {
-    if (!user?.id || !isAuthenticated()) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await Promise.all([
-        fetchCurrencies(user.id),
-        fetchStats(user.id),
-        fetchAchievements(user.id),
-        fetchQuests(user.id)
-      ]);
-    } catch (err) {
-      console.error('Error loading player data:', err);
+      console.error('[usePlayerData] Erro ao buscar moedas:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, isAuthenticated, fetchCurrencies, fetchStats, fetchAchievements, fetchQuests]);
+  }, [user?.id, user?.coins]);
 
-  // Auto-assign daily quests
-  const assignDailyQuests = useCallback(async () => {
-    if (!user?.id || !isAuthenticated()) return;
-
-    try {
-      const response = await fetch('/api/quests/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: user.id })
-      });
-      
-      if (response.ok) {
-        // Refresh quests after assignment
-        await fetchQuests(user.id);
-      }
-    } catch (err) {
-      console.error('Error assigning daily quests:', err);
-    }
-  }, [user?.id, isAuthenticated, fetchQuests]);
-
-  // Update currencies locally (optimistic update)
-  const updateCurrencies = (newCurrencies) => {
-    setCurrencies(prev => ({
-      ...prev,
-      ...newCurrencies
-    }));
+  // Atualizar moedas localmente (otimista)
+  const updateCoins = (newCoins) => {
+    setCoins(newCoins);
   };
 
-  // Update stats locally (optimistic update)
-  const updateStats = (newStats) => {
-    setStats(prev => ({
-      ...prev,
-      ...newStats
-    }));
-  };
-
-  // Spend currencies with validation
-  const spendCurrencies = async (costs, reason, metadata = {}) => {
+  // Gastar moedas com validação
+  const spendCoins = async (amount, reason = 'purchase') => {
     if (!user?.id || !isAuthenticated()) {
-      return Promise.reject(new Error('Not authenticated'));
+      return Promise.reject(new Error('Não autenticado'));
+    }
+
+    if (coins < amount) {
+      return Promise.reject(new Error('Moedas insuficientes'));
     }
 
     try {
-      const response = await fetch('/api/currency/spend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: user.id,
-          costs,
-          reason,
-          metadata
-        })
-      });
+      // TODO: Implementar endpoint para atualizar moedas no servidor
+      // Por enquanto, atualização local
+      const newCoins = coins - amount;
+      setCoins(newCoins);
 
-      if (!response.ok) {
-        const error = await response.json();
-        const err = new Error(error.error || 'Failed to spend currencies');
-        err.details = error;
-        return Promise.reject(err);
-      }
+      console.log(`[usePlayerData] Gastou ${amount} moedas. Motivo: ${reason}. Novo saldo: ${newCoins}`);
 
-      const data = await response.json();
-      setCurrencies(data.currencies);
-      return data;
+      return { success: true, newBalance: newCoins };
     } catch (err) {
-      console.error('Error spending currencies:', err);
+      console.error('[usePlayerData] Erro ao gastar moedas:', err);
       return Promise.reject(err);
     }
   };
 
-  // Claim quest rewards
-  const claimQuestReward = async (questId) => {
+  // Adicionar moedas
+  const addCoins = async (amount, reason = 'reward') => {
     if (!user?.id || !isAuthenticated()) {
-      return Promise.reject(new Error('Not authenticated'));
+      return Promise.reject(new Error('Não autenticado'));
     }
 
     try {
-      const response = await fetch('/api/quests/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: user.id,
-          questId
-        })
-      });
+      // TODO: Implementar endpoint para atualizar moedas no servidor
+      // Por enquanto, atualização local
+      const newCoins = coins + amount;
+      setCoins(newCoins);
 
-      if (!response.ok) {
-        const error = await response.json();
-        const err = new Error(error.error || 'Failed to claim reward');
-        err.details = error;
-        return Promise.reject(err);
-      }
+      console.log(`[usePlayerData] Ganhou ${amount} moedas. Motivo: ${reason}. Novo saldo: ${newCoins}`);
 
-      const data = await response.json();
-      
-      // Refresh currencies and quests
-      await Promise.all([
-        fetchCurrencies(user.id),
-        fetchQuests(user.id)
-      ]);
-
-      return data;
+      return { success: true, newBalance: newCoins };
     } catch (err) {
-      console.error('Error claiming quest reward:', err);
+      console.error('[usePlayerData] Erro ao adicionar moedas:', err);
       return Promise.reject(err);
     }
   };
 
-  // Check if player can afford something
-  const canAfford = (costs) => {
-    if (!currencies) return false;
-    
-    return Object.entries(costs).every(([currency, cost]) => {
-      return currencies[currency] >= cost;
-    });
+  // Verificar se pode comprar algo
+  const canAfford = (cost) => {
+    return coins >= cost;
   };
 
-  // Calculate win rate
-  const getWinRate = () => {
-    if (!stats || stats.total_matches === 0) return 0;
-    return Math.round((stats.wins / stats.total_matches) * 100);
-  };
-
-  // Get progress for next level (assuming XP system)
+  // Progresso de nível (baseado no XP do usuário)
   const getLevelProgress = () => {
     if (!user) return { current: 0, required: 100, percentage: 0 };
     
     const currentXP = user.xp || 0;
     const currentLevel = user.level || 1;
-    const xpForNextLevel = currentLevel * 100; // Simple formula
-    const xpForCurrentLevel = (currentLevel - 1) * 100;
+    const xpForNextLevel = currentLevel * 1000; // Fórmula: level * 1000
+    const xpForCurrentLevel = (currentLevel - 1) * 1000;
     const xpProgress = currentXP - xpForCurrentLevel;
     const xpRequired = xpForNextLevel - xpForCurrentLevel;
     
     return {
-      current: xpProgress,
+      current: Math.max(0, xpProgress),
       required: xpRequired,
-      percentage: Math.min(100, Math.round((xpProgress / xpRequired) * 100))
+      percentage: Math.min(100, Math.max(0, Math.round((xpProgress / xpRequired) * 100)))
     };
   };
 
-  // Load data when user changes
+  // Carregar dados quando o usuário mudar
   useEffect(() => {
-    loadPlayerData();
-    assignDailyQuests();
-  }, [loadPlayerData, assignDailyQuests]);
+    if (user?.id && isAuthenticated()) {
+      fetchCoins();
+    } else {
+      setCoins(0);
+      setLoading(false);
+    }
+  }, [user?.id, isAuthenticated, fetchCoins]);
+
+  // Sincronizar com user.coins quando mudar
+  useEffect(() => {
+    if (user?.coins !== undefined) {
+      setCoins(user.coins);
+    }
+  }, [user?.coins]);
 
   return {
-    // Data
-    currencies,
-    stats,
-    achievements,
-    quests,
+    // Dados
+    coins,
     loading,
     error,
 
-    // Computed values
-    winRate: getWinRate(),
+    // Valores computados
     levelProgress: getLevelProgress(),
-
-    // Actions
-    loadPlayerData,
-    updateCurrencies,
-    updateStats,
-    spendCurrencies,
-    claimQuestReward,
     canAfford,
 
-    // Refresh functions
-    refreshCurrencies: () => user?.id && fetchCurrencies(user.id),
-    refreshStats: () => user?.id && fetchStats(user.id),
-    refreshAchievements: () => user?.id && fetchAchievements(user.id),
-    refreshQuests: () => user?.id && fetchQuests(user.id)
+    // Ações
+    updateCoins,
+    spendCoins,
+    addCoins,
+    refreshCoins: fetchCoins
   };
 }

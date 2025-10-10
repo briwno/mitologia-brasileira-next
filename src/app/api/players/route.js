@@ -1,120 +1,141 @@
 // src/app/api/players/route.js
+// API simplificada para gerenciar dados dos jogadores
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { requireSupabaseAdmin } from '@/lib/supabase';
 
-const PlayerCreate = z.object({
-  uid: z.string().min(1),
-  name: z.string().min(1),
-  avatarUrl: z.string().url().optional().or(z.literal('')),
-});
-
-const PlayerUpdate = z.object({
-  name: z.string().min(1).optional(),
-  avatarUrl: z.string().url().optional().or(z.literal('')),
-  mmr: z.number().int().min(0).max(5000).optional(),
-  banned: z.boolean().optional(),
-});
-
+/**
+ * GET /api/players
+ * Buscar jogadores
+ * Query params:
+ * - id: buscar por ID
+ * - uid: buscar por UID
+ * - username: buscar por username
+ * - (sem params): listar top 100 por MMR
+ */
 export async function GET(req) {
   try {
     const supabase = requireSupabaseAdmin();
     const { searchParams } = new URL(req.url);
+    
+    const id = searchParams.get('id');
     const uid = searchParams.get('uid');
-    if (uid) {
-      const { data: one, error } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
+    const username = searchParams.get('username');
+
+    // Buscar por ID
+    if (id) {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      
       if (error) throw error;
-      if (!one) return NextResponse.json({ error: 'not-found' }, { status: 404 });
-      const player = { ...one, avatarUrl: one.avatar_url ?? null };
-      delete player.avatar_url;
-      return NextResponse.json({ player });
+      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      
+      return NextResponse.json({ player: data });
     }
 
-    const { data: all, error } = await supabase.from('players').select('*');
-    if (error) throw error;
-    const mapped = (all || []).map((p) => {
-      const obj = { ...p, avatarUrl: p.avatar_url ?? null };
-      delete obj.avatar_url;
-      return obj;
-    });
-    return NextResponse.json({ players: mapped });
-  } catch (e) {
-    console.error('players GET', e);
-    return NextResponse.json({ error: 'internal' }, { status: 500 });
-  }
-}
-
-export async function POST(req) {
-  try {
-    const body = await req.json();
-    const parsed = PlayerCreate.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-    const supabase = requireSupabaseAdmin();
-    const { data: exists, error: e1 } = await supabase.from('players').select('*').eq('uid', parsed.data.uid).maybeSingle();
-    if (e1 && e1.code !== 'PGRST116') throw e1;
-    if (exists) {
-      const player = { ...exists, avatarUrl: exists.avatar_url ?? null };
-      delete player.avatar_url;
-      return NextResponse.json({ player, created: false });
+    // Buscar por UID
+    if (uid) {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('uid', uid)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      
+      return NextResponse.json({ player: data });
     }
 
-    const { data: inserted, error } = await supabase
+    // Buscar por username
+    if (username) {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('username', username)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      
+      return NextResponse.json({ player: data });
+    }
+
+    // Listar top players (ranking)
+    const { data, error } = await supabase
       .from('players')
-      .insert({ uid: parsed.data.uid, name: parsed.data.name, avatar_url: parsed.data.avatarUrl || null })
-      .select('*')
-      .single();
-  if (error) throw error;
-  const player = { ...inserted, avatarUrl: inserted.avatar_url ?? null };
-  delete player.avatar_url;
-  return NextResponse.json({ player, created: true });
-  } catch (e) {
-    console.error('players POST', e);
-    return NextResponse.json({ error: 'internal' }, { status: 500 });
+      .select('id, uid, username, avatar_url, level, xp, mmr, title, coins')
+      .eq('banned', false)
+      .order('mmr', { ascending: false })
+      .order('level', { ascending: false })
+      .order('xp', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return NextResponse.json({ players: data || [] });
+
+  } catch (error) {
+    console.error('[Players API] Erro GET:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
 
+/**
+ * PUT /api/players
+ * Atualizar dados do jogador
+ * Body: { playerId, data: { xp?, level?, coins?, mmr?, title?, avatar_url? } }
+ */
 export async function PUT(req) {
   try {
-    const { uid, data } = await req.json();
-    if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
-    const parsed = PlayerUpdate.safeParse(data);
-    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const { playerId, data } = await req.json();
+
+    if (!playerId) {
+      return NextResponse.json({ error: 'ID do jogador obrigatório' }, { status: 400 });
+    }
+
+    if (!data || Object.keys(data).length === 0) {
+      return NextResponse.json({ error: 'Dados para atualização obrigatórios' }, { status: 400 });
+    }
+
+    // Validar campos permitidos
+    const allowedFields = ['xp', 'level', 'coins', 'mmr', 'title', 'avatar_url'];
+    const updates = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.includes(key)) {
+        updates[key] = value;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'Nenhum campo válido para atualizar' }, { status: 400 });
+    }
 
     const supabase = requireSupabaseAdmin();
-    // Map field names to snake_case used in Supabase
-    const updates = { ...parsed.data };
-    if (Object.prototype.hasOwnProperty.call(updates, 'avatarUrl')) {
-      updates.avatar_url = updates.avatarUrl || null;
-      delete updates.avatarUrl;
-    }
-    const { data: res, error } = await supabase
+
+    const { data: updated, error } = await supabase
       .from('players')
       .update(updates)
-      .eq('uid', uid)
+      .eq('id', playerId)
       .select('*')
       .single();
-  if (error) throw error;
-  const player = { ...res, avatarUrl: res.avatar_url ?? null };
-  delete player.avatar_url;
-  return NextResponse.json({ player });
-  } catch (e) {
-    console.error('players PUT', e);
-    return NextResponse.json({ error: 'internal' }, { status: 500 });
-  }
-}
 
-export async function DELETE(req) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const uid = searchParams.get('uid');
-    if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
-    const supabase = requireSupabaseAdmin();
-    const { error } = await supabase.from('players').delete().eq('uid', uid);
     if (error) throw error;
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error('players DELETE', e);
-    return NextResponse.json({ error: 'internal' }, { status: 500 });
+    if (!updated) {
+      return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      player: updated,
+      updated: Object.keys(updates)
+    });
+
+  } catch (error) {
+    console.error('[Players API] Erro PUT:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

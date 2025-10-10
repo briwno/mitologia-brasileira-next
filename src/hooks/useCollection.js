@@ -11,7 +11,7 @@ export function useCollection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const uid = user?.email || user?.uid || null; // usamos email ou uid
+  const uid = user?.uid || null; // usamos email ou uid
 
   const load = useCallback(async () => {
     if (!uid) return;
