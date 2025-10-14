@@ -82,7 +82,13 @@ export function useMMR() {
       // Por enquanto, atualização local
       setMMR(newMMR);
 
-      console.log(`[useMMR] MMR atualizado: ${mmr} → ${newMMR} (${mmrChange >= 0 ? '+' : ''}${mmrChange})`);
+      let changeSign;
+      if (mmrChange >= 0) {
+        changeSign = '+';
+      } else {
+        changeSign = '';
+      }
+      console.log(`[useMMR] MMR atualizado: ${mmr} → ${newMMR} (${changeSign}${mmrChange})`);
 
       return { 
         success: true, 

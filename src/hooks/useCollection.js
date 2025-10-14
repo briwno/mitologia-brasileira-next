@@ -21,8 +21,16 @@ export function useCollection() {
       const res = await fetch(`/api/collection?uid=${encodeURIComponent(uid)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao carregar coleção');
-      setCards(Array.isArray(data.cards) ? data.cards : []);
-      setItemCards(Array.isArray(data.itemCards) ? data.itemCards : []);
+      if (Array.isArray(data.cards)) {
+        setCards(data.cards);
+      } else {
+        setCards([]);
+      }
+      if (Array.isArray(data.itemCards)) {
+        setItemCards(data.itemCards);
+      } else {
+        setItemCards([]);
+      }
     } catch (e) {
       setError(e.message);
     } finally {

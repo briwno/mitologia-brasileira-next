@@ -23,9 +23,12 @@ export default function PaginaLogin() {
     }
     try {
   definirCarregando(true);
-      const carga = modoLogin
-        ? { action: 'login', username: dadosFormulario.username, password: dadosFormulario.password }
-        : { action: 'register', username: dadosFormulario.username, email: dadosFormulario.email, password: dadosFormulario.password };
+      let carga;
+      if (modoLogin) {
+        carga = { action: 'login', username: dadosFormulario.username, password: dadosFormulario.password };
+      } else {
+        carga = { action: 'register', username: dadosFormulario.username, email: dadosFormulario.email, password: dadosFormulario.password };
+      }
       const resposta = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(carga) });
       const dadosResposta = await resposta.json();
       if (!resposta.ok) throw new Error(dadosResposta.error || 'Falha na autenticação');
@@ -52,10 +55,22 @@ export default function PaginaLogin() {
         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-8 w-full max-w-md border border-green-500/30">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            {modoLogin ? 'Entrar' : 'Cadastrar'}
+            {(() => {
+              if (modoLogin) {
+                return 'Entrar';
+              } else {
+                return 'Cadastrar';
+              }
+            })()}
           </h1>
           <p className="text-gray-300 mt-2">
-            {modoLogin ? 'Entre em sua conta' : 'Crie sua conta e comece a jogar'}
+            {(() => {
+              if (modoLogin) {
+                return 'Entre em sua conta';
+              } else {
+                return 'Crie sua conta e comece a jogar';
+              }
+            })()}
           </p>
         </div>
 
@@ -133,7 +148,21 @@ export default function PaginaLogin() {
             {carregando && (
               <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
             )}
-            {carregando ? (modoLogin ? 'Entrando...' : 'Cadastrando...') : (modoLogin ? 'Entrar' : 'Cadastrar')}
+            {(() => {
+              if (carregando) {
+                if (modoLogin) {
+                  return 'Entrando...';
+                } else {
+                  return 'Cadastrando...';
+                }
+              } else {
+                if (modoLogin) {
+                  return 'Entrar';
+                } else {
+                  return 'Cadastrar';
+                }
+              }
+            })()}
           </button>
         </form>
 
@@ -142,7 +171,13 @@ export default function PaginaLogin() {
             onClick={() => definirModoLogin(!modoLogin)}
             className="text-green-400 hover:text-green-300 text-sm"
           >
-            {modoLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
+            {(() => {
+              if (modoLogin) {
+                return 'Não tem uma conta? Cadastre-se';
+              } else {
+                return 'Já tem uma conta? Entre';
+              }
+            })()}
           </button>
         </div>
 

@@ -164,7 +164,15 @@ export function useGameState(initialPlayers, mode = 'pvp') {
     endTurn,
     resetGame,
     currentPlayer: gameState.players[gameState.currentPlayerIndex] || null,
-    opponent: gameState.players[gameState.currentPlayerIndex === 0 ? 1 : 0] || null
+    opponent: (() => {
+      let opponentIndex;
+      if (gameState.currentPlayerIndex === 0) {
+        opponentIndex = 1;
+      } else {
+        opponentIndex = 0;
+      }
+      return gameState.players[opponentIndex] || null;
+    })()
   };
 }
 
@@ -195,7 +203,12 @@ function applyItemEffect(item, player, gameEngine) {
 
 function applySkillEffect(card, player, gameEngine) {
   // Implementar efeitos específicos das habilidades das lendas
-  const opponent = gameEngine.players[gameEngine.indiceJogadorAtual === 0 ? 1 : 0];
+  let opponent;
+  if (gameEngine.indiceJogadorAtual === 0) {
+    opponent = gameEngine.players[1];
+  } else {
+    opponent = gameEngine.players[0];
+  }
   
   if (card.habilidade) {
     switch (card.habilidade.tipo) {

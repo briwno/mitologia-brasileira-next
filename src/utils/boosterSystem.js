@@ -243,7 +243,11 @@ export function calcularRecompensaQuiz(dificuldade, pontuacao) {
   if (percentual >= 0.7) {
     const sorteio = Math.random();
     if (sorteio < base.boosterChance) {
-      boosters = dificuldade === 'DIFICIL' ? 2 : 1;
+      if (dificuldade === 'DIFICIL') {
+        boosters = 2;
+      } else {
+        boosters = 1;
+      }
     }
   }
 
@@ -276,7 +280,11 @@ export function calcularEstatisticasPulls(historicoPulls) {
 
   const percentuais = {};
   for (const raridade in porRaridade) {
-    percentuais[raridade] = total > 0 ? (porRaridade[raridade] / total) * 100 : 0;
+    if (total > 0) {
+      percentuais[raridade] = (porRaridade[raridade] / total) * 100;
+    } else {
+      percentuais[raridade] = 0;
+    }
   }
 
   return {

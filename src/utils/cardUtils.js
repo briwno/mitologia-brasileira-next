@@ -59,9 +59,26 @@ export const inferirCustoParaJogar = (carta) => {
     return null;
   }
 
-  const habilidadePrincipal = carta.abilities && carta.abilities.skill1 ? carta.abilities.skill1.cost : null;
-  const habilidadeBasica = carta.abilities && carta.abilities.basic ? carta.abilities.basic.cost : null;
-  const habilidadeFinal = carta.abilities && carta.abilities.ultimate ? carta.abilities.ultimate.cost : null;
+  let habilidadePrincipal;
+  if (carta.abilities && carta.abilities.skill1) {
+    habilidadePrincipal = carta.abilities.skill1.cost;
+  } else {
+    habilidadePrincipal = null;
+  }
+  
+  let habilidadeBasica;
+  if (carta.abilities && carta.abilities.basic) {
+    habilidadeBasica = carta.abilities.basic.cost;
+  } else {
+    habilidadeBasica = null;
+  }
+  
+  let habilidadeFinal;
+  if (carta.abilities && carta.abilities.ultimate) {
+    habilidadeFinal = carta.abilities.ultimate.cost;
+  } else {
+    habilidadeFinal = null;
+  }
   const custoInferido = primeiroValorDefinido(habilidadePrincipal, habilidadeBasica, habilidadeFinal);
 
   if (typeof custoInferido === 'number') {
@@ -90,7 +107,12 @@ export const traduzirValor = (valor, mapa) => {
     return valor;
   }
   // Normalizar para MAIÚSCULAS para bater com as chaves do mapa
-  const chaveNormalizada = typeof valor === 'string' ? valor.toUpperCase() : valor;
+  let chaveNormalizada;
+  if (typeof valor === 'string') {
+    chaveNormalizada = valor.toUpperCase();
+  } else {
+    chaveNormalizada = valor;
+  }
   if (valorFoiDefinido(mapa[chaveNormalizada])) {
     return mapa[chaveNormalizada];
   }
@@ -176,7 +198,12 @@ export const mapearCartaDaApi = (cartaApi) => {
   if (bonusSazonalBruto) {
     const chaveEstacao = valorComPadrao(bonusSazonalBruto.season, bonusSazonalBruto.estacao);
     const estacaoTraduzida = traduzirValor(chaveEstacao, TRANSLATION_MAPS.SEASON);
-    const estacaoFinal = valorFoiDefinido(estacaoTraduzida) ? estacaoTraduzida : formatarRotuloEnum(chaveEstacao);
+    let estacaoFinal;
+    if (valorFoiDefinido(estacaoTraduzida)) {
+      estacaoFinal = estacaoTraduzida;
+    } else {
+      estacaoFinal = formatarRotuloEnum(chaveEstacao);
+    }
     const descricao = primeiroValorDefinido(
       bonusSazonalBruto.description,
       bonusSazonalBruto.descricao,

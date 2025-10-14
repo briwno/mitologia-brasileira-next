@@ -26,7 +26,13 @@ export default function LayoutDePagina({ children }) {
         </div>
       </div>
 
-      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${(() => {
+        if (isLoaded) {
+          return 'opacity-100';
+        } else {
+          return 'opacity-0';
+        }
+      })()}`}>
         {/* Barra superior (compartilhada) */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex items-center gap-3">
@@ -47,7 +53,13 @@ export default function LayoutDePagina({ children }) {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">BR</div>
                     <div className="hidden sm:block">
                     <div className="text-white font-bold text-sm">{user?.username || 'Convidado'}</div>
-                    <div className="text-cyan-300 text-xs">{isAuthenticated() ? 'Conectado' : 'Não conectado'}</div>
+                    <div className="text-cyan-300 text-xs">{(() => {
+                      if (isAuthenticated()) {
+                        return 'Conectado';
+                      } else {
+                        return 'Não conectado';
+                      }
+                    })()}</div>
                     </div>
                   </div>
                   </div>

@@ -21,7 +21,15 @@ export default function ItemTooltip({ item, children }) {
           {/* Header */}
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">
-              {item.tipo === 'ofensivo' ? '⚔️' : item.tipo === 'defensivo' ? '🛡️' : '🔧'}
+              {(() => {
+                if (item.tipo === 'ofensivo') {
+                  return '⚔️';
+                } else if (item.tipo === 'defensivo') {
+                  return '🛡️';
+                } else {
+                  return '🔧';
+                }
+              })()}
             </span>
             <div>
               <div className="font-bold text-white text-sm">{item.nome}</div>
@@ -40,16 +48,22 @@ export default function ItemTooltip({ item, children }) {
           <div className="border-t border-gray-700 pt-2">
             <div className="text-yellow-400 text-xs font-semibold mb-1">EFEITO:</div>
             <div className="text-green-300 text-xs">
-              {typeof item.efeito === 'string' ? item.efeito : (
-                <div className="space-y-1">
-                  {item.efeito.dano && <div>• Causa {item.efeito.dano} de dano</div>}
-                  {item.efeito.cura && <div>• Cura {item.efeito.cura} pontos de vida</div>}
-                  {item.efeito.escudo && <div>• Concede escudo de {item.efeito.escudo}</div>}
-                  {item.efeito.comprar_cartas && <div>• Compra {item.efeito.comprar_cartas} itens</div>}
-                  {item.efeito.regenerar_pp && <div>• Regenera {item.efeito.regenerar_pp} PP</div>}
-                  {item.efeito.descricao && <div>• {item.efeito.descricao}</div>}
-                </div>
-              )}
+              {(() => {
+                if (typeof item.efeito === 'string') {
+                  return item.efeito;
+                } else {
+                  return (
+                    <div className="space-y-1">
+                      {item.efeito.dano && <div>• Causa {item.efeito.dano} de dano</div>}
+                      {item.efeito.cura && <div>• Cura {item.efeito.cura} pontos de vida</div>}
+                      {item.efeito.escudo && <div>• Concede escudo de {item.efeito.escudo}</div>}
+                      {item.efeito.comprar_cartas && <div>• Compra {item.efeito.comprar_cartas} itens</div>}
+                      {item.efeito.regenerar_pp && <div>• Regenera {item.efeito.regenerar_pp} PP</div>}
+                      {item.efeito.descricao && <div>• {item.efeito.descricao}</div>}
+                    </div>
+                  );
+                }
+              })()}
             </div>
           </div>
           

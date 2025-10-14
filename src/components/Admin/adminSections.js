@@ -43,13 +43,26 @@ async function fetchCardOptions() {
     throw new Error(json?.error || 'Não foi possível carregar as cartas disponíveis.');
   }
 
-  const cards = Array.isArray(json?.cards) ? json.cards : Array.isArray(json) ? json : [];
+  let cards;
+  if (Array.isArray(json?.cards)) {
+    cards = json.cards;
+  } else if (Array.isArray(json)) {
+    cards = json;
+  } else {
+    cards = [];
+  }
   const collator = new Intl.Collator('pt-BR');
 
   cachedCardOptions = cards
     .map((card) => ({
       value: card.id,
-      label: card.name ? `${card.name} (${card.id})` : card.id,
+      label: (() => {
+        if (card.name) {
+          return `${card.name} (${card.id})`;
+        } else {
+          return card.id;
+        }
+      })(),
       description: [card.region, card.rarity].filter(Boolean).join(' • ') || undefined,
     }))
     .sort((a, b) => collator.compare(a.label, b.label));
@@ -440,7 +453,13 @@ export const ADMIN_SECTIONS = [
 
       return {
         ...player,
-        collectionCards: Array.isArray(json?.cards) ? json.cards : [],
+        collectionCards: (() => {
+          if (Array.isArray(json?.cards)) {
+            return json.cards;
+          } else {
+            return [];
+          }
+        })(),
       };
     },
   },

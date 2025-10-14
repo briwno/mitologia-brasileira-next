@@ -38,7 +38,13 @@ export default function BattleCard({
       className={`
         rounded-lg border-2 transition-all relative overflow-hidden
         ${getTypeClasses()}
-        ${isClickable && card ? 'cursor-pointer hover:scale-105' : 'cursor-default'}
+        ${(() => {
+          if (isClickable && card) {
+            return 'cursor-pointer hover:scale-105';
+          } else {
+            return 'cursor-default';
+          }
+        })()}
         ${className}
       `}
       onClick={handleClick}
@@ -106,11 +112,23 @@ export default function BattleCard({
         /* Carta vazia */
         <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
           <Icon 
-            name={type === 'lenda' ? 'user' : 'package'} 
+            name={(() => {
+              if (type === 'lenda') {
+                return 'user';
+              } else {
+                return 'package';
+              }
+            })()} 
             size={20} 
           />
           <div className="text-xs mt-1 text-center px-1">
-            {type === 'lenda' ? 'LENDA' : 'ITEM'}
+            {(() => {
+              if (type === 'lenda') {
+                return 'LENDA';
+              } else {
+                return 'ITEM';
+              }
+            })()}
           </div>
         </div>
       )}

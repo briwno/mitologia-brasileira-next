@@ -75,7 +75,7 @@ export async function POST(request) {
           email: emailLower,
           password, // nao vai ter hash
           avatar_url: 'https://img.icons8.com/color/96/user.png',
-          mmr: 1000,
+          mmr: 0,
           level: 1,
           xp: 0,
           coins: 500,

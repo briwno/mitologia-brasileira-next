@@ -22,7 +22,13 @@ const normalizeText = (value, fallback = "") => {
 
 const toLower = (value, fallback = "") => normalizeText(value, fallback).toLowerCase();
 
-const safeClone = (value) => (value ? JSON.parse(JSON.stringify(value)) : value);
+const safeClone = (value) => {
+  if (value) {
+    return JSON.parse(JSON.stringify(value));
+  } else {
+    return value;
+  }
+};
 
 const normalizeChance = (chance) => {
   if (chance == null) return 1;
@@ -126,7 +132,11 @@ const ensureLendaState = (card, index = 0) => {
   clone.ataqueBonus = Number(clone.ataqueBonus ?? 0);
   clone.defesaBonus = Number(clone.defesaBonus ?? 0);
   clone.status = clone.status || { atordoado: 0 };
-  clone.efeitos = Array.isArray(clone.efeitos) ? clone.efeitos : [];
+  if (Array.isArray(clone.efeitos)) {
+    clone.efeitos = clone.efeitos;
+  } else {
+    clone.efeitos = [];
+  }
 
   const habilidadesOriginais = clone.habilidades || clone.abilities || {};
   const habilidadesNormalizadas = {};
@@ -203,7 +213,12 @@ export class MotorDeJogo {
   }
 
   prepararJogador(rawPlayer = {}, index = 0) {
-    const deck = Array.isArray(rawPlayer.deck) ? rawPlayer.deck : [];
+    let deck;
+    if (Array.isArray(rawPlayer.deck)) {
+      deck = rawPlayer.deck;
+    } else {
+      deck = [];
+    }
     const lendasOriginais = rawPlayer.lendas ||
       deck.filter((card) => getCardType(card) === CONSTANTES_DO_JOGO.CARD_TYPES.LENDA);
     const itensOriginais = rawPlayer.itens ||
@@ -680,7 +695,12 @@ export class MotorDeJogo {
     }
 
     if (habilidade.buff) {
-      const alvoBuff = habilidade.buff?.alvo === "self" ? lendaAtiva : alvo || lendaAtiva;
+      let alvoBuff;
+      if (habilidade.buff?.alvo === "self") {
+        alvoBuff = lendaAtiva;
+      } else {
+        alvoBuff = alvo || lendaAtiva;
+      }
       this.aplicarBuff(playerIndex, alvoBuff, habilidade.buff, habilidade.duration, habilidade.nome);
     }
 
@@ -877,7 +897,11 @@ export class MotorDeJogo {
 
   aplicarEscudo(playerIndex, lenda, valor, duration = DEFAULT_SHIELD_DURATION) {
     if (!lenda || !valor) return;
-    lenda.efeitos = Array.isArray(lenda.efeitos) ? lenda.efeitos : [];
+    if (Array.isArray(lenda.efeitos)) {
+      lenda.efeitos = lenda.efeitos;
+    } else {
+      lenda.efeitos = [];
+    }
     lenda.efeitos.push({
       id: randomId(),
       tipo: "escudo",

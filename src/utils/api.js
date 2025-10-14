@@ -70,7 +70,12 @@ class ApiClient {
   // Métodos HTTP
   async get(endpoint, params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+    let url;
+    if (queryString) {
+      url = `${endpoint}?${queryString}`;
+    } else {
+      url = endpoint;
+    }
     return this.request(url, { method: 'GET' });
   }
 

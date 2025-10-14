@@ -42,7 +42,13 @@ function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, simboloRanque
         </div>
 
         {/* moldura dourada */}
-        <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${hover ? 'ring-2 ring-yellow-400' : 'ring-1 ring-yellow-600/60 group-hover:ring-yellow-400'}`} />
+        <div className={`absolute inset-0 pointer-events-none rounded-xl z-30 ${(() => {
+          if (hover) {
+            return 'ring-2 ring-yellow-400';
+          } else {
+            return 'ring-1 ring-yellow-600/60 group-hover:ring-yellow-400';
+          }
+        })()}`} />
         <div className="absolute -inset-1 pointer-events-none rounded-xl bg-gradient-to-b from-yellow-300/10 via-transparent to-yellow-300/0 z-10" />
 
         {/* conteúdo */}

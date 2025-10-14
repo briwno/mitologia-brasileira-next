@@ -119,8 +119,14 @@
 
     actions.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     
-    const randomFactor = this.difficulty === 'easy' ? 0.3 : 
-                        this.difficulty === 'hard' ? 0.1 : 0.2;
+    let randomFactor;
+    if (this.difficulty === 'easy') {
+      randomFactor = 0.3;
+    } else if (this.difficulty === 'hard') {
+      randomFactor = 0.1;
+    } else {
+      randomFactor = 0.2;
+    }
     
     if (Math.random() < randomFactor && actions.length > 1) {
       return actions[Math.floor(Math.random() * Math.min(3, actions.length))];
@@ -172,7 +178,12 @@ import { getAllGameCards } from './cardUtils';
 
 export function getBotDeck(options = {}) {
   // Busca todas as cartas disponíveis do jogo
-  const availableCards = typeof getAllGameCards === 'function' ? getAllGameCards() : [];
+  let availableCards;
+  if (typeof getAllGameCards === 'function') {
+    availableCards = getAllGameCards();
+  } else {
+    availableCards = [];
+  }
   const bot = new BotAI(options.difficulty || 'normal', options.personality || 'balanced');
   return bot.generateBotDeck(availableCards);
 }

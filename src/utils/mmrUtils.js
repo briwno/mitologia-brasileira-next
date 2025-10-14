@@ -34,7 +34,11 @@ export function calcularRankingPorMMR(mmr) {
   ];
 
   const ranking = mmrRankings.find(r => mmr >= r.min && mmr <= r.max);
-  return ranking ? ranking.rank : 'Bronze 1';
+  if (ranking) {
+    return ranking.rank;
+  } else {
+    return 'Bronze 1';
+  }
 }
 
 /**

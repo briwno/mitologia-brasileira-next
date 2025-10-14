@@ -92,7 +92,12 @@ function normalizeAbilitiesValue(field, rawValue) {
     }
 
     const target = { ...defaultValue };
-    const fieldsToConsider = key === 'passive' ? passiveFields : skillFields;
+    let fieldsToConsider;
+    if (key === 'passive') {
+      fieldsToConsider = passiveFields;
+    } else {
+      fieldsToConsider = skillFields;
+    }
 
     fieldsToConsider.forEach((fieldName) => {
       if (hasOwn(source, fieldName)) {
@@ -121,7 +126,11 @@ function getDefaultValue(field) {
   if (field.defaultValue !== undefined) {
     if (field.type === 'boolean') return Boolean(field.defaultValue);
     if (field.type === 'list' || field.type === 'multi-select') {
-      return Array.isArray(field.defaultValue) ? [...field.defaultValue] : [];
+      if (Array.isArray(field.defaultValue)) {
+        return [...field.defaultValue];
+      } else {
+        return [];
+      }
     }
     if (field.type === 'object' && field.fields) {
       const obj = {};
@@ -170,7 +179,11 @@ function formatFieldValue(field, raw, source) {
     case 'boolean':
       return Boolean(raw);
     case 'json':
-      return raw ? JSON.stringify(raw, null, 2) : '';
+      if (raw) {
+        return JSON.stringify(raw, null, 2);
+      } else {
+        return '';
+      }
     case 'array':
     case 'tags':
       if (Array.isArray(raw)) return raw.join(', ');
@@ -234,9 +247,16 @@ function BasicField({ field, value, onChange, nested }) {
     );
   }
 
+  let baseClassNameCondition;
+  if (nested) {
+    baseClassNameCondition = 'border-slate-800/80 bg-slate-900/40';
+  } else {
+    baseClassNameCondition = '';
+  }
+  
   const baseClassName = cn(
     'w-full rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40',
-    nested ? 'border-slate-800/80 bg-slate-900/40' : ''
+    baseClassNameCondition
   );
 
   const sharedProps = {
@@ -244,7 +264,13 @@ function BasicField({ field, value, onChange, nested }) {
     name: field.name,
     placeholder: field.placeholder,
     className: baseClassName,
-    value: field.type === 'number' ? value ?? '' : value ?? '',
+    value: (() => {
+      if (field.type === 'number') {
+        return value ?? '';
+      } else {
+        return value ?? '';
+      }
+    })(),
     onChange: (event) => onChange(event.target.value),
   };
 
@@ -291,7 +317,13 @@ function BasicField({ field, value, onChange, nested }) {
         {...sharedProps}
         onChange={(event) => {
           const newValue = event.target.value;
-          onChange(newValue === '' ? '' : Number(newValue));
+          let result;
+          if (newValue === '') {
+            result = '';
+          } else {
+            result = Number(newValue);
+          }
+          onChange(result);
         }}
       />
     );
@@ -320,7 +352,13 @@ function BasicField({ field, value, onChange, nested }) {
 
 function ListField({ field, value, onChange }) {
   const [draft, setDraft] = useState('');
-  const items = useMemo(() => (Array.isArray(value) ? value : []), [value]);
+  const items = useMemo(() => {
+    if (Array.isArray(value)) {
+      return value;
+    } else {
+      return [];
+    }
+  }, [value]);
   const allowDuplicates = field.allowDuplicates ?? false;
 
   const addItem = useCallback(() => {
@@ -407,7 +445,12 @@ function ListField({ field, value, onChange }) {
 }
 
 function MultiSelectField({ field, value, onChange, loading }) {
-  const selected = Array.isArray(value) ? value : [];
+  let selected;
+  if (Array.isArray(value)) {
+    selected = value;
+  } else {
+    selected = [];
+  }
   const [customValue, setCustomValue] = useState('');
 
   const toggleOption = (optionValue) => {
@@ -529,7 +572,12 @@ function MultiSelectField({ field, value, onChange, loading }) {
 }
 
 function ObjectField({ field, value, onChange }) {
-  const current = value && typeof value === 'object' ? value : {};
+  let current;
+  if (value && typeof value === 'object') {
+    current = value;
+  } else {
+    current = {};
+  }
 
   const handleChange = (key, newValue) => {
     const next = { ...current, [key]: newValue };

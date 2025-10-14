@@ -34,7 +34,11 @@ async function buscarItensDoBanco(filtros = {}) {
   }
 
   const resposta = await itemCardsAPI.getAll(parametrosDeFiltro);
-  return Array.isArray(resposta.itemCards) ? resposta.itemCards : [];
+  if (Array.isArray(resposta.itemCards)) {
+    return resposta.itemCards;
+  } else {
+    return [];
+  }
 }
 
 function prepararItemParaJogo(itemBruto) {
@@ -103,7 +107,12 @@ function prepararItemParaJogo(itemBruto) {
 
 export async function carregarDadosDeCartas(filtros = {}) {
   const cartasResposta = await cardsAPI.getAll(filtros);
-  const cartasBrutas = Array.isArray(cartasResposta.cards) ? cartasResposta.cards : [];
+  let cartasBrutas;
+  if (Array.isArray(cartasResposta.cards)) {
+    cartasBrutas = cartasResposta.cards;
+  } else {
+    cartasBrutas = [];
+  }
   const cartas = cartasBrutas
     .map((carta) => {
       const local = mapearCartaDaApi(carta);

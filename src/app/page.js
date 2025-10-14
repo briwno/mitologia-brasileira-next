@@ -53,12 +53,28 @@ function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, 
   const conteudo = (
     <div
       className={`relative h-80 md:h-[26rem] rounded-2xl border-2 overflow-hidden transition-all select-none
-        ${disponivel ? (destaque ? 'border-cyan-300 shadow-[0_20px_60px_-20px_rgba(0,255,255,0.35)]' : 'border-neutral-600 hover:border-cyan-400') : 'border-neutral-700 opacity-70 grayscale'}
+        ${(() => {
+          if (disponivel) {
+            if (destaque) {
+              return 'border-cyan-300 shadow-[0_20px_60px_-20px_rgba(0,255,255,0.35)]';
+            } else {
+              return 'border-neutral-600 hover:border-cyan-400';
+            }
+          } else {
+            return 'border-neutral-700 opacity-70 grayscale';
+          }
+        })()}
         bg-gradient-to-b from-black/60 to-black/30 backdrop-blur-sm`}
     >
       {/* Imagem de fundo (placeholder por padrão) */}
       <Image
-        src={!caminhoImagem || erroAoCarregarImagem ? '/images/placeholder.svg' : caminhoImagem}
+        src={(() => {
+          if (!caminhoImagem || erroAoCarregarImagem) {
+            return '/images/placeholder.svg';
+          } else {
+            return caminhoImagem;
+          }
+        })()}
         alt={`${titulo} banner`}
         fill
   className="object-cover transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-150 group-hover:contrast-110"
@@ -77,7 +93,13 @@ function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, 
         <Icon name={nomeIcone} size={32} />
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/70 border-t border-white/10 p-4">
-        <div className={`text-center font-extrabold ${disponivel ? 'text-white' : 'text-neutral-400'} text-xl md:text-2xl tracking-wide`}>{titulo}</div>
+        <div className={`text-center font-extrabold ${(() => {
+          if (disponivel) {
+            return 'text-white';
+          } else {
+            return 'text-neutral-400';
+          }
+        })()} text-xl md:text-2xl tracking-wide`}>{titulo}</div>
         {subtitulo && <div className="text-center text-neutral-300 text-xs md:text-sm mt-1">{subtitulo}</div>}
         {!disponivel && (
           <div className="text-center text-red-300/90 text-xs md:text-sm mt-1">Requer Nível 20</div>
@@ -127,7 +149,12 @@ export default function Inicio() {
     levelProgress: progressoNivel,
   } = informacoesJogador || {};
 
-  const estaAutenticado = typeof verificarAutenticacao === 'function' ? verificarAutenticacao() : false;
+  let estaAutenticado;
+  if (typeof verificarAutenticacao === 'function') {
+    estaAutenticado = verificarAutenticacao();
+  } else {
+    estaAutenticado = false;
+  }
 
   // Verificação de segurança para auth
   if (!contextoAutenticacao) {
@@ -165,7 +192,13 @@ export default function Inicio() {
         </div>
       </div>
 
-      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${carregado ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${(() => {
+        if (carregado) {
+          return 'opacity-100';
+        } else {
+          return 'opacity-0';
+        }
+      })()}`}>
         {/* Barra superior */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex items-center gap-3">
