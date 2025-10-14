@@ -93,7 +93,7 @@ export async function POST(request) {
       // Criar coleção inicial
       await supabase
         .from('collections')
-        .insert({ player_id: player.id, cards: ['sac001', 'iar001', 'cur001'] })
+        .insert({ player_id: player.id, cards: ['sac001', 'iar001', 'cur001', 'cuc001', 'mul001'] })
         .select()
         .single();
 
