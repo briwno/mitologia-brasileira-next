@@ -4,14 +4,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import LayoutDePagina from '@/components/UI/PageLayout';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function PaginaLogin() {
+  const { login, register } = useAuth();
   const [modoLogin, definirModoLogin] = useState(true);
   const [dadosFormulario, definirDadosFormulario] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    username: ''
+    nickname: ''
   });
   const [carregando, definirCarregando] = useState(false);
 
@@ -22,19 +24,36 @@ export default function PaginaLogin() {
       return;
     }
     try {
-  definirCarregando(true);
-      let carga;
+      definirCarregando(true);
+      
       if (modoLogin) {
-        carga = { action: 'login', username: dadosFormulario.username, password: dadosFormulario.password };
+        const resultado = await login({ 
+          email: dadosFormulario.email, 
+          password: dadosFormulario.password 
+        });
+        
+        if (!resultado.success) {
+          throw new Error(resultado.error || 'Falha ao fazer login');
+        }
+        
+        window.location.href = '/';
       } else {
-        carga = { action: 'register', username: dadosFormulario.username, email: dadosFormulario.email, password: dadosFormulario.password };
+        const resultado = await register({ 
+          email: dadosFormulario.email, 
+          password: dadosFormulario.password,
+          nickname: dadosFormulario.nickname 
+        });
+        
+        if (!resultado.success) {
+          throw new Error(resultado.error || 'Falha ao criar conta');
+        }
+        
+        if (resultado.requiresEmailConfirmation) {
+          alert('Conta criada! Verifique seu email para confirmar.');
+        } else {
+          window.location.href = '/';
+        }
       }
-      const resposta = await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(carga) });
-      const dadosResposta = await resposta.json();
-      if (!resposta.ok) throw new Error(dadosResposta.error || 'Falha na autenticação');
-      localStorage.setItem('authToken', dadosResposta.token);
-      localStorage.setItem('user', JSON.stringify(dadosResposta.user));
-      window.location.href = '/';
     } catch (erro) {
       alert(erro.message);
     } finally {
@@ -75,15 +94,15 @@ export default function PaginaLogin() {
         </div>
 
   <form onSubmit={aoEnviarFormulario} className="space-y-4" aria-busy={carregando}>
-          {/* Campo de nome de usuário presente em ambos os modos */}
+          {/* Campo de email sempre presente */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Nome de usuário
+              Email
             </label>
             <input
-              type="text"
-              name="username"
-              value={dadosFormulario.username}
+              type="email"
+              name="email"
+              value={dadosFormulario.email}
               onChange={aoAtualizarCampo}
       className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
       disabled={carregando}
@@ -94,12 +113,12 @@ export default function PaginaLogin() {
           {!modoLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Email
+                Nome de usuário (apelido)
               </label>
               <input
-                type="email"
-                name="email"
-                value={dadosFormulario.email}
+                type="text"
+                name="nickname"
+                value={dadosFormulario.nickname}
                 onChange={aoAtualizarCampo}
                 className="w-full px-3 py-2 bg-black/50 border border-gray-600 rounded-md text-white focus:border-green-500 focus:outline-none disabled:opacity-60"
                 disabled={carregando}

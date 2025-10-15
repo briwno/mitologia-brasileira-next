@@ -145,12 +145,12 @@ export const itemCardsAPI = {
 
 // Coleção
 export const collectionAPI = {
-  get: (uid) => apiClient.get(`/collection?uid=${encodeURIComponent(uid)}`),
-  set: (uid, cards, itemCards = []) => apiClient.post('/collection', { uid, cards, itemCards }),
-  addCard: (uid, cardId) => apiClient.patch('/collection', { uid, add: cardId }),
-  removeCard: (uid, cardId) => apiClient.patch('/collection', { uid, remove: cardId }),
-  addItemCard: (uid, itemCardId) => apiClient.patch('/collection', { uid, addItemCard: itemCardId }),
-  removeItemCard: (uid, itemCardId) => apiClient.patch('/collection', { uid, removeItemCard: itemCardId }),
+  get: (playerId) => apiClient.get(`/collection?playerId=${encodeURIComponent(playerId)}`),
+  set: (playerId, cards, itemCards = []) => apiClient.post('/collection', { playerId, cards, itemCards }),
+  addCard: (playerId, cardId) => apiClient.patch('/collection', { playerId, add: cardId }),
+  removeCard: (playerId, cardId) => apiClient.patch('/collection', { playerId, remove: cardId }),
+  addItemCard: (playerId, itemCardId) => apiClient.patch('/collection', { playerId, addItemCard: itemCardId }),
+  removeItemCard: (playerId, itemCardId) => apiClient.patch('/collection', { playerId, removeItemCard: itemCardId }),
 };
 
 // Decks

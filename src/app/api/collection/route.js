@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireSupabaseAdmin } from '@/lib/supabase';
 
 const UpsertSchema = z.object({
-  uid: z.string().min(1),
+  playerId: z.string().uuid(),
   cards: z.array(z.string().min(1)).default([]),
   itemCards: z.array(z.string().min(1)).default([]),
 });
@@ -13,25 +13,14 @@ export async function GET(req) {
   console.log('[Collection API] GET request received');
   try {
     const { searchParams } = new URL(req.url);
-    const uid = searchParams.get('uid');
-    console.log('[Collection API] uid parameter:', uid);
-    if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
+    const playerId = searchParams.get('playerId');
+    console.log('[Collection API] playerId parameter:', playerId);
+    if (!playerId) return NextResponse.json({ error: 'playerId required' }, { status: 400 });
 
     const supabase = requireSupabaseAdmin();
-    console.log('[Collection API] Querying players table for uid:', uid);
-    const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-    if (uerr) {
-      console.error('[Collection API] Error querying players:', uerr);
-      return NextResponse.json({ error: 'database_error' }, { status: 500 });
-    }
-    if (!user) {
-      console.log('[Collection API] Player not found for uid:', uid);
-      return NextResponse.json({ error: 'player not found' }, { status: 404 });
-    }
+    console.log('[Collection API] Querying collections table for playerId:', playerId);
 
-    console.log(`[Collection API] Found player: uid=${uid} -> player_id=${user.id}`);
-
-    const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', user.id).maybeSingle();
+    const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', playerId).maybeSingle();
     if (error && error.code !== 'PGRST116') {
       console.error('[Collection API] Error querying collections:', error);
       return NextResponse.json({ error: 'database_error' }, { status: 500 });
@@ -65,14 +54,8 @@ export async function POST(req) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
     const supabase = requireSupabaseAdmin();
-    const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', parsed.data.uid).maybeSingle();
-    if (uerr) {
-      console.error('[Collection API] Error finding player (POST):', uerr);
-      return NextResponse.json({ error: 'database_error' }, { status: 500 });
-    }
-    if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
-    const upsertData = { player_id: user.id, cards: parsed.data.cards };
+    const upsertData = { player_id: parsed.data.playerId, cards: parsed.data.cards };
     if (parsed.data.itemCards && parsed.data.itemCards.length > 0) {
       upsertData.item_cards = parsed.data.itemCards;
     }
@@ -107,17 +90,11 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    const { uid, add, remove, addItemCard, removeItemCard } = await req.json();
-    if (!uid) return NextResponse.json({ error: 'uid required' }, { status: 400 });
+    const { playerId, add, remove, addItemCard, removeItemCard } = await req.json();
+    if (!playerId) return NextResponse.json({ error: 'playerId required' }, { status: 400 });
     const supabase = requireSupabaseAdmin();
-    const { data: user, error: uerr } = await supabase.from('players').select('*').eq('uid', uid).maybeSingle();
-    if (uerr) {
-      console.error('[Collection API] Error finding player (PATCH):', uerr);
-      return NextResponse.json({ error: 'database_error' }, { status: 500 });
-    }
-    if (!user) return NextResponse.json({ error: 'player not found' }, { status: 404 });
 
-    const { data: existing, error: exErr } = await supabase.from('collections').select('*').eq('player_id', user.id).maybeSingle();
+    const { data: existing, error: exErr } = await supabase.from('collections').select('*').eq('player_id', playerId).maybeSingle();
     if (exErr && exErr.code !== 'PGRST116') {
       console.error('[Collection API] Error querying collections (PATCH):', exErr);
       return NextResponse.json({ error: 'database_error' }, { status: 500 });
@@ -154,7 +131,7 @@ export async function PATCH(req) {
       nextItemCards = nextItemCards.filter((c) => c !== String(removeItemCard));
     }
 
-    const upsertData = { player_id: user.id, cards: nextCards };
+    const upsertData = { player_id: playerId, cards: nextCards };
     if (nextItemCards.length > 0 || existing?.item_cards) {
       upsertData.item_cards = nextItemCards;
     }

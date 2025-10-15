@@ -21,16 +21,12 @@ export function usePlayerData() {
       if (user.coins !== undefined) {
         setCoins(user.coins);
       } else {
-        // Fallback: buscar da API se necessário
-        const response = await fetch('/api/auth', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
+        // Fallback: buscar da API
+        const response = await fetch(`/api/players?id=${user.id}`);
 
         if (response.ok) {
           const data = await response.json();
-          setCoins(data.user?.coins || 0);
+          setCoins(data.player?.coins || 0);
         } else {
           console.error('[usePlayerData] Falha ao buscar moedas:', response.status);
           setError('Falha ao buscar moedas');
@@ -60,9 +56,23 @@ export function usePlayerData() {
     }
 
     try {
-      // TODO: Implementar endpoint para atualizar moedas no servidor
-      // Por enquanto, atualização local
       const newCoins = coins - amount;
+      
+      // Atualizar no servidor
+      const response = await fetch('/api/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: user.id,
+          data: { coins: newCoins }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar moedas no servidor');
+      }
+
+      // Atualizar local
       setCoins(newCoins);
 
       console.log(`[usePlayerData] Gastou ${amount} moedas. Motivo: ${reason}. Novo saldo: ${newCoins}`);
@@ -81,9 +91,23 @@ export function usePlayerData() {
     }
 
     try {
-      // TODO: Implementar endpoint para atualizar moedas no servidor
-      // Por enquanto, atualização local
       const newCoins = coins + amount;
+      
+      // Atualizar no servidor
+      const response = await fetch('/api/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: user.id,
+          data: { coins: newCoins }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar moedas no servidor');
+      }
+
+      // Atualizar local
       setCoins(newCoins);
 
       console.log(`[usePlayerData] Ganhou ${amount} moedas. Motivo: ${reason}. Novo saldo: ${newCoins}`);

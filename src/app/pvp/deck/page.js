@@ -196,7 +196,7 @@ export default function SelecaoDeDeck() {
       }
       
       const payload = {
-        ownerId: Number(user.id),
+        ownerId: user.id,
         name: `Deck ${gameMode.toUpperCase()} - ${new Date().toLocaleString('pt-BR')}`,
         cards: cardIds
       };

@@ -34,11 +34,11 @@ export default function PlayerProfile({ compact = false }) {
         <div className="flex items-center gap-3">
           <img
             src={user.avatar_url}
-            alt={user.username}
+            alt={user.nickname}
             className="w-10 h-10 rounded-full border-2 border-green-500"
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm truncate">{user.username}</h3>
+            <h3 className="font-bold text-sm truncate">{user.nickname}</h3>
             <p className="text-xs text-gray-400 truncate">{user.title}</p>
           </div>
           <div className="flex items-center gap-1">
@@ -56,11 +56,11 @@ export default function PlayerProfile({ compact = false }) {
       <div className="flex items-start gap-4 mb-6">
         <img
           src={user.avatar_url}
-          alt={user.username}
+          alt={user.nickname}
           className="w-20 h-20 rounded-full border-4 border-green-500 shadow-lg"
         />
         <div className="flex-1">
-          <h2 className="text-2xl font-bold">{user.username}</h2>
+          <h2 className="text-2xl font-bold">{user.nickname}</h2>
           <p className="text-gray-400 text-sm mb-2">{user.title}</p>
           
           {/* Nível e XP */}

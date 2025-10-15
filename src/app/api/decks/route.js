@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireSupabaseAdmin } from '@/lib/supabase';
 
 const DeckCreate = z.object({
-  ownerId: z.number().int(),
+  ownerId: z.string().uuid(),
   name: z.string().min(1),
   cards: z.array(z.union([z.string(), z.number()])).min(1),
 });
@@ -20,7 +20,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const ownerId = searchParams.get('ownerId');
     if (ownerId) {
-      const { data, error } = await supabase.from('decks').select('*').eq('owner_id', Number(ownerId));
+      const { data, error } = await supabase.from('decks').select('*').eq('owner_id', ownerId);
       if (error) {
         console.error('[Decks API] Error fetching decks by owner:', error);
         return NextResponse.json({ error: 'database_error' }, { status: 500 });
@@ -79,7 +79,7 @@ export async function PUT(req) {
     const { data: res, error } = await supabase
       .from('decks')
       .update(parsed.data)
-      .eq('id', Number(id))
+      .eq('id', id)
       .select('*')
       .single();
     if (error) {
@@ -101,7 +101,7 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-    const { error } = await supabase.from('decks').delete().eq('id', Number(id));
+    const { error } = await supabase.from('decks').delete().eq('id', id);
     if (error) {
       console.error('[Decks API] Error deleting deck:', error);
       return NextResponse.json({ error: 'database_error' }, { status: 500 });

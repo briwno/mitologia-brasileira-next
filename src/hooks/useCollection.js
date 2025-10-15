@@ -11,14 +11,14 @@ export function useCollection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const uid = user?.uid || null; // usamos email ou uid
+  const playerId = user?.id || null; // UUID do Auth
 
   const load = useCallback(async () => {
-    if (!uid) return;
+    if (!playerId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/collection?uid=${encodeURIComponent(uid)}`);
+      const res = await fetch(`/api/collection?playerId=${encodeURIComponent(playerId)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao carregar coleção');
       if (Array.isArray(data.cards)) {
@@ -36,15 +36,15 @@ export function useCollection() {
     } finally {
       setLoading(false);
     }
-  }, [uid]);
+  }, [playerId]);
 
   const setAll = useCallback(async (nextCards, nextItemCards = []) => {
-    if (!uid) return { ok: false };
+    if (!playerId) return { ok: false };
     try {
       const res = await fetch('/api/collection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, cards: nextCards, itemCards: nextItemCards })
+        body: JSON.stringify({ playerId, cards: nextCards, itemCards: nextItemCards })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao salvar coleção');
@@ -55,15 +55,15 @@ export function useCollection() {
       setError(e.message);
       return { ok: false, error: e.message };
     }
-  }, [uid]);
+  }, [playerId]);
 
   const addCard = useCallback(async (cardId) => {
-    if (!uid) return { ok: false };
+    if (!playerId) return { ok: false };
     try {
       const res = await fetch('/api/collection', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, add: cardId })
+        body: JSON.stringify({ playerId, add: cardId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao adicionar carta');
@@ -74,15 +74,15 @@ export function useCollection() {
       setError(e.message);
       return { ok: false, error: e.message };
     }
-  }, [uid]);
+  }, [playerId]);
 
   const removeCard = useCallback(async (cardId) => {
-    if (!uid) return { ok: false };
+    if (!playerId) return { ok: false };
     try {
       const res = await fetch('/api/collection', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, remove: cardId })
+        body: JSON.stringify({ playerId, remove: cardId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao remover carta');
@@ -93,15 +93,15 @@ export function useCollection() {
       setError(e.message);
       return { ok: false, error: e.message };
     }
-  }, [uid]);
+  }, [playerId]);
 
   const addItemCard = useCallback(async (itemCardId) => {
-    if (!uid) return { ok: false };
+    if (!playerId) return { ok: false };
     try {
       const res = await fetch('/api/collection', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, addItemCard: itemCardId })
+        body: JSON.stringify({ playerId, addItemCard: itemCardId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao adicionar item card');
@@ -112,15 +112,15 @@ export function useCollection() {
       setError(e.message);
       return { ok: false, error: e.message };
     }
-  }, [uid]);
+  }, [playerId]);
 
   const removeItemCard = useCallback(async (itemCardId) => {
-    if (!uid) return { ok: false };
+    if (!playerId) return { ok: false };
     try {
       const res = await fetch('/api/collection', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, removeItemCard: itemCardId })
+        body: JSON.stringify({ playerId, removeItemCard: itemCardId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao remover item card');
@@ -131,14 +131,14 @@ export function useCollection() {
       setError(e.message);
       return { ok: false, error: e.message };
     }
-  }, [uid]);
+  }, [playerId]);
 
   // auto-load quando logado
   useEffect(() => {
-    if (uid && !userLoading) {
+    if (playerId && !userLoading) {
       load();
     }
-  }, [uid, userLoading, load]);
+  }, [playerId, userLoading, load]);
 
   return {
     cards,
@@ -151,6 +151,6 @@ export function useCollection() {
     removeCard,
     addItemCard,
     removeItemCard,
-    isReady: !!uid && !userLoading,
+    isReady: !!playerId && !userLoading,
   };
 }

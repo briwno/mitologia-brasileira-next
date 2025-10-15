@@ -7,9 +7,8 @@ import { requireSupabaseAdmin } from '@/lib/supabase';
  * GET /api/players
  * Buscar jogadores
  * Query params:
- * - id: buscar por ID
- * - uid: buscar por UID
- * - username: buscar por username
+ * - id: buscar por ID (UUID)
+ * - nickname: buscar por nickname
  * - (sem params): listar top 100 por MMR
  */
 export async function GET(req) {
@@ -18,10 +17,9 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     
     const id = searchParams.get('id');
-    const uid = searchParams.get('uid');
-    const username = searchParams.get('username');
+    const nickname = searchParams.get('nickname');
 
-    // Buscar por ID
+    // Buscar por ID (UUID)
     if (id) {
       const { data, error } = await supabase
         .from('players')
@@ -35,26 +33,12 @@ export async function GET(req) {
       return NextResponse.json({ player: data });
     }
 
-    // Buscar por UID
-    if (uid) {
+    // Buscar por nickname
+    if (nickname) {
       const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('uid', uid)
-        .maybeSingle();
-      
-      if (error) throw error;
-      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
-      
-      return NextResponse.json({ player: data });
-    }
-
-    // Buscar por username
-    if (username) {
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('username', username)
+        .eq('nickname', nickname)
         .maybeSingle();
       
       if (error) throw error;
@@ -66,7 +50,7 @@ export async function GET(req) {
     // Listar top players (ranking)
     const { data, error } = await supabase
       .from('players')
-      .select('id, uid, username, avatar_url, level, xp, mmr, title, coins')
+      .select('id, nickname, avatar_url, level, xp, mmr, title, coins')
       .eq('banned', false)
       .order('mmr', { ascending: false })
       .order('level', { ascending: false })
@@ -79,6 +63,64 @@ export async function GET(req) {
 
   } catch (error) {
     console.error('[Players API] Erro GET:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/players
+ * Provisionar perfil de jogador após registro via Supabase Auth
+ * Body: { id (UUID), nickname?, avatar_url? }
+ */
+export async function POST(req) {
+  try {
+    const { id, nickname, avatar_url } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID (UUID) do jogador obrigatório' }, { status: 400 });
+    }
+
+    const supabase = requireSupabaseAdmin();
+
+    // Verificar se já existe
+    const { data: existing } = await supabase
+      .from('players')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({ error: 'Jogador já existe' }, { status: 409 });
+    }
+
+    // Criar novo perfil
+    const newPlayer = {
+      id,
+      nickname: nickname || 'Jogador',
+      avatar_url: avatar_url || '/images/avatars/default.png',
+      level: 1,
+      xp: 0,
+      mmr: 1000,
+      coins: 100,
+      title: 'Aspirante',
+      banned: false
+    };
+
+    const { data: created, error } = await supabase
+      .from('players')
+      .insert(newPlayer)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ 
+      success: true, 
+      player: created 
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('[Players API] Erro POST:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

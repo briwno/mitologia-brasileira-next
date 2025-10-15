@@ -314,7 +314,7 @@ export default function PaginaInventarioDeCartas() {
       }
 
       const payload = {
-        ownerId: Number(user.id),
+        ownerId: user.id,
         name: `Deck da Coleção - ${new Date().toLocaleString("pt-BR")}`,
         cards: cardIds,
       };

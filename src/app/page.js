@@ -42,9 +42,7 @@ const ModalPerfil = dynamic(() => import('@/components/Profile/ProfileModal'), {
 
 
 //verificar se é level1
-if (player.level === 1) {
-  //vai ganhar um booster inicial
-}
+
 
 // Cartão clicável para cada modo da página inicial
 function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, destaque = false, caminhoImagem }) {

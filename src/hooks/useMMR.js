@@ -24,17 +24,13 @@ export function useMMR() {
         setMMR(user.mmr);
         setLevel(user.level || 1);
       } else {
-        // Fallback: buscar da API se necessário
-        const response = await fetch('/api/auth', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
+        // Fallback: buscar da API
+        const response = await fetch(`/api/players?id=${user.id}`);
 
         if (response.ok) {
           const data = await response.json();
-          setMMR(data.user?.mmr || 0);
-          setLevel(data.user?.level || 1);
+          setMMR(data.player?.mmr || 0);
+          setLevel(data.player?.level || 1);
         } else {
           console.error('[useMMR] Falha ao buscar MMR:', response.status);
           setError('Falha ao buscar dados de ranking');
@@ -78,8 +74,21 @@ export function useMMR() {
 
       const newMMR = Math.max(0, mmr + mmrChange);
 
-      // TODO: Implementar endpoint para atualizar MMR no servidor
-      // Por enquanto, atualização local
+      // Atualizar no servidor
+      const response = await fetch('/api/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: user.id,
+          data: { mmr: newMMR }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar MMR no servidor');
+      }
+
+      // Atualizar local
       setMMR(newMMR);
 
       let changeSign;
