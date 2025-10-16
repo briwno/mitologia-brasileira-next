@@ -3,57 +3,40 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
+import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import { useMMR } from '@/hooks/useMMR';
 import LayoutDePagina from '@/components/UI/PageLayout';
 import { calcularRankingPorMMR, calcularProgressoRanking, obterIconeRanking, obterCorRanking } from '@/utils/mmrUtils';
 
 export default function PaginaPerfil() {
   const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
-  const [dadosPerfil, definirDadosPerfil] = useState(null);
-  const [carregando, definirCarregando] = useState(true);
-  const [erro, definirErro] = useState(null);
   const contextoAutenticacao = usarAutenticacao();
   const { user: usuario, isAuthenticated: verificarAutenticacao } = contextoAutenticacao || {};
+  
+  // Hook de dados do jogador
+  const informacoesJogador = usarDadosJogador();
+  const {
+    currencies: moedas,
+    stats: estatisticas,
+    collection: colecao,
+    quests: missoes,
+    winRate: taxaVitoria,
+    levelProgress: progressoNivel,
+    loading: carregando,
+    error: erro,
+  } = informacoesJogador || {};
   
   // Hook de MMR para dados de ranking
   const { ranking: dadosRanking, mmr: mmrDoHook, level: levelDoHook } = useMMR();
 
-  useEffect(() => {
-    const carregarDadosPerfil = async () => {
-      if (!verificarAutenticacao?.() || !usuario?.id) {
-        definirErro('Você precisa estar logado para ver seu perfil');
-        definirCarregando(false);
-        return;
-      }
-
-      try {
-        definirCarregando(true);
-        // Busca dados do player pela API simplificada
-        const resposta = await fetch(`/api/players?id=${usuario.id}`);
-
-        if (!resposta.ok) {
-          const errorData = await resposta.json().catch(() => ({}));
-          const mensagem = errorData.error || 'Erro ao carregar dados do perfil';
-          console.error('[Perfil] Falha ao buscar dados:', resposta.status, mensagem);
-          definirErro(mensagem);
-          return;
-        }
-
-        const dados = await resposta.json();
-        // A API /api/players retorna { player: {...} }
-        definirDadosPerfil(dados.player);
-      } catch (erroCarregamento) {
-        console.error('Erro ao buscar dados do perfil:', erroCarregamento);
-        definirErro(erroCarregamento.message);
-      } finally {
-        definirCarregando(false);
-      }
-    };
-
-    carregarDadosPerfil();
-  }, [usuario?.id, verificarAutenticacao]);
+  let estaAutenticado;
+  if (typeof verificarAutenticacao === 'function') {
+    estaAutenticado = verificarAutenticacao();
+  } else {
+    estaAutenticado = false;
+  }
 
   if (carregando) {
     return (
@@ -74,7 +57,7 @@ export default function PaginaPerfil() {
     );
   }
 
-  if (erro || !dadosPerfil) {
+  if (!estaAutenticado) {
     return (
       <LayoutDePagina>
         <div className="container mx-auto px-4 py-8">
@@ -83,18 +66,16 @@ export default function PaginaPerfil() {
               👤 Perfil do Jogador
             </h1>
             <div className="text-xl text-red-400 mb-4">
-              {erro || 'Erro ao carregar dados do perfil'}
+              Você precisa estar logado para ver seu perfil
             </div>
-            {erro === 'Você precisa estar logado para ver seu perfil' && (
-              <div className="mb-4">
-                <Link
-                  href="/login"
-                  className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-semibold mr-4"
-                >
-                  Fazer Login
-                </Link>
-              </div>
-            )}
+            <div className="mb-4">
+              <Link
+                href="/login"
+                className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-semibold mr-4"
+              >
+                Fazer Login
+              </Link>
+            </div>
             <Link
               href="/"
               className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold"
@@ -107,14 +88,37 @@ export default function PaginaPerfil() {
     );
   }
 
-  const estatisticasJogador = dadosPerfil;
-  const partidasRecentes = dadosPerfil.recentMatches || [];
-  const conquistas = dadosPerfil.achievementsList || [];
-  const cartasFavoritas = dadosPerfil.favoriteCards || [];
+  if (erro) {
+    return (
+      <LayoutDePagina>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+              👤 Perfil do Jogador
+            </h1>
+            <div className="text-xl text-red-400 mb-4">
+              {erro}
+            </div>
+            <Link
+              href="/"
+              className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors font-semibold"
+            >
+              ← Voltar ao Menu Principal
+            </Link>
+          </div>
+        </div>
+      </LayoutDePagina>
+    );
+  }
+
+  // Dados do jogador vindos do hook
+  const partidasRecentes = estatisticas?.recentMatches || [];
+  const conquistas = estatisticas?.achievements || [];
+  const cartasFavoritas = estatisticas?.favoriteCards || [];
 
   // Calcular ranking baseado no MMR (priorizar dados do hook)
-  const mmrJogador = mmrDoHook || estatisticasJogador?.mmr || 0;
-  const levelJogador = levelDoHook || estatisticasJogador?.level || 1;
+  const mmrJogador = mmrDoHook || usuario?.mmr || 0;
+  const levelJogador = levelDoHook || usuario?.level || 1;
   const rankingAtual = dadosRanking?.ranking || calcularRankingPorMMR(mmrJogador);
   const progressoRanking = dadosRanking?.progresso || calcularProgressoRanking(mmrJogador);
   const iconeRanking = dadosRanking?.icone || obterIconeRanking(rankingAtual);
@@ -136,10 +140,10 @@ export default function PaginaPerfil() {
               {/* Foto do perfil */}
               <div className="w-24 h-24 bg-gradient-to-br from-purple-600 via-blue-600 to-green-600 rounded-full p-1 shadow-lg">
                 <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-                  {(usuario?.avatar_url || estatisticasJogador?.avatar_url) ? (
+                  {usuario?.avatar_url ? (
                     <Image 
-                      src={usuario?.avatar_url || estatisticasJogador?.avatar_url} 
-                      alt={`Avatar de ${estatisticasJogador?.username || usuario?.username}`}
+                      src={usuario.avatar_url} 
+                      alt={`Avatar de ${usuario?.username || usuario?.name}`}
                       width={88}
                       height={88}
                       className="w-full h-full object-cover rounded-full"
@@ -149,13 +153,9 @@ export default function PaginaPerfil() {
                       }}
                     />
                   ) : (
-                    <Image 
-                      src="/images/avatars/player.jpg"
-                      alt={`Avatar padrão de ${estatisticasJogador?.username || usuario?.username}`}
-                      width={88}
-                      height={88}
-                      className="w-full h-full object-cover rounded-full"
-                    />
+                    <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-4xl">
+                      {usuario?.name?.charAt(0)?.toUpperCase() || usuario?.username?.charAt(0)?.toUpperCase() || 'J'}
+                    </div>
                   )}
                 </div>
               </div>
@@ -167,18 +167,25 @@ export default function PaginaPerfil() {
             
             {/* Nome do usuário */}
             <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              {estatisticasJogador?.username || usuario?.username || 'Jogador'}
+              {usuario?.username || usuario?.name || 'Jogador'}
             </h1>
+
+            {/* Título do jogador */}
+            {usuario?.title && (
+              <p className="text-lg text-cyan-400 mb-2 italic">
+                {usuario.title}
+              </p>
+            )}
 
             {/* UID */}
             <p className="text-sm text-gray-400 mb-2">
-              UID: {estatisticasJogador?.uid || usuario?.uid || 'Desconhecido'}
+              UID: {usuario?.id || 'Desconhecido'}
             </p>
 
             {/* Email e informações adicionais */}
-            {(usuario?.email || estatisticasJogador?.email) && (
+            {usuario?.email && (
               <p className="text-sm text-gray-400 mb-2">
-                {usuario?.email || estatisticasJogador?.email}
+                {usuario.email}
               </p>
             )}
             
@@ -233,79 +240,108 @@ export default function PaginaPerfil() {
               <h3 className="text-lg font-bold mb-4 text-center text-blue-400">📈 Progresso</h3>
               <div className="text-center">
                 <div className="text-sm text-gray-400 mb-4">
-                  Membro desde {estatisticasJogador.joinDate}
+                  Membro desde {usuario?.created_at ? new Date(usuario.created_at).toLocaleDateString('pt-BR') : 'Recente'}
                 </div>
 
                 {/* Nível e XP */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Nível {levelJogador}</span>
-                    <span>
-                      {estatisticasJogador?.xp || 0}/
-                      {(estatisticasJogador?.xp || 0) + (estatisticasJogador?.xpToNext || 1000)} XP
-                    </span>
+                {progressoNivel && (
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Nível {levelJogador}</span>
+                      <span>
+                        {progressoNivel.currentXP}/{progressoNivel.xpNeeded} XP
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${progressoNivel.percentage}%`
+                        }}
+                      ></div>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {progressoNivel.xpToNext} XP para o próximo nível
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{
-                        width: `${(estatisticasJogador.xp / (estatisticasJogador.xp + estatisticasJogador.xpToNext)) * 100}%`
-                      }}
-                    ></div>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {estatisticasJogador.xpToNext} XP para o próximo nível
-                  </div>
-                </div>
+                )}
 
                 {/* Progresso da Coleção */}
-                <div className="bg-black/40 p-4 rounded-lg">
-                  <div className="text-sm font-semibold text-blue-400 mb-2">🃏 Coleção</div>
-                  <div className="text-lg font-bold">
-                    {estatisticasJogador.totalCardsCollected}/
-                    {estatisticasJogador.totalCardsAvailable}
+                {colecao && (
+                  <div className="bg-black/40 p-4 rounded-lg">
+                    <div className="text-sm font-semibold text-blue-400 mb-2">🃏 Coleção</div>
+                    <div className="text-lg font-bold">
+                      {colecao.total}/{colecao.totalAvailable || 60}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {colecao.completionPercentage}% completa
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {estatisticasJogador.totalCardsAvailable > 0
-                      ? `${Math.round((estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100)}% completa`
-                      : 'Nenhuma carta disponível'}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Estatísticas Rápidas */}
             <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-gray-600/30">
               <h3 className="text-lg font-bold mb-4">📊 Estatísticas</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Partidas:</span>
-                  <span className="font-bold">{estatisticasJogador.totalGames}</span>
+              {estatisticas ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Partidas:</span>
+                    <span className="font-bold">{estatisticas.totalGames || (estatisticas.wins + estatisticas.losses)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Vitórias:</span>
+                    <span className="font-bold text-green-400">{estatisticas.wins || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Derrotas:</span>
+                    <span className="font-bold text-red-400">{estatisticas.losses || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Taxa de Vitória:</span>
+                    <span className={`font-bold ${obterClasseTaxaVitoria(taxaVitoria)}`}>
+                      {taxaVitoria}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Sequência Atual:</span>
+                    <span className="font-bold text-yellow-400">{estatisticas.currentStreak || 0}W</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Melhor Sequência:</span>
+                    <span className="font-bold text-purple-400">{estatisticas.bestStreak || 0}W</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Vitórias:</span>
-                  <span className="font-bold text-green-400">{estatisticasJogador.wins}</span>
+              ) : (
+                <div className="text-center text-gray-400">
+                  Nenhuma estatística disponível
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Derrotas:</span>
-                  <span className="font-bold text-red-400">{estatisticasJogador.losses}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Taxa de Vitória:</span>
-                  <span className={`font-bold ${obterClasseTaxaVitoria(estatisticasJogador.winRate)}`}>
-                    {estatisticasJogador.winRate}%
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Sequência Atual:</span>
-                  <span className="font-bold text-yellow-400">{estatisticasJogador.currentStreak}W</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Melhor Sequência:</span>
-                  <span className="font-bold text-purple-400">{estatisticasJogador.bestStreak}W</span>
+              )}
+            </div>
+
+            {/* Moedas e Recursos */}
+            {moedas && (
+              <div className="bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-gray-600/30">
+                <h3 className="text-lg font-bold mb-4">💰 Recursos</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Ouro:</span>
+                    <span className="font-bold text-yellow-400">{moedas.gold?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Gemas:</span>
+                    <span className="font-bold text-blue-400">{moedas.gems?.toLocaleString() || 0}</span>
+                  </div>
+                  {moedas.tokens > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Tokens:</span>
+                      <span className="font-bold text-purple-400">{moedas.tokens}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Conteúdo Principal */}
@@ -350,31 +386,52 @@ export default function PaginaPerfil() {
                   <div className="space-y-6">
                     {/* Progresso da Coleção */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-black/40 p-6 rounded-lg">
-                        <h4 className="text-xl font-bold mb-4 text-blue-400">🃏 Coleção</h4>
-                        <div className="text-center">
-                          <div className="text-3xl font-bold mb-2">
-                            {estatisticasJogador.totalCardsCollected}/
-                            {estatisticasJogador.totalCardsAvailable}
-                          </div>
-                          <div className="text-sm text-gray-400 mb-3">Cartas coletadas</div>
-                          <div className="w-full bg-gray-700 rounded-full h-3">
-                            <div
-                              className="bg-blue-500 h-3 rounded-full"
-                              style={{
-                                width: `${estatisticasJogador.totalCardsAvailable > 0
-                                  ? (estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100
-                                  : 0}%`
-                              }}
-                            ></div>
-                          </div>
-                          <div className="text-sm text-blue-400 mt-2">
-                            {estatisticasJogador.totalCardsAvailable > 0
-                              ? `${Math.round((estatisticasJogador.totalCardsCollected / estatisticasJogador.totalCardsAvailable) * 100)}% completa`
-                              : 'Nenhuma carta disponível'}
+                      {colecao && (
+                        <div className="bg-black/40 p-6 rounded-lg">
+                          <h4 className="text-xl font-bold mb-4 text-blue-400">🃏 Coleção</h4>
+                          <div className="text-center">
+                            <div className="text-3xl font-bold mb-2">
+                              {colecao.total}/{colecao.totalAvailable || 60}
+                            </div>
+                            <div className="text-sm text-gray-400 mb-3">Cartas coletadas</div>
+                            <div className="w-full bg-gray-700 rounded-full h-3">
+                              <div
+                                className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${colecao.completionPercentage}%`
+                                }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-blue-400 mt-2">
+                              {colecao.completionPercentage}% completa
+                            </div>
+                            {colecao.byRarity && (
+                              <div className="mt-4 space-y-1 text-xs text-left">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400">Comuns:</span>
+                                  <span>{colecao.byRarity.comum || 0}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-green-400">Incomuns:</span>
+                                  <span>{colecao.byRarity.incomum || 0}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-blue-400">Raras:</span>
+                                  <span>{colecao.byRarity.rara || 0}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-purple-400">Épicas:</span>
+                                  <span>{colecao.byRarity.epica || 0}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-orange-400">Lendárias:</span>
+                                  <span>{colecao.byRarity.lendaria || 0}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
+                      )}
 
                       <div className="bg-black/40 p-6 rounded-lg">
                         <h4 className="text-xl font-bold mb-4 text-yellow-400">🏆 Conquistas</h4>
@@ -386,7 +443,7 @@ export default function PaginaPerfil() {
                           <div className="text-sm text-gray-400 mb-3">Conquistas desbloqueadas</div>
                           <div className="w-full bg-gray-700 rounded-full h-3">
                             <div
-                              className="bg-yellow-500 h-3 rounded-full"
+                              className="bg-yellow-500 h-3 rounded-full transition-all duration-300"
                               style={{
                                 width: `${conquistas.length > 0
                                   ? (conquistas.filter((conquista) => conquista.completed).length / conquistas.length) * 100

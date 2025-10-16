@@ -15,15 +15,25 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const playerId = searchParams.get('playerId');
     console.log('[Collection API] playerId parameter:', playerId);
-    if (!playerId) return NextResponse.json({ error: 'playerId required' }, { status: 400 });
+    
+    if (!playerId) {
+      console.log('[Collection API] Missing playerId parameter');
+      return NextResponse.json({ error: 'playerId required' }, { status: 400 });
+    }
 
     const supabase = requireSupabaseAdmin();
+    console.log('[Collection API] Supabase admin client obtained');
     console.log('[Collection API] Querying collections table for playerId:', playerId);
 
-    const { data: row, error } = await supabase.from('collections').select('cards, item_cards').eq('player_id', playerId).maybeSingle();
+    const { data: row, error } = await supabase
+      .from('collections')
+      .select('cards, item_cards')
+      .eq('player_id', playerId)
+      .maybeSingle();
+      
     if (error && error.code !== 'PGRST116') {
       console.error('[Collection API] Error querying collections:', error);
-      return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      return NextResponse.json({ error: 'database_error', details: error.message }, { status: 500 });
     }
 
     console.log('[Collection API] Collection data:', row);
@@ -39,11 +49,11 @@ export async function GET(req) {
       itemCards = itemCards.map((c) => c.id);
     }
 
-    console.log('[Collection API] Returning response:', { cards, itemCards });
+    console.log('[Collection API] Returning response:', { cards: cards.length, itemCards: itemCards.length });
     return NextResponse.json({ cards, itemCards });
   } catch (e) {
     console.error('[Collection API] ERROR in GET:', e);
-    return NextResponse.json({ error: 'internal' }, { status: 500 });
+    return NextResponse.json({ error: 'internal', details: e.message }, { status: 500 });
   }
 }
 

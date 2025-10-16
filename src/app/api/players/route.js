@@ -11,9 +11,16 @@ import { requireSupabaseAdmin } from '@/lib/supabase';
  * - nickname: buscar por nickname
  * - (sem params): listar top 100 por MMR
  */
+console.log('🔑 KEY IN USE:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20) + '...')
+
+console.log('[ENV CHECK]', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ OK' : '❌ Faltando key')
+
 export async function GET(req) {
+  console.log('[Players API] GET request received');
   try {
     const supabase = requireSupabaseAdmin();
+    console.log('[Players API] Supabase admin client obtained');
+    
     const { searchParams } = new URL(req.url);
     
     const id = searchParams.get('id');
@@ -21,15 +28,23 @@ export async function GET(req) {
 
     // Buscar por ID (UUID)
     if (id) {
+      console.log('[Players API] Searching by ID:', id);
       const { data, error } = await supabase
         .from('players')
         .select('*')
         .eq('id', id)
         .maybeSingle();
       
-      if (error) throw error;
-      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      if (error) {
+        console.error('[Players API] Error querying by ID:', error);
+        throw error;
+      }
+      if (!data) {
+        console.log('[Players API] Player not found');
+        return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      }
       
+      console.log('[Players API] Player found:', { id: data.id, nickname: data.nickname });
       return NextResponse.json({ player: data });
     }
 
