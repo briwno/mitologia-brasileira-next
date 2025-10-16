@@ -61,14 +61,27 @@ function prepararItemParaJogo(itemBruto) {
   const estruturaImagens = normalizarEstruturaDeImagens(itemBruto);
   
   // Prepare efeito ensuring it's either a string or an object with valid description
-  const efeitoRaw = primeiroValorDefinido(itemBruto.effect, itemBruto.efeito, itemBruto.effects);
+  const efeitoRaw = primeiroValorDefinido(itemBruto.effects, itemBruto.effect, itemBruto.efeito);
   let efeito = null;
   
   if (efeitoRaw) {
     if (typeof efeitoRaw === 'string') {
       efeito = efeitoRaw;
-    } else if (typeof efeitoRaw === 'object' && (efeitoRaw.descricao || efeitoRaw.description)) {
-      efeito = efeitoRaw;
+    } else if (typeof efeitoRaw === 'object') {
+      // Mapear os campos do banco para o formato esperado pelo componente
+      efeito = {
+        descricao: primeiroValorDefinido(efeitoRaw.description, efeitoRaw.descricao, itemBruto.description),
+        dano: primeiroValorDefinido(efeitoRaw.damage, efeitoRaw.dano),
+        cura: primeiroValorDefinido(efeitoRaw.heal, efeitoRaw.cura, efeitoRaw.regen_per_turn),
+        defesa: primeiroValorDefinido(efeitoRaw.defense, efeitoRaw.defesa),
+        ataque: primeiroValorDefinido(efeitoRaw.attack, efeitoRaw.ataque),
+        duracao: primeiroValorDefinido(efeitoRaw.duration, efeitoRaw.duracao),
+        valor: primeiroValorDefinido(efeitoRaw.value, efeitoRaw.valor),
+        tipo: primeiroValorDefinido(efeitoRaw.type, efeitoRaw.tipo),
+        condicao: primeiroValorDefinido(efeitoRaw.trigger, efeitoRaw.condicao),
+        area_effect: efeitoRaw.area_effect,
+        target: efeitoRaw.target,
+      };
     }
   }
 

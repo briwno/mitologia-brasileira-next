@@ -226,6 +226,18 @@ export default function PaginaInventarioDeCartas() {
     });
   }, [ownedCards, region, category, rarity, search, cardTypeFilter]);
 
+  // Filtrar itens possuídos pelo usuário
+  const byItemId = useMemo(
+    () => new Map(allItems.map((i) => [i.id, i])),
+    [allItems]
+  );
+  const ownedItems = useMemo(() => {
+    if (!isAuthenticated()) return [];
+    if (!Array.isArray(ownedItemIds)) return [];
+    if (ownedItemIds.length === 0) return [];
+    return ownedItemIds.map((id) => byItemId.get(id)).filter(Boolean);
+  }, [ownedItemIds, isAuthenticated, byItemId]);
+
   const filteredItems = useMemo(() => {
     const termoNormalizado = normalizarTextoParaComparacao(search);
     const raridadeFiltro = normalizarRaridade(rarity);
@@ -245,7 +257,7 @@ export default function PaginaInventarioDeCartas() {
       category !== "all" &&
       categoriasValidas.has(categoriaCalculada);
 
-    return allItems.filter((item) => {
+    return ownedItems.filter((item) => {
       if (termoNormalizado) {
         const nomeItem = normalizarTextoParaComparacao(
           primeiroValorDefinido(item.nome, item.name)
@@ -281,7 +293,7 @@ export default function PaginaInventarioDeCartas() {
 
       return true;
     });
-  }, [allItems, search, rarity, category, activeTab]);
+  }, [ownedItems, search, rarity, category, activeTab]);
 
   const totalAvailable = allCards.length;
   const totalOwned = ownedCards.length;

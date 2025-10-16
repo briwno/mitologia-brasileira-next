@@ -73,14 +73,14 @@ CREATE TABLE public.decks (
 CREATE TABLE public.item_cards (
   id text NOT NULL,
   name text NOT NULL,
-  description text,
-  item_type text NOT NULL,
+  description text, -- Descrição do efeito em texto (ex: "Regenera 5 de HP")
+  item_type text NOT NULL, -- Tipo: consumable, equipment, material
   rarity text NOT NULL,
-  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
-  lore text,
+  effects jsonb NOT NULL DEFAULT '{}'::jsonb, -- Efeitos mecânicos estruturados (ex: {"heal": 5, "duration": 2})
+  lore text, -- História/contexto cultural do item
   images jsonb NOT NULL DEFAULT '{}'::jsonb,
-  unlock_condition text,
-  is_tradeable boolean DEFAULT true,
+  unlock_condition text, -- Condição para desbloquear o item
+  is_tradeable boolean DEFAULT true, -- Se pode ser trocado entre jogadores
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT item_cards_pkey PRIMARY KEY (id)

@@ -103,15 +103,63 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
           </p>
         )}
 
-        {/* Effects */}
+        {/* Effects - Detailed */}
         {showEffects && item.efeito && (
-          <div className="text-xs">
-            <div className="text-yellow-300 font-medium mb-1">Efeito:</div>
-            <div className="text-white/90">
-              {typeof item.efeito === 'string' 
-                ? item.efeito 
-                : item.efeito.descricao || item.efeito.description || 'Efeito especial'
-              }
+          <div className="text-xs mt-2 bg-black/40 rounded p-2">
+            <div className="text-yellow-300 font-medium mb-1">⚡ Efeito:</div>
+            <div className="text-white/90 space-y-1">
+              {typeof item.efeito === 'string' ? (
+                <div>{item.efeito}</div>
+              ) : (
+                <>
+                  {/* Description of effect */}
+                  {(item.efeito.descricao || item.efeito.description || item.descricao) && (
+                    <div className="text-white/80 italic mb-1">
+                      {item.efeito.descricao || item.efeito.description || item.descricao}
+                    </div>
+                  )}
+                  
+                  {/* Numeric details */}
+                  <div className="grid grid-cols-2 gap-1 mt-1">
+                    {(item.efeito.dano || item.efeito.damage) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-red-400">⚔️</span>
+                        <span className="font-semibold text-red-300">+{item.efeito.dano || item.efeito.damage}</span>
+                      </div>
+                    )}
+                    {(item.efeito.cura || item.efeito.heal || item.efeito.regen_per_turn) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-green-400">❤️</span>
+                        <span className="font-semibold text-green-300">+{item.efeito.cura || item.efeito.heal || item.efeito.regen_per_turn}</span>
+                      </div>
+                    )}
+                    {(item.efeito.defesa || item.efeito.defense) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-blue-400">🛡️</span>
+                        <span className="font-semibold text-blue-300">+{item.efeito.defesa || item.efeito.defense}</span>
+                      </div>
+                    )}
+                    {(item.efeito.ataque || item.efeito.attack) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-orange-400">⚔️</span>
+                        <span className="font-semibold text-orange-300">+{item.efeito.ataque || item.efeito.attack}</span>
+                      </div>
+                    )}
+                    {(item.efeito.duracao || item.efeito.duration) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-purple-400">⏱️</span>
+                        <span className="font-semibold text-purple-300">{item.efeito.duracao || item.efeito.duration} turnos</span>
+                      </div>
+                    )}
+                    {(item.efeito.valor || item.efeito.value) && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-400">✨</span>
+                        <span className="font-semibold text-yellow-300">{item.efeito.valor || item.efeito.value}</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

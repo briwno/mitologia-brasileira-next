@@ -38,11 +38,13 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
 
   const itemEffect = card?.effects || card?.efeito || null;
   const getEffectDescription = () => {
-    if (!itemEffect) return null;
+    if (!itemEffect) return card?.description || card?.descricao || null;
     if (typeof itemEffect === 'string') return itemEffect;
     return (
       itemEffect.description ||
       itemEffect.descricao ||
+      card?.description ||
+      card?.descricao ||
       itemEffect.text ||
       itemEffect.effect ||
       null
@@ -56,6 +58,12 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
       value: itemEffect.value || itemEffect.valor || null,
       duration: itemEffect.duration || itemEffect.duracao || null,
       trigger: itemEffect.trigger || itemEffect.condicao || null,
+      dano: itemEffect.damage || itemEffect.dano || null,
+      cura: itemEffect.heal || itemEffect.cura || itemEffect.regen_per_turn || null,
+      defesa: itemEffect.defense || itemEffect.defesa || null,
+      ataque: itemEffect.attack || itemEffect.ataque || null,
+      area_effect: itemEffect.area_effect || null,
+      target: itemEffect.target || null,
     };
   };
 
@@ -87,18 +95,101 @@ export default function DetalheDaCarta({ card, onClose = null, mode = 'battle', 
             <div className="space-y-2">
               {isItemCard ? (
                 <>
-                  {effectDescription ? (
+                  {itemEffect ? (
                     <div className="bg-purple-900/30 p-2 sm:p-3 rounded border border-white/10">
-                      <div className="text-xs sm:text-sm text-purple-300 font-semibold mb-1">✨ Efeito Principal</div>
+                      <div className="text-xs sm:text-sm text-purple-300 font-semibold mb-2">⚡ Efeito do Item</div>
+                      
+                      {/* Tipo do efeito */}
                       {effectMeta.type && (
-                        <div className="text-[11px] uppercase tracking-wide text-purple-200 mb-1">{effectMeta.type}</div>
+                        <div className="text-[11px] uppercase tracking-wide text-purple-200 mb-2 px-2 py-1 bg-purple-800/30 rounded inline-block">
+                          {effectMeta.type}
+                        </div>
                       )}
-                      <div className="text-xs sm:text-sm text-gray-200 leading-relaxed">{effectDescription}</div>
-                      <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-gray-300">
-                        {effectMeta.value && <div className="text-yellow-300">⚙️ Valor: {effectMeta.value}</div>}
-                        {effectMeta.duration && <div className="text-cyan-300">⏱️ Duração: {effectMeta.duration}</div>}
-                        {effectMeta.trigger && <div className="text-orange-300">🔁 Condição: {effectMeta.trigger}</div>}
-                      </div>
+                      
+                      {/* Descrição do efeito */}
+                      {effectDescription && (
+                        <div className="text-xs sm:text-sm text-gray-200 leading-relaxed mb-3 italic">
+                          {effectDescription}
+                        </div>
+                      )}
+                      
+                      {/* Valores numéricos detalhados */}
+                      {typeof itemEffect === 'object' && (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {(effectMeta.dano || itemEffect.dano || itemEffect.damage) && (
+                            <div className="flex items-center gap-2 bg-red-900/30 p-2 rounded">
+                              <span className="text-red-400 text-lg">⚔️</span>
+                              <div>
+                                <div className="text-[10px] text-red-300/70 uppercase">Dano</div>
+                                <div className="font-bold text-red-300">+{effectMeta.dano || itemEffect.dano || itemEffect.damage}</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.cura || itemEffect.cura || itemEffect.heal || itemEffect.regen_per_turn) && (
+                            <div className="flex items-center gap-2 bg-green-900/30 p-2 rounded">
+                              <span className="text-green-400 text-lg">❤️</span>
+                              <div>
+                                <div className="text-[10px] text-green-300/70 uppercase">Cura</div>
+                                <div className="font-bold text-green-300">+{effectMeta.cura || itemEffect.cura || itemEffect.heal || itemEffect.regen_per_turn}</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.defesa || itemEffect.defesa || itemEffect.defense) && (
+                            <div className="flex items-center gap-2 bg-blue-900/30 p-2 rounded">
+                              <span className="text-blue-400 text-lg">🛡️</span>
+                              <div>
+                                <div className="text-[10px] text-blue-300/70 uppercase">Defesa</div>
+                                <div className="font-bold text-blue-300">+{effectMeta.defesa || itemEffect.defesa || itemEffect.defense}</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.ataque || itemEffect.ataque || itemEffect.attack) && (
+                            <div className="flex items-center gap-2 bg-orange-900/30 p-2 rounded">
+                              <span className="text-orange-400 text-lg">⚔️</span>
+                              <div>
+                                <div className="text-[10px] text-orange-300/70 uppercase">Ataque</div>
+                                <div className="font-bold text-orange-300">+{effectMeta.ataque || itemEffect.ataque || itemEffect.attack}</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.duration || itemEffect.duracao || itemEffect.duration) && (
+                            <div className="flex items-center gap-2 bg-purple-900/30 p-2 rounded">
+                              <span className="text-purple-400 text-lg">⏱️</span>
+                              <div>
+                                <div className="text-[10px] text-purple-300/70 uppercase">Duração</div>
+                                <div className="font-bold text-purple-300">{effectMeta.duration || itemEffect.duracao || itemEffect.duration} turnos</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.value || itemEffect.valor || itemEffect.value) && (
+                            <div className="flex items-center gap-2 bg-yellow-900/30 p-2 rounded">
+                              <span className="text-yellow-400 text-lg">✨</span>
+                              <div>
+                                <div className="text-[10px] text-yellow-300/70 uppercase">Valor</div>
+                                <div className="font-bold text-yellow-300">{effectMeta.value || itemEffect.valor || itemEffect.value}</div>
+                              </div>
+                            </div>
+                          )}
+                          {(effectMeta.trigger || itemEffect.condicao || itemEffect.trigger) && (
+                            <div className="col-span-2 flex items-center gap-2 bg-orange-900/30 p-2 rounded">
+                              <span className="text-orange-400 text-lg">🔁</span>
+                              <div>
+                                <div className="text-[10px] text-orange-300/70 uppercase">Condição</div>
+                                <div className="text-xs text-orange-300">{effectMeta.trigger || itemEffect.condicao || itemEffect.trigger}</div>
+                              </div>
+                            </div>
+                          )}
+                          {itemEffect.area_effect && (
+                            <div className="col-span-2 flex items-center gap-2 bg-cyan-900/30 p-2 rounded">
+                              <span className="text-cyan-400 text-lg">🌊</span>
+                              <div>
+                                <div className="text-[10px] text-cyan-300/70 uppercase">Área de Efeito</div>
+                                <div className="text-xs text-cyan-300">Atinge {itemEffect.target || 'múltiplos alvos'}</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-xs text-gray-400">Nenhum efeito configurado para este item.</div>
