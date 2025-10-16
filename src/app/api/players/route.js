@@ -115,7 +115,7 @@ export async function POST(req) {
       avatar_url: avatar_url || '/images/avatars/default.png',
       level: 1,
       xp: 0,
-      mmr: 1000,
+      mmr: 1,
       coins: 100,
       title: 'Aspirante',
       banned: false

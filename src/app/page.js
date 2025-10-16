@@ -219,12 +219,26 @@ export default function Inicio() {
               />
             </div>
             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/10">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
-              {usuario?.name?.charAt(0)?.toUpperCase() || 'BR'}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
+              {usuario?.avatar_url ? (
+                <Image
+                  src={usuario.avatar_url}
+                  alt={`Avatar de ${usuario?.nickname || usuario?.name || 'Jogador'}`}
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = usuario?.name?.charAt(0)?.toUpperCase() || 'BR';
+                  }}
+                />
+              ) : (
+                <span>{usuario?.name?.charAt(0)?.toUpperCase() || usuario?.nickname?.charAt(0)?.toUpperCase() || 'BR'}</span>
+              )}
             </div>
             <div className="hidden sm:block">
               <div className="text-white font-bold text-sm flex items-center gap-2">
-                {usuario?.username || usuario?.name || 'Convidado'}
+                {usuario?.nickname || usuario?.name || 'Convidado'}
                 {usuario?.title && (
                   <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
                     {usuario.title}
