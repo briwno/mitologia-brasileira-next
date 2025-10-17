@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ProvedoresAplicacao from "./providers";
 import BarraNavegacaoGlobal from "@/components/UI/GlobalNav";
+import { Analytics } from "@vercel/analytics/next"
 
 const fonteGeistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function LayoutPrincipal({ children }) {
       >
   <ProvedoresAplicacao>
     {children}
+    <Analytics />
     <BarraNavegacaoGlobal />
   </ProvedoresAplicacao>
   {/* Marca d'água global com a versão */}
