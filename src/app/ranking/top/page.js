@@ -161,15 +161,20 @@ export default function PaginaTopJogadores() {
 									<span className="col-span-1 font-bold text-white/90">#{registro.posicao}</span>
 									<div className="col-span-2 flex items-center gap-3">
 										<div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-											{registro.avatarUrl ? (
+											{registro.avatarUrl && registro.avatarUrl.startsWith('http') ? (
 												<Image
 													src={registro.avatarUrl}
 													alt={registro.nomeUsuario}
 													width={40}
 													height={40}
 													className="w-full h-full object-cover"
+													onError={(e) => {
+														e.currentTarget.style.display = 'none';
+													}}
+													unoptimized
 												/>
-											) : (
+											) : null}
+											{(!registro.avatarUrl || !registro.avatarUrl.startsWith('http')) && (
 												<span>{registro.nomeUsuario.charAt(0).toUpperCase()}</span>
 											)}
 										</div>

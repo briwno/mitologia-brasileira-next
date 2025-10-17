@@ -78,14 +78,17 @@ export async function GET(req) {
     // Listar top players (ranking)
     const { data, error } = await supabase
       .from('players')
-      .select('id, nickname, avatar_url, level, xp, mmr, title, coins')
+      .select('id, nickname, avatar_url, level, xp, mmr, titulo_selecionado, coins')
       .eq('banned', false)
       .order('mmr', { ascending: false })
       .order('level', { ascending: false })
       .order('xp', { ascending: false })
       .limit(100);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Players API] Error listing players:', error);
+      throw error;
+    }
 
     return NextResponse.json({ players: data || [] });
 
