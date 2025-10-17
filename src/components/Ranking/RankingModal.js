@@ -113,18 +113,10 @@ export default function RankingModal({ onClose }) {
         <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(88vh - 64px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CartaoDeModo
-              title="Seu Ranque"
-              iconName="medal"
-              subtitle="Veja sua posição atual"
-              href="/ranking"
-              imageSrc="/images/backgrounds/ranque-background.jpg"
-              simboloRanque="🥉"
-            />
-            <CartaoDeModo
               title="Top Jogadores"
-              iconName="calendar"
+              iconName="trophy"
               subtitle="Melhores jogadores por pontuação"
-              href="/ranking/"
+              href="/ranking/top"
               imageSrc="/images/backgrounds/semanal-background.jpg"
             />
             <CartaoDeModo
@@ -134,6 +126,13 @@ export default function RankingModal({ onClose }) {
               href="/ranking/rewards"
               imageSrc="/images/backgrounds/recompensas-background.jpg"
             />
+            <div className="relative group">
+              <div className="h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-hidden bg-black/40 border border-white/10 flex flex-col items-center justify-center opacity-50 grayscale">
+                <div className="text-6xl mb-4">🏆</div>
+                <div className="text-xl font-bold text-white/70">Campeonatos</div>
+                <div className="text-sm text-white/50 mt-2">Em breve</div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-2">
