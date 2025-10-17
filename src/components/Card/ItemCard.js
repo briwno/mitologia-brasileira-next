@@ -26,7 +26,6 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
 
   const rarity = (item.raridade || 'COMUM').toUpperCase();
   const style = rarityStyles[rarity] || rarityStyles['COMUM'];
-  const typeIcon = typeIcons[item.tipo] || '📦';
 
   // Get best available image or use placeholder
   const imgSrc = item.imagem || '/images/placeholder.svg';
@@ -57,29 +56,15 @@ export default function ItemCard({ item, onClick, className = '', showEffects = 
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
             <div className="text-center text-white/70">
-              <div className="text-4xl mb-2">{typeIcon}</div>
               <div className="text-xs px-2">Sem Imagem</div>
             </div>
           </div>
         )}
 
-        {/* Type Badge */}
-        <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 text-white text-xs font-medium flex items-center gap-1">
-          <span>{typeIcon}</span>
-          <span className="hidden sm:inline">{item.tipo}</span>
-        </div>
-
         {/* Rarity Badge */}
         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1">
           <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${style.split(' ')[0]}`} />
         </div>
-
-        {/* Owned Indicator */}
-        {isOwned && (
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-600/90 backdrop-blur-sm rounded-full px-2 py-1 text-white text-xs font-medium">
-            ✓ Possuído
-          </div>
-        )}
 
         {/* Tradeable Indicator */}
         {item.isTradeable === false && (

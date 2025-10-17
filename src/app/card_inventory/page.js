@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import LayoutDePagina from "@/components/UI/PageLayout";
 import DeckBuilder from "@/components/Deck/DeckBuilder";
 import { useAuth } from "@/hooks/useAuth";
@@ -369,64 +370,78 @@ export default function PaginaInventarioDeCartas() {
 
         {/* Resumo Rápido */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-gray-600/30">
-            <div className="text-sm text-gray-400">Cartas Coletadas</div>
-            <div className="text-2xl font-bold">
-              {totalOwned}/{totalAvailable}
+          <div className="bg-gradient-to-br from-blue-600/20 to-blue-900/40 backdrop-blur-sm rounded-xl p-6 border-2 border-blue-500/50 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-blue-200 font-semibold">📚 Coleção</div>
+              <div className="text-xs px-2 py-1 bg-blue-500/30 rounded-full text-blue-200">
+                {totalAvailable > 0 ? Math.round((totalOwned / totalAvailable) * 100) : 0}%
+              </div>
             </div>
-            <div className="text-xs text-gray-500">Progresso da Coleção</div>
-          </div>
-          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-gray-600/30">
-            <div className="text-sm text-gray-400">Itens</div>
-            <div className="text-2xl font-bold">{allItems.length}</div>
-            <div className="text-xs text-gray-500">
-              Equipamentos e Consumíveis
+            <div className="text-3xl font-bold text-white mb-1">
+              {totalOwned}<span className="text-xl text-blue-300">/{totalAvailable}</span>
+            </div>
+            <div className="text-xs text-blue-300">Cartas Coletadas</div>
+            {/* Barra de progresso */}
+            <div className="mt-3 h-2 bg-black/30 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+                style={{ width: `${totalAvailable > 0 ? (totalOwned / totalAvailable) * 100 : 0}%` }}
+              />
             </div>
           </div>
-          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-gray-600/30">
-            <div className="text-sm text-gray-400 mb-2">Ações Rápidas</div>
-            <div className="text-xs text-gray-400 mb-2 space-y-1">
-              <div className="flex justify-between">
-                <span>🔮 Lendas:</span>
-                <span
-                  className={
-                    legendsCount >= 5 ? "text-green-400" : "text-yellow-400"
-                  }
-                >
-                  {legendsCount}/5+
+
+          <div className="bg-gradient-to-br from-purple-600/20 to-purple-900/40 backdrop-blur-sm rounded-xl p-6 border-2 border-purple-500/50 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-purple-200 font-semibold">📦 Inventário</div>
+              <div className="text-xs px-2 py-1 bg-purple-500/30 rounded-full text-purple-200">
+                Total
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-1">
+              {allItems.length}
+            </div>
+            <div className="text-xs text-purple-300">Itens Disponíveis</div>
+            {/* Stats adicionais */}
+            <div className="mt-3 flex gap-2 text-xs">
+              <div className="px-2 py-1 bg-purple-500/20 rounded">⚔️ Equipamentos</div>
+              <div className="px-2 py-1 bg-purple-500/20 rounded">🧪 Consumíveis</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-600/20 to-green-900/40 backdrop-blur-sm rounded-xl p-6 border-2 border-green-500/50 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-green-200 font-semibold">⚔️ Deck Builder</div>
+              <div className={`text-xs px-2 py-1 rounded-full ${
+                canBuildDeck ? 'bg-green-500/30 text-green-200' : 'bg-yellow-500/30 text-yellow-200'
+              }`}>
+                {canBuildDeck ? 'Pronto!' : 'Faltam cartas'}
+              </div>
+            </div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-green-300">🔮 Lendas</span>
+                <span className={`text-sm font-bold ${
+                  legendsCount >= 5 ? "text-green-400" : "text-yellow-400"
+                }`}>
+                  {legendsCount}/5
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span>⚔️ Itens:</span>
-                <span
-                  className={
-                    itemsCount >= 20 ? "text-green-400" : "text-yellow-400"
-                  }
-                >
-                  {itemsCount}/20+
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-green-300">⚔️ Itens</span>
+                <span className={`text-sm font-bold ${
+                  itemsCount >= 20 ? "text-green-400" : "text-yellow-400"
+                }`}>
+                  {itemsCount}/20
                 </span>
               </div>
             </div>
             <button
               onClick={() => setShowDeckBuilder(true)}
-              className="w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 rounded-lg text-sm font-semibold transition-all"
+              disabled={!canBuildDeck}
+              className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-600 disabled:to-gray-700 rounded-lg text-sm font-bold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ⚔️ Montar Deck
+              {canBuildDeck ? '🎯 Montar Deck' : '🔒 Colete mais cartas'}
             </button>
-            <div className="text-xs text-gray-500 mt-1 text-center">
-              {!canBuildDeck ? (
-                <div>
-                  {legendsCount < 5 && (
-                    <div>Precisa de {5 - legendsCount} lendas</div>
-                  )}
-                  {itemsCount < 20 && (
-                    <div>Precisa de {20 - itemsCount} itens</div>
-                  )}
-                </div>
-              ) : (
-                "Criar deck de 25 cartas"
-              )}
-            </div>
           </div>
         </div>
 
@@ -556,11 +571,6 @@ export default function PaginaInventarioDeCartas() {
                             "Comum"
                           );
                           const frame = obterClassesDeRaridade(rotuloRaridade);
-                          const classesFrame = frame.split(" ");
-                          const frameText = valorComPadrao(
-                            classesFrame[1],
-                            "text-gray-400"
-                          );
                           const isLegend = ehCartaDeLenda(card);
                           const isItem = ehCartaDeItem(card);
                           const nomeCarta = valorComPadrao(
@@ -578,14 +588,6 @@ export default function PaginaInventarioDeCartas() {
                             ),
                             "Categoria desconhecida"
                           );
-                          const possuiStatus = [
-                            card.ataque,
-                            card.attack,
-                            card.defesa,
-                            card.defense,
-                            card.vida,
-                            card.life,
-                          ].some(valorFoiDefinido);
                           const ataqueCarta = valorComPadrao(
                             primeiroValorDefinido(card.ataque, card.attack),
                             "-"
@@ -599,74 +601,90 @@ export default function PaginaInventarioDeCartas() {
                             "-"
                           );
 
+                          // Cores por raridade
+                          const rarityColors = {
+                            'Mítico': 'from-red-600/20 to-red-900/40 border-red-500/50',
+                            'Lendário': 'from-orange-600/20 to-orange-900/40 border-orange-500/50',
+                            'Épico': 'from-purple-600/20 to-purple-900/40 border-purple-500/50',
+                            'Raro': 'from-blue-600/20 to-blue-900/40 border-blue-500/50',
+                            'Comum': 'from-gray-600/20 to-gray-900/40 border-gray-500/50'
+                          };
+                          
+                          const cardBg = rarityColors[rotuloRaridade] || rarityColors['Comum'];
+
                           return (
                             <div
                               key={card.id}
                               onClick={() => setSelectedCard(card)}
-                              className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 border-2 transition-all hover:scale-105 cursor-pointer ${frame} relative`}
+                              className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 hover:z-10`}
                             >
-                              {/* Badge de tipo de carta */}
-                              <div className="absolute top-2 right-2">
-                                {isLegend && (
-                                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-xs">
-                                    🔮
-                                  </div>
-                                )}
-                                {isItem && (
-                                  <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs">
-                                    ⚔️
-                                  </div>
-                                )}
-                              </div>
+                              {/* Card Container */}
+                              <div className={`relative rounded-xl overflow-hidden bg-gradient-to-br ${cardBg} border-2 backdrop-blur-sm`}>
+                                {/* Imagem da Carta */}
+                                <div className="relative aspect-[3/4] overflow-hidden bg-black/30">
+                                  {card.imagens?.retrato || card.images?.portrait ? (
+                                    <Image
+                                      src={card.imagens?.retrato || card.images?.portrait}
+                                      alt={`${nomeCarta} - ${regiaoCarta}`}
+                                      fill
+                                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                      quality={90}
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                                      <div className="text-center text-white/70">
+                                        <div className="text-4xl mb-2">🔮</div>
+                                        <div className="text-xs px-2">Sem Imagem</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Gradiente overlay para melhor legibilidade */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                </div>
 
-                              <div className="text-center">
-                                <div className="mb-3">
-                                  <CardImage
-                                    card={card}
-                                    size="medium"
-                                    className="mx-auto"
-                                  />
-                                </div>
-                                <h4 className="text-sm font-bold mb-1">
-                                  {nomeCarta}
-                                </h4>
-                                <div className="text-xs text-gray-400 mb-1">
-                                  {regiaoCarta} • {categoriaCarta}
-                                </div>
-                                <div
-                                  className={`text-xs font-semibold mb-2 ${frameText}`}
-                                >
-                                  {rotuloRaridade}
-                                </div>
-                                {possuiStatus && (
-                                  <div className="grid grid-cols-3 gap-1 text-xs">
-                                    <div className="bg-red-900/40 p-1 rounded">
-                                      ATQ: {ataqueCarta}
-                                    </div>
-                                    <div className="bg-blue-900/40 p-1 rounded">
-                                      DEF: {defesaCarta}
-                                    </div>
-                                    <div className="bg-green-900/40 p-1 rounded">
-                                      VIDA: {vidaCarta}
+                                {/* Informações da Carta */}
+                                <div className="p-3 space-y-2">
+                                  {/* Nome */}
+                                  <h3 className="font-bold text-sm line-clamp-1 text-white">
+                                    {nomeCarta}
+                                  </h3>
+
+                                  {/* Região e Categoria */}
+                                  <div className="flex items-center gap-1 text-xs text-gray-300">
+                                    <span className="truncate">{regiaoCarta}</span>
+                                    <span>•</span>
+                                    <span className="truncate">{categoriaCarta}</span>
+                                  </div>
+
+                                  {/* Raridade */}
+                                  <div className="flex justify-center">
+                                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${frame.split(' ')[1]} ${frame.split(' ')[0]}`}>
+                                      {rotuloRaridade}
                                     </div>
                                   </div>
-                                )}
-                                {/* Badge específica do inventário */}
-                                <div className="mt-2 flex gap-1 justify-center">
-                                  <div className="text-[10px] inline-block px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300 border border-emerald-700/50">
-                                    Possuída
-                                  </div>
-                                  {isLegend && (
-                                    <div className="text-[10px] inline-block px-2 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/50">
-                                      Lenda
-                                    </div>
-                                  )}
-                                  {isItem && (
-                                    <div className="text-[10px] inline-block px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/50">
-                                      Item
+
+                                  {/* Stats */}
+                                  {(ataqueCarta !== "-" || defesaCarta !== "-" || vidaCarta !== "-") && (
+                                    <div className="grid grid-cols-3 gap-1 text-xs pt-2 border-t border-white/10">
+                                      <div className="text-center">
+                                        <div className="text-red-400 font-bold">ATQ</div>
+                                        <div className="text-white">{ataqueCarta}</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-blue-400 font-bold">DEF</div>
+                                        <div className="text-white">{defesaCarta}</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-green-400 font-bold">VIDA</div>
+                                        <div className="text-white">{vidaCarta}</div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Hover Effect */}
+                                <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors pointer-events-none" />
                               </div>
                             </div>
                           );
