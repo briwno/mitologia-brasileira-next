@@ -38,15 +38,33 @@ export async function GET(req) {
 
     console.log('[Collection API] Collection data:', row);
 
-    // Converter formato: [{ id: 'cur001' }] -> ['cur001']
+    // Novo formato: [{ id: 'cur001', quantidade: 1 }, { id: 'boi001', quantidade: 2 }]
+    // Extrair apenas IDs únicos (quantidade é para inventário, não deck)
+    // Filtrar objetos inválidos sem 'id'
     let cards = row?.cards || [];
-    if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-      cards = cards.map((c) => c.id);
+    if (Array.isArray(cards) && cards.length > 0) {
+      if (typeof cards[0] === 'object') {
+        // Filtrar apenas objetos válidos com 'id' e extrair IDs únicos
+        cards = cards
+          .filter(c => c && c.id) // Remove objetos sem ID
+          .map(c => c.id);
+        cards = [...new Set(cards)]; // Remove duplicatas
+      } else if (typeof cards[0] === 'string') {
+        cards = [...new Set(cards)]; // Já são strings, apenas remove duplicatas
+      }
     }
 
     let itemCards = row?.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-      itemCards = itemCards.map((c) => c.id);
+    if (Array.isArray(itemCards) && itemCards.length > 0) {
+      if (typeof itemCards[0] === 'object') {
+        // Filtrar apenas objetos válidos com 'id' e extrair IDs únicos
+        itemCards = itemCards
+          .filter(c => c && c.id) // Remove objetos sem ID
+          .map(c => c.id);
+        itemCards = [...new Set(itemCards)]; // Remove duplicatas
+      } else if (typeof itemCards[0] === 'string') {
+        itemCards = [...new Set(itemCards)]; // Já são strings, apenas remove duplicatas
+      }
     }
 
     console.log('[Collection API] Returning response:', { cards: cards.length, itemCards: itemCards.length });
@@ -80,15 +98,25 @@ export async function POST(req) {
       return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
     
-    // Converter resposta para formato esperado
+    // Converter resposta para formato esperado, filtrando objetos inválidos
     let cards = data.cards || [];
-    if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-      cards = cards.map((c) => c.id);
+    if (Array.isArray(cards) && cards.length > 0) {
+      if (typeof cards[0] === 'object') {
+        cards = cards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+        cards = [...new Set(cards)];
+      }
     }
     
     let itemCards = data.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-      itemCards = itemCards.map((c) => c.id);
+    if (Array.isArray(itemCards) && itemCards.length > 0) {
+      if (typeof itemCards[0] === 'object') {
+        itemCards = itemCards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+        itemCards = [...new Set(itemCards)];
+      }
     }
     
     return NextResponse.json({ cards, itemCards, created: false });
@@ -110,15 +138,23 @@ export async function PATCH(req) {
       return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
     
-    // Converter formato existente: [{ id: 'cur001' }] -> ['cur001']
+    // Converter formato existente, filtrando objetos inválidos
     let nextCards = existing?.cards || [];
-    if (Array.isArray(nextCards) && nextCards.length > 0 && typeof nextCards[0] === 'object' && nextCards[0].id) {
-      nextCards = nextCards.map((c) => c.id);
+    if (Array.isArray(nextCards) && nextCards.length > 0) {
+      if (typeof nextCards[0] === 'object') {
+        nextCards = nextCards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+      }
     }
 
     let nextItemCards = existing?.item_cards || [];
-    if (Array.isArray(nextItemCards) && nextItemCards.length > 0 && typeof nextItemCards[0] === 'object' && nextItemCards[0].id) {
-      nextItemCards = nextItemCards.map((c) => c.id);
+    if (Array.isArray(nextItemCards) && nextItemCards.length > 0) {
+      if (typeof nextItemCards[0] === 'object') {
+        nextItemCards = nextItemCards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+      }
     }
 
     // Operações com cards normais
@@ -156,15 +192,25 @@ export async function PATCH(req) {
       return NextResponse.json({ error: 'database_error' }, { status: 500 });
     }
     
-    // Converter resposta para formato esperado
+    // Converter resposta para formato esperado, filtrando objetos inválidos
     let cards = data.cards || [];
-    if (Array.isArray(cards) && cards.length > 0 && typeof cards[0] === 'object' && cards[0].id) {
-      cards = cards.map((c) => c.id);
+    if (Array.isArray(cards) && cards.length > 0) {
+      if (typeof cards[0] === 'object') {
+        cards = cards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+        cards = [...new Set(cards)];
+      }
     }
     
     let itemCards = data.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0 && typeof itemCards[0] === 'object' && itemCards[0].id) {
-      itemCards = itemCards.map((c) => c.id);
+    if (Array.isArray(itemCards) && itemCards.length > 0) {
+      if (typeof itemCards[0] === 'object') {
+        itemCards = itemCards
+          .filter(c => c && c.id)
+          .map(c => c.id);
+        itemCards = [...new Set(itemCards)];
+      }
     }
     
     return NextResponse.json({ cards, itemCards, created: !existing });

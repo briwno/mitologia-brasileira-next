@@ -251,8 +251,16 @@ async function abrirBoosterHandler(supabase, playerId, boosterInicial = false) {
 
   if (colecaoError) throw colecaoError;
 
-  const cartasAtuais = colecao?.cards || [];
-  const itensAtuais = colecao?.item_cards || [];
+  // Filtrar objetos inválidos da coleção existente
+  let cartasAtuais = colecao?.cards || [];
+  if (Array.isArray(cartasAtuais)) {
+    cartasAtuais = cartasAtuais.filter(c => c && c.id); // Remove objetos sem ID
+  }
+
+  let itensAtuais = colecao?.item_cards || [];
+  if (Array.isArray(itensAtuais)) {
+    itensAtuais = itensAtuais.filter(c => c && c.id); // Remove objetos sem ID
+  }
 
   // Adicionar cartas obtidas (permitindo duplicadas)
   resultado.cartas.forEach((carta) => {
@@ -312,6 +320,12 @@ function consolidarCartas(cartas) {
   const mapa = new Map();
   
   cartas.forEach((item) => {
+    // Ignorar objetos inválidos sem ID
+    if (!item || !item.id) {
+      console.warn('[Boosters] Objeto inválido ignorado:', item);
+      return;
+    }
+    
     const id = item.id;
     const quantidadeAtual = mapa.get(id) || 0;
     mapa.set(id, quantidadeAtual + (item.quantidade || 1));
