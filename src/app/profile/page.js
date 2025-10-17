@@ -8,10 +8,12 @@ import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
 import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import { useMMR } from '@/hooks/useMMR';
 import LayoutDePagina from '@/components/UI/PageLayout';
+import ModalEditarPerfil from '@/components/Profile/EditProfileModal';
 import { calcularRankingPorMMR, calcularProgressoRanking, obterIconeRanking, obterCorRanking } from '@/utils/mmrUtils';
 
 export default function PaginaPerfil() {
   const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
+  const [modalEditarAberto, definirModalEditarAberto] = useState(false);
   const contextoAutenticacao = usarAutenticacao();
   const { user: usuario, isAuthenticated: verificarAutenticacao } = contextoAutenticacao || {};
   
@@ -26,10 +28,22 @@ export default function PaginaPerfil() {
     levelProgress: progressoNivel,
     loading: carregando,
     error: erro,
+    refetch: recarregarDados,
   } = informacoesJogador || {};
   
   // Hook de MMR para dados de ranking
   const { ranking: dadosRanking, mmr: mmrDoHook, level: levelDoHook } = useMMR();
+
+  const aoAtualizarPerfil = (dadosAtualizados) => {
+    // Atualizar o contexto de autenticação se necessário
+    if (contextoAutenticacao?.updateUser) {
+      contextoAutenticacao.updateUser(dadosAtualizados);
+    }
+    // Recarregar dados do jogador
+    if (recarregarDados) {
+      recarregarDados();
+    }
+  };
 
   let estaAutenticado;
   if (typeof verificarAutenticacao === 'function') {
@@ -171,9 +185,11 @@ export default function PaginaPerfil() {
             </h1>
 
             {/* Título do jogador */}
-            {usuario?.title && (
-              <p className="text-lg text-cyan-400 mb-2 italic">
-                {usuario.title}
+            {usuario?.titulo_info && (
+              <p className="text-lg mb-2 italic flex items-center justify-center gap-2">
+                <span style={{ color: usuario.titulo_info.cor || '#3B82F6' }}>
+                  {usuario.titulo_info.icone} {usuario.titulo_info.nome}
+                </span>
               </p>
             )}
 
@@ -219,7 +235,10 @@ export default function PaginaPerfil() {
             </div>
             
             {/* Botão de editar perfil */}
-            <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm font-semibold">
+            <button 
+              onClick={() => definirModalEditarAberto(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm font-semibold"
+            >
               ✏️ Editar Perfil
             </button>
           </div>
@@ -612,6 +631,14 @@ export default function PaginaPerfil() {
           </Link>
         </div>
       </div>
+
+      {/* Modal de Edição de Perfil */}
+      <ModalEditarPerfil
+        isOpen={modalEditarAberto}
+        onClose={() => definirModalEditarAberto(false)}
+        player={usuario}
+        onUpdate={aoAtualizarPerfil}
+      />
     </LayoutDePagina>
   );
 }

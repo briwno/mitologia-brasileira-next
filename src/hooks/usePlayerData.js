@@ -173,6 +173,7 @@ export function usePlayerData() {
     updateCoins,
     spendCoins,
     addCoins,
-    refreshCoins: fetchCoins
+    refreshCoins: fetchCoins,
+    refetch: fetchCoins // Alias para compatibilidade
   };
 }

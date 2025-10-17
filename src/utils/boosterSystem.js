@@ -7,46 +7,43 @@ import { valorComPadrao, primeiroValorDefinido } from './valores';
  * Constantes do sistema de boosters
  */
 export const BOOSTER_CONFIG = {
-  // Tamanhos de boosters
-  TAMANHOS: {
-    PEQUENO: 3,
-    MEDIO: 5,
-    GRANDE: 10,
+  // Cada booster contém 5 cartas: 4 itens + 1 lenda
+  CARTAS_POR_BOOSTER: 5,
+  ITENS_POR_BOOSTER: 4,
+  LENDAS_POR_BOOSTER: 1,
+
+  // Taxa de drop base para LENDAS (a carta especial) - sem pity
+  // Lendas só podem ser Épicas, Lendárias ou Míticas
+  DROP_RATES_LENDAS: {
+    MITICO: 0.005,      // 0.5%
+    LENDARIO: 0.045,    // 4.5%
+    EPICO: 0.950,       // 95% (resto da probabilidade)
   },
 
-  // Taxa de drop base (sem pity)
-  DROP_RATES: {
-    MITICO: 0.006,      // 0.6%
-    LENDARIO: 0.051,    // 5.1%
-    EPICO: 0.134,       // 13.4%
-    RARO: 0.309,        // 30.9%
+  // Taxa de drop para ITENS (as 4 cartas comuns do booster)
+  // Itens podem ser de Comum a Lendário
+  DROP_RATES_ITENS: {
+    LENDARIO: 0.02,     // 2%
+    EPICO: 0.08,        // 8%
+    RARO: 0.15,         // 15%
     INCOMUM: 0.35,      // 35%
-    COMUM: 0.15,        // 15%
+    COMUM: 0.40,        // 40%
   },
 
-  // Pity system (garantias)
+  // Pity system (garantias) - só se aplica à carta de LENDA
   PITY: {
-    EPICO_SOFT: 10,     // Após 10 pulls sem épico, chance aumenta
-    EPICO_HARD: 15,     // Garantia de épico em 15 pulls
-    LENDARIO_SOFT: 70,  // Após 70 pulls sem lendário, chance aumenta
-    LENDARIO_HARD: 90,  // Garantia de lendário em 90 pulls
-    MITICO_SOFT: 270,   // Após 270 pulls sem mítico, chance aumenta
-    MITICO_HARD: 300,   // Garantia de mítico em 300 pulls
+    MITICO_GARANTIDO: 20, // Garantia de mítico a cada 20 boosters sem mítico
+    SOFT_PITY_START: 15,  // Soft pity começa em 15 boosters
   },
 
-  // Multiplicadores de pity soft
-  SOFT_PITY_MULTIPLIER: {
-    EPICO: 5,           // 5x chance após soft pity
-    LENDARIO: 10,       // 10x chance após soft pity
-    MITICO: 15,         // 15x chance após soft pity
-  },
+  // Multiplicador de chance de mítico durante soft pity
+  SOFT_PITY_MULTIPLIER: 2.5, // 2.5x chance por booster após 15
 
-  // Preços em moedas
-  PRECOS: {
-    PEQUENO: 150,       // 3 cartas
-    MEDIO: 400,         // 5 cartas (20% desconto)
-    GRANDE: 800,        // 10 cartas (47% desconto)
-  },
+  // Preço de 1 booster em moedas
+  PRECO_BOOSTER: 100,
+  
+  // Booster inicial gratuito
+  BOOSTER_INICIAL_CARTAS: 5, // Mesmo formato: 4 itens + 1 lenda
 };
 
 /**
@@ -55,46 +52,34 @@ export const BOOSTER_CONFIG = {
 const ORDEM_RARIDADE = ['COMUM', 'INCOMUM', 'RARO', 'EPICO', 'LENDARIO', 'MITICO'];
 
 /**
- * Calcula a raridade com base no pity counter
- * @param {Object} pityCounters - Contadores de pity do jogador
- * @returns {string} - Raridade sorteada
+ * Raridades válidas apenas para cartas de LENDA
  */
-export function calcularRaridadeComPity(pityCounters) {
-  const contadores = valorComPadrao(pityCounters, {
-    epico: 0,
-    lendario: 0,
-    mitico: 0,
-  });
+const RARIDADES_LENDAS = ['EPICO', 'LENDARIO', 'MITICO'];
 
-  // Hard pity - garantia absoluta
-  if (contadores.mitico >= BOOSTER_CONFIG.PITY.MITICO_HARD) {
+/**
+ * Raridades válidas para ITENS
+ */
+const RARIDADES_ITENS = ['COMUM', 'INCOMUM', 'RARO', 'EPICO', 'LENDARIO'];
+
+/**
+ * Calcula a raridade de uma LENDA com base no pity counter
+ * Lendas só podem ser Épicas, Lendárias ou Míticas
+ * @param {number} pityMitico - Contador de boosters sem mítico
+ * @returns {string} - Raridade sorteada (EPICO, LENDARIO ou MITICO)
+ */
+export function calcularRaridadeLenda(pityMitico) {
+  // Hard pity - garantia absoluta no 20º booster
+  if (pityMitico >= BOOSTER_CONFIG.PITY.MITICO_GARANTIDO) {
     return 'MITICO';
   }
-  if (contadores.lendario >= BOOSTER_CONFIG.PITY.LENDARIO_HARD) {
-    return 'LENDARIO';
-  }
-  if (contadores.epico >= BOOSTER_CONFIG.PITY.EPICO_HARD) {
-    return 'EPICO';
-  }
 
-  // Calcular chances com soft pity
-  let chances = { ...BOOSTER_CONFIG.DROP_RATES };
+  // Calcular chances base
+  let chances = { ...BOOSTER_CONFIG.DROP_RATES_LENDAS };
 
-  // Soft pity para épico
-  if (contadores.epico >= BOOSTER_CONFIG.PITY.EPICO_SOFT) {
-    const multiplicador = BOOSTER_CONFIG.SOFT_PITY_MULTIPLIER.EPICO;
-    chances.EPICO *= multiplicador;
-  }
-
-  // Soft pity para lendário
-  if (contadores.lendario >= BOOSTER_CONFIG.PITY.LENDARIO_SOFT) {
-    const multiplicador = BOOSTER_CONFIG.SOFT_PITY_MULTIPLIER.LENDARIO;
-    chances.LENDARIO *= multiplicador;
-  }
-
-  // Soft pity para mítico
-  if (contadores.mitico >= BOOSTER_CONFIG.PITY.MITICO_SOFT) {
-    const multiplicador = BOOSTER_CONFIG.SOFT_PITY_MULTIPLIER.MITICO;
+  // Soft pity - aumenta chance de mítico após 15 boosters
+  if (pityMitico >= BOOSTER_CONFIG.PITY.SOFT_PITY_START) {
+    const boostersAposSoft = pityMitico - BOOSTER_CONFIG.PITY.SOFT_PITY_START + 1;
+    const multiplicador = Math.pow(BOOSTER_CONFIG.SOFT_PITY_MULTIPLIER, boostersAposSoft);
     chances.MITICO *= multiplicador;
   }
 
@@ -109,55 +94,49 @@ export function calcularRaridadeComPity(pityCounters) {
   const numero = Math.random();
   let acumulado = 0;
 
-  for (const raridade of ORDEM_RARIDADE.reverse()) {
+  // Iterar apenas nas raridades válidas para lendas
+  for (const raridade of RARIDADES_LENDAS.reverse()) {
     acumulado += chancesNormalizadas[raridade];
     if (numero <= acumulado) {
       return raridade;
     }
   }
 
+  // Fallback: se algo der errado, retornar épico (menor raridade para lendas)
+  return 'EPICO';
+}
+
+/**
+ * Calcula a raridade de um ITEM (sem pity)
+ * Itens podem ser de Comum a Lendário
+ * @returns {string} - Raridade sorteada (COMUM, INCOMUM, RARO, EPICO ou LENDARIO)
+ */
+export function calcularRaridadeItem() {
+  const chances = BOOSTER_CONFIG.DROP_RATES_ITENS;
+  const numero = Math.random();
+  let acumulado = 0;
+
+  // Iterar nas raridades válidas para itens (do maior para o menor)
+  for (const raridade of RARIDADES_ITENS.reverse()) {
+    acumulado += chances[raridade];
+    if (numero <= acumulado) {
+      return raridade;
+    }
+  }
+
+  // Fallback: se algo der errado, retornar comum (menor raridade para itens)
   return 'COMUM';
 }
 
 /**
- * Atualiza os contadores de pity após um pull
- * @param {Object} pityCounters - Contadores atuais
- * @param {string} raridadeObtida - Raridade da carta obtida
- * @returns {Object} - Contadores atualizados
+ * Abre um booster e retorna as cartas (4 itens + 1 lenda)
+ * @param {Array} cartasLendas - Pool de cartas lendas disponíveis
+ * @param {Array} cartasItens - Pool de cartas de itens disponíveis
+ * @param {number} pityMitico - Contador de pity do jogador
+ * @returns {Object} - { cartas: Array, novoPityMitico: number, estatisticas: Object }
  */
-export function atualizarPityCounters(pityCounters, raridadeObtida) {
-  const novosContadores = {
-    epico: pityCounters.epico + 1,
-    lendario: pityCounters.lendario + 1,
-    mitico: pityCounters.mitico + 1,
-  };
-
-  // Resetar contadores quando obter a raridade correspondente ou superior
-  const indiceObtido = ORDEM_RARIDADE.indexOf(raridadeObtida);
-
-  if (indiceObtido >= ORDEM_RARIDADE.indexOf('EPICO')) {
-    novosContadores.epico = 0;
-  }
-  if (indiceObtido >= ORDEM_RARIDADE.indexOf('LENDARIO')) {
-    novosContadores.lendario = 0;
-  }
-  if (indiceObtido >= ORDEM_RARIDADE.indexOf('MITICO')) {
-    novosContadores.mitico = 0;
-  }
-
-  return novosContadores;
-}
-
-/**
- * Abre um booster e retorna as cartas
- * @param {number} tamanho - Quantidade de cartas (3, 5 ou 10)
- * @param {Array} cartasDisponiveis - Pool de cartas disponíveis
- * @param {Object} pityCounters - Contadores de pity do jogador
- * @returns {Object} - { cartas: Array, novoPityCounter: Object, estatisticas: Object }
- */
-export function abrirBooster(tamanho, cartasDisponiveis, pityCounters) {
+export function abrirBooster(cartasLendas, cartasItens, pityMitico) {
   const cartasSorteadas = [];
-  let novoPity = { ...pityCounters };
   const estatisticas = {
     COMUM: 0,
     INCOMUM: 0,
@@ -167,42 +146,70 @@ export function abrirBooster(tamanho, cartasDisponiveis, pityCounters) {
     MITICO: 0,
   };
 
-  for (let i = 0; i < tamanho; i++) {
-    // Calcular raridade com pity
-    const raridade = calcularRaridadeComPity(novoPity);
+  // 1. Sortear 4 cartas de ITENS
+  for (let i = 0; i < BOOSTER_CONFIG.ITENS_POR_BOOSTER; i++) {
+    const raridade = calcularRaridadeItem();
     
-    // Atualizar pity
-    novoPity = atualizarPityCounters(novoPity, raridade);
-    
-    // Filtrar cartas da raridade sorteada
-    const cartasRaridade = cartasDisponiveis.filter((carta) => {
-      const raridadeCarta = primeiroValorDefinido(carta.raridade, carta.rarity, '').toUpperCase();
-      return raridadeCarta === raridade;
+    // Filtrar itens da raridade sorteada
+    const itensFiltrados = cartasItens.filter((item) => {
+      const raridadeItem = primeiroValorDefinido(item.raridade, item.rarity, '').toUpperCase();
+      return raridadeItem === raridade;
     });
 
-    // Sortear carta aleatória dessa raridade
-    let cartaSorteada;
-    if (cartasRaridade.length > 0) {
-      const indiceAleatorio = Math.floor(Math.random() * cartasRaridade.length);
-      cartaSorteada = cartasRaridade[indiceAleatorio];
+    // Sortear item aleatório dessa raridade
+    let itemSorteado;
+    if (itensFiltrados.length > 0) {
+      const indiceAleatorio = Math.floor(Math.random() * itensFiltrados.length);
+      itemSorteado = itensFiltrados[indiceAleatorio];
     } else {
-      // Fallback: sortear qualquer carta
-      const indiceAleatorio = Math.floor(Math.random() * cartasDisponiveis.length);
-      cartaSorteada = cartasDisponiveis[indiceAleatorio];
+      // Fallback: sortear qualquer item
+      const indiceAleatorio = Math.floor(Math.random() * cartasItens.length);
+      itemSorteado = cartasItens[indiceAleatorio];
     }
 
     cartasSorteadas.push({
-      ...cartaSorteada,
+      ...itemSorteado,
       raridadeSorteada: raridade,
-      novaCarta: true,
+      tipo: 'item',
     });
 
     estatisticas[raridade]++;
   }
 
+  // 2. Sortear 1 carta de LENDA (com pity)
+  const raridadeLenda = calcularRaridadeLenda(pityMitico);
+  
+  // Filtrar lendas da raridade sorteada
+  const lendasFiltradas = cartasLendas.filter((lenda) => {
+    const raridadeLendaItem = primeiroValorDefinido(lenda.raridade, lenda.rarity, '').toUpperCase();
+    return raridadeLendaItem === raridadeLenda;
+  });
+
+  // Sortear lenda aleatória dessa raridade
+  let legendaSorteada;
+  if (lendasFiltradas.length > 0) {
+    const indiceAleatorio = Math.floor(Math.random() * lendasFiltradas.length);
+    legendaSorteada = lendasFiltradas[indiceAleatorio];
+  } else {
+    // Fallback: sortear qualquer lenda
+    const indiceAleatorio = Math.floor(Math.random() * cartasLendas.length);
+    legendaSorteada = cartasLendas[indiceAleatorio];
+  }
+
+  cartasSorteadas.push({
+    ...legendaSorteada,
+    raridadeSorteada: raridadeLenda,
+    tipo: 'lenda',
+  });
+
+  estatisticas[raridadeLenda]++;
+
+  // 3. Atualizar pity
+  const novoPityMitico = raridadeLenda === 'MITICO' ? 0 : pityMitico + 1;
+
   return {
     cartas: cartasSorteadas,
-    novoPityCounter: novoPity,
+    novoPityMitico,
     estatisticas,
   };
 }
@@ -261,12 +268,10 @@ export function calcularRecompensaQuiz(dificuldade, pontuacao) {
 /**
  * Verifica se jogador tem moedas suficientes para comprar booster
  * @param {number} moedasJogador - Moedas do jogador
- * @param {string} tamanhoBooster - 'PEQUENO', 'MEDIO', 'GRANDE'
  * @returns {boolean}
  */
-export function podeComprarBooster(moedasJogador, tamanhoBooster) {
-  const preco = BOOSTER_CONFIG.PRECOS[tamanhoBooster];
-  return moedasJogador >= preco;
+export function podeComprarBooster(moedasJogador) {
+  return moedasJogador >= BOOSTER_CONFIG.PRECO_BOOSTER;
 }
 
 /**

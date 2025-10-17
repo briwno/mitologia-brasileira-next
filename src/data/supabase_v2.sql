@@ -73,17 +73,31 @@ CREATE TABLE public.decks (
 CREATE TABLE public.item_cards (
   id text NOT NULL,
   name text NOT NULL,
-  description text, -- Descrição do efeito em texto (ex: "Regenera 5 de HP")
-  item_type text NOT NULL, -- Tipo: consumable, equipment, material
+  description text,
+  item_type text NOT NULL,
   rarity text NOT NULL,
-  effects jsonb NOT NULL DEFAULT '{}'::jsonb, -- Efeitos mecânicos estruturados (ex: {"heal": 5, "duration": 2})
-  lore text, -- História/contexto cultural do item
+  effects jsonb NOT NULL DEFAULT '{}'::jsonb,
+  lore text,
   images jsonb NOT NULL DEFAULT '{}'::jsonb,
-  unlock_condition text, -- Condição para desbloquear o item
-  is_tradeable boolean DEFAULT true, -- Se pode ser trocado entre jogadores
+  unlock_condition text,
+  is_tradeable boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT item_cards_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.item_cards_backup (
+  id text,
+  name text,
+  description text,
+  item_type text,
+  rarity text,
+  effects jsonb,
+  lore text,
+  images jsonb,
+  unlock_condition text,
+  is_tradeable boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
 );
 CREATE TABLE public.matches (
   id bigint NOT NULL DEFAULT nextval('matches_id_seq'::regclass),
@@ -103,6 +117,20 @@ CREATE TABLE public.matches (
   CONSTRAINT matches_player_b_id_fkey FOREIGN KEY (player_b_id) REFERENCES public.players(id),
   CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id)
 );
+CREATE TABLE public.player_boosters (
+  player_id uuid NOT NULL,
+  boosters_disponiveis integer DEFAULT 0,
+  booster_inicial_aberto boolean DEFAULT false,
+  pity_epico integer DEFAULT 0,
+  pity_lendario integer DEFAULT 0,
+  pity_mitico integer DEFAULT 0,
+  total_boosters_abertos integer DEFAULT 0,
+  total_cartas_obtidas integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT player_boosters_pkey PRIMARY KEY (player_id),
+  CONSTRAINT player_boosters_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
 CREATE TABLE public.players (
   id uuid NOT NULL,
   nickname text NOT NULL UNIQUE,
@@ -110,11 +138,12 @@ CREATE TABLE public.players (
   mmr integer DEFAULT 1000,
   level integer DEFAULT 1,
   xp integer DEFAULT 0,
-  title text DEFAULT 'Aspirante'::text,
   banned boolean DEFAULT false,
   coins integer DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  titulos_desbloqueados jsonb DEFAULT '[]'::jsonb,
+  titulo_selecionado text,
   CONSTRAINT players_pkey PRIMARY KEY (id),
   CONSTRAINT players_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
@@ -126,4 +155,17 @@ CREATE TABLE public.quizzes (
   created_at timestamp without time zone DEFAULT now(),
   updated_at timestamp without time zone DEFAULT now(),
   CONSTRAINT quizzes_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.titulos (
+  id text NOT NULL,
+  nome text NOT NULL,
+  descricao text,
+  cor text DEFAULT '#3B82F6'::text,
+  raridade text DEFAULT 'comum'::text,
+  condicao_desbloqueio text,
+  icone text,
+  ordem_exibicao integer DEFAULT 0,
+  ativo boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT titulos_pkey PRIMARY KEY (id)
 );

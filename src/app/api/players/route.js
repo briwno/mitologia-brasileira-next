@@ -43,6 +43,19 @@ export async function GET(req) {
         console.log('[Players API] Player not found');
         return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
       }
+
+      // Se o jogador tem um título selecionado, buscar os dados completos
+      if (data.titulo_selecionado) {
+        const { data: tituloData } = await supabase
+          .from('titulos')
+          .select('id, nome, icone, cor, raridade')
+          .eq('id', data.titulo_selecionado)
+          .single();
+
+        if (tituloData) {
+          data.titulo_info = tituloData;
+        }
+      }
       
       console.log('[Players API] Player found:', { id: data.id, nickname: data.nickname });
       return NextResponse.json({ player: data });
@@ -117,7 +130,7 @@ export async function POST(req) {
       xp: 0,
       mmr: 1,
       coins: 100,
-      title: 'Aspirante',
+      titulo_selecionado: 'Iniciante',
       banned: false
     };
 

@@ -239,9 +239,12 @@ export default function Inicio() {
             <div className="hidden sm:block">
               <div className="text-white font-bold text-sm flex items-center gap-2">
                 {usuario?.nickname || usuario?.name || 'Convidado'}
-                {usuario?.title && (
-                  <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
-                    {usuario.title}
+                {usuario?.titulo_info && (
+                  <span 
+                    className="text-xs px-2 py-0.5 rounded font-bold bg-black/30 border border-white/10 ml-2 flex items-center gap-1"
+                    style={{ color: usuario.titulo_info.cor || '#3B82F6' }}
+                  >
+                    {usuario.titulo_info.icone} {usuario.titulo_info.nome}
                   </span>
                 )}
               </div>
@@ -362,7 +365,7 @@ export default function Inicio() {
                   </div>
                   <div className="flex-1">
                     <div className="font-bold">SUAS CARTAS</div>
-                    <div className="text-emerald-200 text-sm">47/60 cartas coletadas</div>
+                    <div className="text-emerald-200 text-sm">Ver e gerenciar sua coleção</div>
                   </div>
                   <div className="text-emerald-300 text-2xl group-hover:translate-x-1 transition-transform">→</div>
                 </div>

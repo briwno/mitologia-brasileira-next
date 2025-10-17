@@ -16,11 +16,33 @@ const temaPorRaridade = {
 	MITICO: 'border-rose-500/90 shadow-[0_0_28px_rgba(244,63,94,0.4)]',
 };
 
-// Imagens simples de "pacote" usando assets existentes (placeholders)
-const pacoteArte = {
-	PEQUENO: '/images/banners/menumuseu.png',
-	MEDIO: '/images/banners/menuranking.png',
-	GRANDE: '/images/banners/menubatalha.png',
+// Função para extrair URL da imagem de forma segura
+const getImageUrl = (carta, tipo = 'lenda') => {
+	if (!carta) return '/images/placeholder.svg';
+	
+	const images = carta.images || carta.imagens || {};
+	
+	// Log para debug
+	console.log('[Shop] Processando imagem:', {
+		nome: carta.name || carta.nome,
+		tipo,
+		images: JSON.stringify(images)
+	});
+	
+	// Tentar diferentes campos de imagem
+	const possiveisUrls = [
+		images.retrato,
+		images.portrait,
+		images.completa,
+		images.full,
+		images.card,
+	].filter(Boolean);
+	
+	if (possiveisUrls.length > 0) {
+		return possiveisUrls[0];
+	}
+	
+	return '/images/placeholder.svg';
 };
 
 export default function PaginaShopBoosters() {
@@ -29,21 +51,20 @@ export default function PaginaShopBoosters() {
 	const [processando, setProcessando] = useState(false);
 	const [erro, setErro] = useState(null);
 
-	const [saldo, setSaldo] = useState(0); // players.coins
-
+	const [saldo, setSaldo] = useState(0);
 	const [boostersDisponiveis, setBoostersDisponiveis] = useState(0);
-	const [pity, setPity] = useState({ epico: 0, lendario: 0, mitico: 0 });
+	const [boosterInicialAberto, setBoosterInicialAberto] = useState(false);
+	const [pityMitico, setPityMitico] = useState(0);
+	const [avisoSistema, setAvisoSistema] = useState(null);
 
-	const [resultadoAbertura, setResultadoAbertura] = useState(null); // { cartas, estatisticas }
+	const [resultadoAbertura, setResultadoAbertura] = useState(null);
 	const [mostrarResultado, setMostrarResultado] = useState(false);
 
-	const podeComprar = useMemo(() => ({
-		PEQUENO: saldo >= BOOSTER_CONFIG.PRECOS.PEQUENO,
-		MEDIO: saldo >= BOOSTER_CONFIG.PRECOS.MEDIO,
-		GRANDE: saldo >= BOOSTER_CONFIG.PRECOS.GRANDE,
-	}), [saldo]);
+	const podeComprar = useMemo(() => {
+		return saldo >= BOOSTER_CONFIG.PRECO_BOOSTER;
+	}, [saldo]);
 
-		const carregar = useCallback(async () => {
+	const carregar = useCallback(async () => {
 		if (!user?.id || !isAuthenticated()) {
 			setCarregando(false);
 			return;
@@ -54,28 +75,42 @@ export default function PaginaShopBoosters() {
 			const r = await fetch(`/api/boosters?playerId=${user.id}`);
 			const json = await r.json();
 			if (!r.ok) throw new Error(json.error || 'Falha ao carregar dados do shop');
-			// API retorna apenas { coins }
+			
 			setSaldo(json.coins || 0);
-			setBoostersDisponiveis(0); // Temporário até implementar sistema completo
-			setPity({ epico: 0, lendario: 0, mitico: 0 }); // Temporário
+			setBoostersDisponiveis(json.boostersDisponiveis || 0);
+			setBoosterInicialAberto(json.boosterInicialAberto || false);
+			setPityMitico(json.pityMitico || 0);
+			
+			// Verificar se há aviso do sistema
+			if (json.aviso) {
+				setAvisoSistema(json.aviso);
+			}
 		} catch (e) {
 			console.error('[Shop] load error', e);
 			setErro(e.message);
 		} finally {
 			setCarregando(false);
 		}
-		}, [user?.id, isAuthenticated]);
+	}, [user?.id, isAuthenticated]);
 
-		useEffect(() => { carregar(); }, [carregar]);
+	useEffect(() => { carregar(); }, [carregar]);
 
 	// Comprar booster
-	const comprar = async (tamanho) => {
+	const comprar = async () => {
 		if (!user?.id) return;
 		setProcessando(true);
 		setErro(null);
 		try {
-			// TODO: Implementar sistema de compra de boosters
-			setErro('Sistema de compra em desenvolvimento');
+			const r = await fetch('/api/boosters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ playerId: user.id, acao: 'comprar' }),
+			});
+			const json = await r.json();
+			if (!r.ok) throw new Error(json.error || 'Falha ao comprar booster');
+			
+			setSaldo(json.novoSaldo);
+			setBoostersDisponiveis(json.boostersDisponiveis);
 		} catch (e) {
 			setErro(e.message);
 		} finally {
@@ -83,57 +118,39 @@ export default function PaginaShopBoosters() {
 		}
 	};
 
-	// Abrir booster (consome 1 do contador, tamanho define qtd de cartas)
-	const abrir = async (tamanho) => {
+	// Abrir booster
+	const abrir = async (boosterInicial = false) => {
 		if (!user?.id) return;
 		setProcessando(true);
 		setErro(null);
 		try {
-			// TODO: Implementar sistema de abertura de boosters
-			setErro('Sistema de abertura em desenvolvimento');
+			const r = await fetch('/api/boosters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					playerId: user.id, 
+					acao: 'abrir',
+					boosterInicial,
+				}),
+			});
+			const json = await r.json();
+			if (!r.ok) throw new Error(json.error || 'Falha ao abrir booster');
+			
+			setResultadoAbertura({
+				cartas: json.cartas,
+				estatisticas: json.estatisticas,
+			});
+			setMostrarResultado(true);
+			setPityMitico(json.novoPityMitico);
+			setBoostersDisponiveis(json.boostersRestantes);
+			if (boosterInicial) {
+				setBoosterInicialAberto(true);
+			}
 		} catch (e) {
 			setErro(e.message);
 		} finally {
 			setProcessando(false);
 		}
-	};
-
-	const BoosterCard = ({ tipo, titulo, descricao }) => {
-		const preco = BOOSTER_CONFIG.PRECOS[tipo];
-		const tamanho = BOOSTER_CONFIG.TAMANHOS[tipo];
-		const pode = podeComprar[tipo];
-		return (
-			<div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm">
-				<div className="relative w-full h-64">
-					<Image src={pacoteArte[tipo]} alt={`Booster ${tipo}`} fill className="object-cover" />
-					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-					<div className="absolute top-3 left-3 text-[10px] px-2 py-1 rounded bg-emerald-500/20 border border-emerald-400/40">Pacote {tipo.toLowerCase()}</div>
-					<div className="absolute bottom-3 left-3 right-3">
-						<h3 className="text-xl font-extrabold">{titulo}</h3>
-						<p className="text-gray-300 text-xs">{descricao}</p>
-					</div>
-				</div>
-				<div className="p-4 border-t border-white/10">
-					<div className="flex items-center justify-between text-sm text-gray-300 mb-3">
-						<span>{tamanho} cartas</span>
-						<span className="font-semibold">🪙 {preco}</span>
-					</div>
-					<div className="grid grid-cols-2 gap-2">
-						<button
-							disabled={processando || !pode}
-							onClick={() => comprar(tipo)}
-							className="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:cursor-not-allowed font-semibold"
-						>Comprar</button>
-						<button
-							disabled={processando || boostersDisponiveis < 1}
-							onClick={() => abrir(tipo)}
-							className="py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:cursor-not-allowed font-semibold"
-						>Abrir</button>
-					</div>
-					<div className="mt-2 text-[11px] text-gray-400">Pity: Épico {pity.epico || 0} • Lendário {pity.lendario || 0} • Mítico {pity.mitico || 0}</div>
-				</div>
-			</div>
-		);
 	};
 
 	if (!isAuthenticated()) {
@@ -165,54 +182,220 @@ export default function PaginaShopBoosters() {
 			<div className="container mx-auto px-4 py-8">
 				<div className="text-center mb-6">
 					<h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300">Loja de Boosters</h1>
-					<p className="text-gray-300">Compre pacotes e descubra novas lendas do folclore</p>
+					<p className="text-gray-300">Descubra novas lendas do folclore brasileiro</p>
+					<p className="text-sm text-gray-400 mt-2">Cada booster contém 4 itens + 1 lenda (épica ou superior)</p>
 				</div>
 
 				<div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">Saldo: <span className="font-semibold">🪙 {saldo}</span></div>
-					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">Boosters: <span className="font-semibold">{boostersDisponiveis}</span></div>
+					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">
+						Saldo: <span className="font-semibold">🪙 {saldo}</span>
+					</div>
+					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">
+						Boosters: <span className="font-semibold">{boostersDisponiveis}</span>
+					</div>
+					<div className="px-4 py-2 rounded-xl bg-black/40 border border-white/10">
+						Pity: <span className="font-semibold text-rose-400">{pityMitico}/20</span>
+					</div>
 					{erro && <div className="px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">{erro}</div>}
 				</div>
 
-				{/* Aviso de desenvolvimento */}
-				<div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-center">
-					<p className="text-yellow-300 font-semibold">⚠️ Sistema de Boosters em Desenvolvimento</p>
-					<p className="text-yellow-200 text-sm">As funcionalidades de compra e abertura de pacotes serão implementadas em breve!</p>
+				{/* Aviso do Sistema */}
+				{avisoSistema && (
+					<div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+						<p className="text-yellow-300 font-semibold text-center">⚠️ {avisoSistema}</p>
+						<p className="text-yellow-200 text-sm text-center mt-2">
+							Consulte o arquivo <code className="bg-black/30 px-2 py-1 rounded">src/data/GUIA_CORRECAO_BOOSTERS.md</code> para instruções.
+						</p>
+					</div>
+				)}
+
+				{/* Booster Inicial Gratuito */}
+				{!boosterInicialAberto && (
+					<div className="max-w-2xl mx-auto mb-8 p-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-amber-400/50">
+						<div className="text-center">
+							<h2 className="text-2xl font-bold text-amber-300 mb-2">🎁 Booster Inicial Gratuito!</h2>
+							<p className="text-gray-300 mb-4">Bem-vindo! Abra seu primeiro booster gratuitamente e comece sua coleção.</p>
+							<button
+								disabled={processando}
+								onClick={() => abrir(true)}
+								className="px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg"
+							>
+								Abrir Booster Inicial
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Sistema de Boosters */}
+				<div className="max-w-2xl mx-auto">
+					<div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-sm">
+						<div className="relative w-full h-64">
+							<Image src="/images/banners/menubatalha.png" alt="Booster" fill className="object-cover" />
+							<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+							<div className="absolute top-3 left-3 text-[10px] px-2 py-1 rounded bg-emerald-500/20 border border-emerald-400/40">
+								Booster Padrão
+							</div>
+							<div className="absolute bottom-3 left-3 right-3">
+								<h3 className="text-xl font-extrabold">Pacote de Cartas</h3>
+								<p className="text-gray-300 text-xs">5 cartas • 4 itens + 1 lenda épica+</p>
+							</div>
+						</div>
+						<div className="p-4 border-t border-white/10">
+							<div className="flex items-center justify-between text-sm text-gray-300 mb-3">
+								<span>5 cartas</span>
+								<span className="font-semibold">🪙 {BOOSTER_CONFIG.PRECO_BOOSTER}</span>
+							</div>
+							<div className="grid grid-cols-2 gap-2">
+								<button
+									disabled={processando || !podeComprar}
+									onClick={comprar}
+									className="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:cursor-not-allowed font-semibold"
+								>
+									{podeComprar ? 'Comprar' : 'Moedas insuficientes'}
+								</button>
+								<button
+									disabled={processando || boostersDisponiveis < 1}
+									onClick={() => abrir(false)}
+									className="py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:cursor-not-allowed font-semibold"
+								>
+									Abrir Booster
+								</button>
+							</div>
+							<div className="mt-3 p-3 rounded-lg bg-black/30 border border-white/5">
+								<p className="text-xs text-gray-400 mb-1">
+									<strong className="text-gray-300">Sistema de Pity:</strong> Garantia de carta mítica no 20º booster!
+								</p>
+								<p className="text-xs text-gray-400">
+									Soft pity começa em 15 boosters. Todas as lendas são épicas ou superiores.
+								</p>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				{/* Deck de boosters (3 tamanhos) */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-					<BoosterCard tipo="PEQUENO" titulo="Pacote Pequeno" descricao="Entrada rápida — chances equilibradas" />
-					<BoosterCard tipo="MEDIO" titulo="Pacote Médio" descricao="Melhor custo-benefício" />
-					<BoosterCard tipo="GRANDE" titulo="Pacote Grande" descricao="Para caçadores de raridades" />
-				</div>
-
-				{/* Observação */}
+				{/* Info adicional */}
 				<div className="max-w-4xl mx-auto mt-6 text-center text-xs text-gray-400">
-					Um booster consumido permite abrir qualquer tamanho; escolha sabiamente. As taxas seguem o sistema de pity e raridades definido no jogo.
+					<p>As cartas podem vir repetidas e são adicionadas à sua coleção.</p>
+					<p>As taxas seguem o sistema de pity e raridades definido no jogo.</p>
 				</div>
 			</div>
 
 			{/* Modal de resultado da abertura */}
 			{mostrarResultado && resultadoAbertura && (
-				<div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setMostrarResultado(false)}>
-					<div className="bg-black/40 border border-white/10 rounded-2xl p-6 max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-						<div className="flex items-center justify-between mb-4">
-							<h3 className="text-xl font-bold">Cartas Obtidas</h3>
-							<button onClick={() => setMostrarResultado(false)} className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600">Fechar</button>
+				<div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setMostrarResultado(false)}>
+					<div className="bg-gradient-to-b from-black/60 to-black/80 border border-amber-500/30 rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+						<div className="flex items-center justify-between mb-6">
+							<h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-rose-300">🎉 Cartas Obtidas</h3>
+							<button onClick={() => setMostrarResultado(false)} className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold">Fechar</button>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-							{resultadoAbertura.cartas.map((c, i) => (
-								<div key={i} className={`relative rounded-lg p-2 border ${temaPorRaridade[c.raridadeSorteada] || 'border-gray-600'} bg-black/30`}>
-									<div className="relative w-full h-32 rounded overflow-hidden mb-2 border border-white/10">
-										<Image src={(c.imagens?.retrato || c.images?.portrait || '/images/placeholder.svg')} alt={c.nome || c.name} fill className="object-cover" />
+
+						{/* Layout: Lenda no centro, itens ao redor */}
+						<div className="flex flex-col items-center gap-6">
+							{/* Lenda - Carta Principal no Centro */}
+							{resultadoAbertura.cartas.filter(c => c.tipo === 'lenda').map((lenda, i) => {
+								const imagem = getImageUrl(lenda, 'lenda');
+								return (
+									<div key={`lenda-${i}`} className="w-full max-w-md">
+										<div className={`relative rounded-2xl p-4 border-2 ${temaPorRaridade[lenda.raridadeSorteada] || 'border-purple-500'} bg-black/40 transform hover:scale-105 transition-transform duration-300`}>
+											<div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-sm">
+												⚡ LENDA
+											</div>
+											<div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-3 border-2 border-white/20">
+												<Image 
+													src={imagem}
+													alt={lenda.name || lenda.nome || 'Lenda'} 
+													fill 
+													className="object-cover" 
+													unoptimized
+													onError={(e) => {
+														console.error('[Shop] Erro ao carregar imagem da lenda:', imagem);
+														e.currentTarget.src = '/images/placeholder.svg';
+													}}
+												/>
+											</div>
+											<div className="text-center">
+												<h4 className="text-xl font-bold text-white mb-1">{lenda.name || lenda.nome}</h4>
+												<div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+													lenda.raridadeSorteada === 'MITICO' ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50' :
+													lenda.raridadeSorteada === 'LENDARIO' ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50' :
+													'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+												}`}>
+													{lenda.raridadeSorteada}
+												</div>
+											</div>
+										</div>
 									</div>
-									<div className="text-xs font-semibold line-clamp-2">{c.nome || c.name}</div>
-									<div className="text-[10px] text-gray-400">{c.raridadeSorteada}</div>
+								);
+							})}
+
+							{/* Itens - Grade ao redor */}
+							<div className="w-full">
+								<p className="text-center text-gray-400 text-sm mb-3">🎒 Itens Obtidos</p>
+								<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+									{resultadoAbertura.cartas.filter(c => c.tipo === 'item').map((item, i) => {
+										const imagem = getImageUrl(item, 'item');
+										return (
+											<div key={`item-${i}`} className={`relative rounded-xl p-3 border ${temaPorRaridade[item.raridadeSorteada] || 'border-gray-600'} bg-black/30 hover:scale-105 transition-transform duration-200`}>
+												<div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-2 border border-white/10">
+													<Image 
+														src={imagem}
+														alt={item.name || item.nome || 'Item'} 
+														fill 
+														className="object-cover" 
+														unoptimized
+														onError={(e) => {
+															console.error('[Shop] Erro ao carregar imagem do item:', imagem);
+															e.currentTarget.src = '/images/placeholder.svg';
+														}}
+													/>
+												</div>
+												<div className="text-center">
+													<div className="text-sm font-semibold text-white line-clamp-1">{item.name || item.nome}</div>
+													<div className="text-xs text-gray-400 mt-1">{item.raridadeSorteada}</div>
+												</div>
+											</div>
+										);
+									})}
 								</div>
-							))}
+							</div>
 						</div>
-						<div className="mt-4 text-right text-sm text-gray-400">Resumo: EP {resultadoAbertura.estatisticas?.EPICO || 0} • LD {resultadoAbertura.estatisticas?.LENDARIO || 0} • MT {resultadoAbertura.estatisticas?.MITICO || 0}</div>
+
+						{/* Resumo das Raridades */}
+						<div className="mt-6 p-4 rounded-xl bg-black/40 border border-white/10">
+							<p className="text-sm text-gray-300 mb-2 text-center font-semibold">📊 Resumo das Raridades</p>
+							<div className="flex flex-wrap justify-center gap-2">
+								{resultadoAbertura.estatisticas.MITICO > 0 && (
+									<div className="px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-300 text-sm font-semibold">
+										✨ Mítico: {resultadoAbertura.estatisticas.MITICO}
+									</div>
+								)}
+								{resultadoAbertura.estatisticas.LENDARIO > 0 && (
+									<div className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-sm font-semibold">
+										⭐ Lendário: {resultadoAbertura.estatisticas.LENDARIO}
+									</div>
+								)}
+								{resultadoAbertura.estatisticas.EPICO > 0 && (
+									<div className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/50 text-purple-300 text-sm font-semibold">
+										💜 Épico: {resultadoAbertura.estatisticas.EPICO}
+									</div>
+								)}
+								{resultadoAbertura.estatisticas.RARO > 0 && (
+									<div className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/50 text-blue-300 text-sm font-semibold">
+										💎 Raro: {resultadoAbertura.estatisticas.RARO}
+									</div>
+								)}
+								{resultadoAbertura.estatisticas.INCOMUM > 0 && (
+									<div className="px-3 py-1 rounded-full bg-green-500/20 border border-green-500/50 text-green-300 text-sm font-semibold">
+										🟢 Incomum: {resultadoAbertura.estatisticas.INCOMUM}
+									</div>
+								)}
+								{resultadoAbertura.estatisticas.COMUM > 0 && (
+									<div className="px-3 py-1 rounded-full bg-gray-500/20 border border-gray-500/50 text-gray-300 text-sm font-semibold">
+										⚪ Comum: {resultadoAbertura.estatisticas.COMUM}
+									</div>
+								)}
+							</div>
+						</div>
 					</div>
 				</div>
 			)}
