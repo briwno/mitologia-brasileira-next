@@ -1,7 +1,13 @@
 {
   "redirects": [
     {
-      "source": "/((?!divulgar|images|_next|api|favicon\\.ico|.*\\..*).*)",
+      "source": "/((?!images|_next|api|favicon\\.ico|.*\\..*).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "promo.kaaguy.app"
+        }
+      ],
       "destination": "/divulgar",
       "permanent": false
     }
