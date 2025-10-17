@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import Icon from '@/components/UI/Icon';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 // Carrega o modal de PvP de forma dinâmica (sem SSR) com fallback de carregamento
@@ -24,8 +24,13 @@ const MuseumModal = dynamic(() => import('@/components/Museum/MuseumModal'), { s
 // Navegação global (mobile + desktop)
 export default function NavegacaoGlobal() {
   const pathname = usePathname();
+  const [carregado, setCarregado] = useState(false);
   const [mostrarModalPvP, definirMostrarModalPvP] = useState(false);
   const [mostrarModalMuseu, definirMostrarModalMuseu] = useState(false);
+
+  useEffect(() => {
+    setCarregado(true);
+  }, []);
 
   // Oculta a navegação na tela de sala de jogo (durante a partida)
   if (pathname?.startsWith('/pvp/game')) {
@@ -71,8 +76,9 @@ export default function NavegacaoGlobal() {
         </div>
       </div>
 
-    {mostrarModalPvP && <PvPModal onClose={() => definirMostrarModalPvP(false)} />}
-    {mostrarModalMuseu && <MuseumModal onClose={() => definirMostrarModalMuseu(false)} />}
+      {/* Modais - Renderizados apenas após carregamento completo */}
+      {carregado && mostrarModalPvP && <PvPModal onClose={() => definirMostrarModalPvP(false)} />}
+      {carregado && mostrarModalMuseu && <MuseumModal onClose={() => definirMostrarModalMuseu(false)} />}
     </>
   );
 }

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
@@ -17,6 +17,7 @@ function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
     <Link
       href={href}
       className="block"
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -103,6 +104,7 @@ export default function ProfileModal({ onClose }) {
               subtitle="Veja suas informações"
               href="/profile"
               imageSrc="/images/backgrounds/perfil-background.jpg"
+              onClick={() => onClose?.()}
             />
             <CartaoDeModo
               title="Amigos"
@@ -110,6 +112,7 @@ export default function ProfileModal({ onClose }) {
               subtitle="Lista de amigos e convites"
               href="/profile/friends"
               imageSrc="/images/backgrounds/amigos-background.jpg"
+              onClick={() => onClose?.()}
             />
             <CartaoDeModo
               title="Mascote"
@@ -117,6 +120,7 @@ export default function ProfileModal({ onClose }) {
               subtitle="Customize seu companheiro"
               href="/profile/pet"
               imageSrc="/images/backgrounds/mascote-background.jpg"
+              onClick={() => onClose?.()}
             />
           </div>
 

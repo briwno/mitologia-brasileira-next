@@ -5,12 +5,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-function CartaoDeModo({ title, emoji, subtitle, imageSrc, href }) {
+function CartaoDeModo({ title, emoji, subtitle, imageSrc, href, onClick }) {
   const [hover, setHover] = useState(false);
   return (
     <Link
       href={href}
       className="block"
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -91,6 +92,7 @@ export default function MuseumModal({ onClose }) {
               subtitle="Todas as cartas e suas histórias"
               href="/museum/cards"
               imageSrc="/images/banners/menumuseu.png"
+              onClick={() => onClose?.()}
             />
       <CartaoDeModo
               title="Quiz Cultural"
@@ -98,6 +100,7 @@ export default function MuseumModal({ onClose }) {
               subtitle="Teste seus conhecimentos"
               href="/museum/quiz"
               imageSrc="/images/banners/museu.jpg"
+              onClick={() => onClose?.()}
             />
       <CartaoDeModo
               title="Mapa das Lendas"
@@ -105,6 +108,7 @@ export default function MuseumModal({ onClose }) {
               subtitle="Origem geográfica dos mitos"
               href="/museum/map"
               imageSrc="/images/banners/batalha.jpg"
+              onClick={() => onClose?.()}
             />
           </div>
 

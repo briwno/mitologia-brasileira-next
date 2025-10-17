@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Icon from '@/components/UI/Icon';
 
-function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, simboloRanque }) {
+function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, simboloRanque, onClick }) {
   const [hover, setHover] = useState(false);
   
   // Verificação de segurança para props
@@ -18,6 +18,7 @@ function CartaoDeModo({ title, iconName, subtitle, imageSrc, href, simboloRanque
     <Link
       href={href}
       className="block"
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -118,6 +119,7 @@ export default function RankingModal({ onClose }) {
               subtitle="Melhores jogadores por pontuação"
               href="/ranking/top"
               imageSrc="/images/backgrounds/semanal-background.jpg"
+              onClick={() => onClose?.()}
             />
             <CartaoDeModo
               title="Recompensas"
@@ -125,6 +127,7 @@ export default function RankingModal({ onClose }) {
               subtitle="Prêmios por ranking"
               href="/ranking/rewards"
               imageSrc="/images/backgrounds/recompensas-background.jpg"
+              onClick={() => onClose?.()}
             />
             <div className="relative group">
               <div className="h-56 md:h-80 xl:h-[26rem] rounded-xl overflow-hidden bg-black/40 border border-white/10 flex flex-col items-center justify-center opacity-50 grayscale">
