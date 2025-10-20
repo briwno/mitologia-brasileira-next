@@ -1,8 +1,10 @@
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState, useCallback } from "react";
 
 export default function BrazilMap({ onRegionClick, selectedRegion }) {
   const svgRef = useRef(null);
+  const [svgLoaded, setSvgLoaded] = useState(false);
+  const retryTimeoutRef = useRef(null);
 
   // Mapeamento de estados para regiões (usando useMemo)
   const stateToRegion = useMemo(() => ({
@@ -44,60 +46,16 @@ export default function BrazilMap({ onRegionClick, selectedRegion }) {
     'sul': '#8b5cf6'
   }), []);
 
-  useEffect(() => {
-    const handleSvgLoad = () => {
-      const svgElement = svgRef.current;
-      if (!svgElement) return;
+  // Função para aplicar estilos e event listeners aos paths (usando useCallback)
+  const applyStylesToSvg = useCallback((svgDoc) => {
+    if (!svgDoc) {
+      return false;
+    }
 
-      const svgDoc = svgElement.contentDocument;
-      if (!svgDoc) return;
-
-      // Adicionar event listeners para todos os paths (estados)
-      const paths = svgDoc.querySelectorAll('path');
-      
-      paths.forEach(path => {
-        const stateId = path.getAttribute('id');
-        const region = stateToRegion[stateId];
-        
-        if (stateId && region) {
-          // Estilo baseado na região
-          const baseColor = regionColors[region] || '#e5e7eb';
-          const isSelected = selectedRegion && selectedRegion.id === region;
-          
-          path.style.cursor = 'pointer';
-          path.style.fill = isSelected ? baseColor : '#e5e7eb';
-          path.style.stroke = '#374151';
-          path.style.strokeWidth = '0.8';
-          path.style.transition = 'all 0.3s ease-in-out';
-
-          // Event listeners
-          path.addEventListener('click', () => {
-            if (onRegionClick) {
-              const regionData = {
-                id: region,
-                name: getRegionName(region),
-                color: baseColor
-              };
-              onRegionClick(regionData);
-            }
-          });
-
-          path.addEventListener('mouseenter', () => {
-            if (!isSelected) {
-              path.style.fill = baseColor;
-              path.style.opacity = '0.8';
-            }
-            path.style.strokeWidth = '1.2';
-          });
-
-          path.addEventListener('mouseleave', () => {
-            path.style.fill = isSelected ? baseColor : '#e5e7eb';
-            path.style.opacity = '1';
-            path.style.strokeWidth = '0.8';
-          });
-        }
-      });
-    };
+    const paths = svgDoc.querySelectorAll('path');
+    if (paths.length === 0) {
+      return false;
+    }
 
     const getRegionName = (regionId) => {
       const names = {
@@ -109,25 +67,156 @@ export default function BrazilMap({ onRegionClick, selectedRegion }) {
       };
       return names[regionId] || regionId;
     };
+    
+    paths.forEach(path => {
+      const stateId = path.getAttribute('id');
+      const region = stateToRegion[stateId];
+      
+      if (stateId && region) {
+        // Estilo baseado na região
+        const baseColor = regionColors[region] || '#e5e7eb';
+        const isSelected = selectedRegion && selectedRegion.id === region;
+        
+        // Detectar se é mobile
+        const isMobile = window.innerWidth < 640;
+        const baseStrokeWidth = isMobile ? '1.2' : '0.8';
+        const hoverStrokeWidth = isMobile ? '1.8' : '1.2';
+        
+        path.style.cursor = 'pointer';
+        path.style.fill = isSelected ? baseColor : '#e5e7eb';
+        path.style.stroke = '#374151';
+        path.style.strokeWidth = baseStrokeWidth;
+        path.style.transition = 'all 0.3s ease-in-out';
+
+        // Remover listeners antigos
+        const newPath = path.cloneNode(true);
+        path.parentNode.replaceChild(newPath, path);
+
+        // Event listeners
+        const handleClick = () => {
+          if (onRegionClick) {
+            const regionData = {
+              id: region,
+              name: getRegionName(region),
+              color: baseColor
+            };
+            onRegionClick(regionData);
+          }
+        };
+
+        const handleMouseEnter = () => {
+          if (!isSelected) {
+            newPath.style.fill = baseColor;
+            newPath.style.opacity = '0.8';
+          }
+          newPath.style.strokeWidth = hoverStrokeWidth;
+        };
+
+        const handleMouseLeave = () => {
+          newPath.style.fill = isSelected ? baseColor : '#e5e7eb';
+          newPath.style.opacity = '1';
+          newPath.style.strokeWidth = baseStrokeWidth;
+        };
+
+        const handleTouchStart = (e) => {
+          e.preventDefault();
+          if (!isSelected) {
+            newPath.style.fill = baseColor;
+            newPath.style.opacity = '0.8';
+          }
+          newPath.style.strokeWidth = hoverStrokeWidth;
+        };
+
+        const handleTouchEnd = (e) => {
+          e.preventDefault();
+          handleClick();
+          setTimeout(() => {
+            newPath.style.fill = isSelected ? baseColor : '#e5e7eb';
+            newPath.style.opacity = '1';
+            newPath.style.strokeWidth = baseStrokeWidth;
+          }, 300);
+        };
+
+        newPath.addEventListener('click', handleClick);
+        newPath.addEventListener('mouseenter', handleMouseEnter);
+        newPath.addEventListener('mouseleave', handleMouseLeave);
+        newPath.addEventListener('touchstart', handleTouchStart, { passive: false });
+        newPath.addEventListener('touchend', handleTouchEnd, { passive: false });
+      }
+    });
+
+    return true;
+  }, [onRegionClick, selectedRegion, regionColors, stateToRegion]);
+
+  useEffect(() => {
+    const handleSvgLoad = () => {
+      const svgElement = svgRef.current;
+      if (!svgElement) {
+        return;
+      }
+
+      const svgDoc = svgElement.contentDocument;
+      
+      if (applyStylesToSvg(svgDoc)) {
+        setSvgLoaded(true);
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+      } else {
+        // Se falhou, tentar novamente após um delay
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        retryTimeoutRef.current = setTimeout(() => {
+          handleSvgLoad();
+        }, 100);
+      }
+    };
 
     // Aguardar o SVG carregar
     const svgElement = svgRef.current;
     if (svgElement) {
+      // Tentar carregar imediatamente
       if (svgElement.contentDocument) {
         handleSvgLoad();
-      } else {
-        svgElement.addEventListener('load', handleSvgLoad);
-        return () => svgElement.removeEventListener('load', handleSvgLoad);
       }
+      
+      // Também adicionar listener de load
+      svgElement.addEventListener('load', handleSvgLoad);
+      
+      // Tentar novamente após um delay (fallback)
+      const fallbackTimeout = setTimeout(() => {
+        if (!svgLoaded) {
+          handleSvgLoad();
+        }
+      }, 500);
+      
+      return () => {
+        svgElement.removeEventListener('load', handleSvgLoad);
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        clearTimeout(fallbackTimeout);
+      };
     }
-  }, [onRegionClick, selectedRegion, regionColors, stateToRegion]);
+  }, [applyStylesToSvg, svgLoaded]);
 
   // Atualizar cores quando selectedRegion muda
   useEffect(() => {
+    if (!svgLoaded) {
+      return;
+    }
+
     const svgElement = svgRef.current;
-    if (!svgElement?.contentDocument) return;
+    if (!svgElement?.contentDocument) {
+      return;
+    }
 
     const paths = svgElement.contentDocument.querySelectorAll('path');
+    const isMobile = window.innerWidth < 640;
+    const baseStrokeWidth = isMobile ? '1.2' : '0.8';
+    const hoverStrokeWidth = isMobile ? '1.8' : '1.2';
+
     paths.forEach(path => {
       const stateId = path.getAttribute('id');
       const region = stateToRegion[stateId];
@@ -135,53 +224,58 @@ export default function BrazilMap({ onRegionClick, selectedRegion }) {
       if (stateId && region) {
         const baseColor = regionColors[region] || '#e5e7eb';
         const isSelected = selectedRegion && selectedRegion.id === region;
+        
         path.style.fill = isSelected ? baseColor : '#e5e7eb';
+        path.style.strokeWidth = isSelected ? hoverStrokeWidth : baseStrokeWidth;
       }
     });
-  }, [selectedRegion, regionColors, stateToRegion]);
+  }, [selectedRegion, regionColors, stateToRegion, svgLoaded]);
 
   return (
-    <div style={{ 
-      width: "100%", 
-      maxWidth: "800px", 
-      margin: "0 auto",
-      borderRadius: "12px",
-      padding: "20px",
-      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-    }}>
-      <object
-        ref={svgRef}
-        type="image/svg+xml"
-        data="/brazil.svg"
-        aria-label="Mapa do Brasil por Regiões"
-        style={{ 
-          width: "100%", 
-          height: "auto",
-          minHeight: "400px"
-        }}
-      >
-        Seu navegador não suporta SVG.
-      </object>
+    <div className="w-full max-w-3xl mx-auto rounded-xl p-2 sm:p-4 md:p-6 bg-gradient-to-br from-blue-900/20 to-green-900/20 backdrop-blur-sm border border-gray-600/30">
+      <div className="relative w-full" style={{ minHeight: "280px", maxHeight: "600px" }}>
+        {!svgLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 rounded-lg z-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-2"></div>
+              <p className="text-gray-400 text-sm">Carregando mapa...</p>
+            </div>
+          </div>
+        )}
+        <object
+          ref={svgRef}
+          type="image/svg+xml"
+          data="/brazil.svg"
+          aria-label="Mapa do Brasil por Regiões"
+          className="w-full h-auto mx-auto"
+          style={{
+            minHeight: "280px",
+            maxHeight: "600px",
+            maxWidth: "600px",
+            display: "block",
+            pointerEvents: "auto",
+            touchAction: "manipulation",
+            opacity: svgLoaded ? 1 : 0.3,
+            transition: "opacity 0.3s ease-in-out"
+          }}
+        >
+          Seu navegador não suporta SVG.
+        </object>
+      </div>
       
       {selectedRegion && (
-        <div style={{ 
-          marginTop: "20px", 
-          textAlign: "center",
-          background: "rgba(0, 0, 0, 0.8)",
-          padding: "15px",
-          borderRadius: "8px",
-          border: `2px solid ${regionColors[selectedRegion.id] || '#e5e7eb'}`
-        }}>
-          <h3 style={{ 
-            color: regionColors[selectedRegion.id] || '#ffffff', 
-            fontSize: "18px", 
-            fontWeight: "bold",
-            margin: "0 0 10px 0"
-          }}>
+        <div 
+          className="mt-3 sm:mt-4 md:mt-6 text-center bg-black/80 p-3 sm:p-4 rounded-lg border-2 animate-in fade-in-50 duration-300"
+          style={{ borderColor: regionColors[selectedRegion.id] || '#e5e7eb' }}
+        >
+          <h3 
+            className="text-base sm:text-lg md:text-xl font-bold mb-2"
+            style={{ color: regionColors[selectedRegion.id] || '#ffffff' }}
+          >
             {selectedRegion.emoji} {selectedRegion.name}
           </h3>
-          <p style={{ color: "#d1d5db", fontSize: "14px", margin: "0" }}>
-            Clique nos cards abaixo para ver as cartas desta região
+          <p className="text-gray-300 text-xs sm:text-sm md:text-base px-2">
+            Role para baixo para ver as cartas desta região
           </p>
         </div>
       )}

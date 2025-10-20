@@ -112,7 +112,13 @@ export default function PaginaInventarioDeCartas() {
     const semDuplicatas = Array.from(new Set(regioes));
     return [
       "all",
-      ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave),
+      ...semDuplicatas.map((chave) => {
+        const valor = mapaOriginal.get(chave);
+        if (valor) {
+          return valor;
+        }
+        return chave;
+      }),
     ];
   }, [allCards]);
 
@@ -139,7 +145,13 @@ export default function PaginaInventarioDeCartas() {
     const semDuplicatas = Array.from(new Set(categorias));
     return [
       "all",
-      ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave),
+      ...semDuplicatas.map((chave) => {
+        const valor = mapaOriginal.get(chave);
+        if (valor) {
+          return valor;
+        }
+        return chave;
+      }),
     ];
   }, [allCards]);
 
@@ -166,7 +178,13 @@ export default function PaginaInventarioDeCartas() {
     const semDuplicatas = Array.from(new Set(raridades));
     return [
       "all",
-      ...semDuplicatas.map((chave) => mapaOriginal.get(chave) || chave),
+      ...semDuplicatas.map((chave) => {
+        const valor = mapaOriginal.get(chave);
+        if (valor) {
+          return valor;
+        }
+        return chave;
+      }),
     ];
   }, [allCards]);
 
@@ -233,9 +251,15 @@ export default function PaginaInventarioDeCartas() {
     [allItems]
   );
   const ownedItems = useMemo(() => {
-    if (!isAuthenticated()) return [];
-    if (!Array.isArray(ownedItemIds)) return [];
-    if (ownedItemIds.length === 0) return [];
+    if (!isAuthenticated()) {
+      return [];
+    }
+    if (!Array.isArray(ownedItemIds)) {
+      return [];
+    }
+    if (ownedItemIds.length === 0) {
+      return [];
+    }
     return ownedItemIds.map((id) => byItemId.get(id)).filter(Boolean);
   }, [ownedItemIds, isAuthenticated, byItemId]);
 
@@ -343,7 +367,12 @@ export default function PaginaInventarioDeCartas() {
         return;
       }
 
-      const errorData = await response.json().catch(() => ({}));
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = {};
+      }
       const message = valorComPadrao(errorData.error, "Erro ao salvar deck");
       console.error(
         "[CardInventory] Falha ao salvar deck:",
@@ -374,7 +403,12 @@ export default function PaginaInventarioDeCartas() {
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-blue-200 font-semibold">📚 Coleção</div>
               <div className="text-xs px-2 py-1 bg-blue-500/30 rounded-full text-blue-200">
-                {totalAvailable > 0 ? Math.round((totalOwned / totalAvailable) * 100) : 0}%
+                {(() => {
+                  if (totalAvailable > 0) {
+                    return Math.round((totalOwned / totalAvailable) * 100);
+                  }
+                  return 0;
+                })()}%
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
@@ -385,7 +419,12 @@ export default function PaginaInventarioDeCartas() {
             <div className="mt-3 h-2 bg-black/30 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
-                style={{ width: `${totalAvailable > 0 ? (totalOwned / totalAvailable) * 100 : 0}%` }}
+                style={{ width: `${(() => {
+                  if (totalAvailable > 0) {
+                    return (totalOwned / totalAvailable) * 100;
+                  }
+                  return 0;
+                })()}%` }}
               />
             </div>
           </div>
@@ -420,17 +459,13 @@ export default function PaginaInventarioDeCartas() {
             <div className="space-y-2 mb-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs text-green-300">🔮 Lendas</span>
-                <span className={`text-sm font-bold ${
-                  legendsCount >= 5 ? "text-green-400" : "text-yellow-400"
-                }`}>
+                <span className={legendsCount >= 5 ? "text-sm font-bold text-green-400" : "text-sm font-bold text-yellow-400"}>
                   {legendsCount}/5
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-green-300">⚔️ Itens</span>
-                <span className={`text-sm font-bold ${
-                  itemsCount >= 20 ? "text-green-400" : "text-yellow-400"
-                }`}>
+                <span className={itemsCount >= 20 ? "text-sm font-bold text-green-400" : "text-sm font-bold text-yellow-400"}>
                   {itemsCount}/20
                 </span>
               </div>
@@ -466,7 +501,7 @@ export default function PaginaInventarioDeCartas() {
                   : "text-gray-400 hover:text-gray-300"
               }`}
             >
-              📦 Itens ({allItems.length})
+              📦 Itens ({ownedItems.length})
             </button>
           </div>
 
@@ -610,7 +645,10 @@ export default function PaginaInventarioDeCartas() {
                             'Comum': 'from-gray-600/20 to-gray-900/40 border-gray-500/50'
                           };
                           
-                          const cardBg = rarityColors[rotuloRaridade] || rarityColors['Comum'];
+                          let cardBg = rarityColors[rotuloRaridade];
+                          if (!cardBg) {
+                            cardBg = rarityColors['Comum'];
+                          }
 
                           return (
                             <div
@@ -622,23 +660,29 @@ export default function PaginaInventarioDeCartas() {
                               <div className={`relative rounded-xl overflow-hidden bg-gradient-to-br ${cardBg} border-2 backdrop-blur-sm`}>
                                 {/* Imagem da Carta */}
                                 <div className="relative aspect-[3/4] overflow-hidden bg-black/30">
-                                  {card.imagens?.retrato || card.images?.portrait ? (
-                                    <Image
-                                      src={card.imagens?.retrato || card.images?.portrait}
-                                      alt={`${nomeCarta} - ${regiaoCarta}`}
-                                      fill
-                                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                      quality={90}
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                                      <div className="text-center text-white/70">
-                                        <div className="text-4xl mb-2">🔮</div>
-                                        <div className="text-xs px-2">Sem Imagem</div>
+                                  {(() => {
+                                    const imagemSrc = card.imagens?.retrato || card.images?.portrait;
+                                    if (imagemSrc) {
+                                      return (
+                                        <Image
+                                          src={imagemSrc}
+                                          alt={`${nomeCarta} - ${regiaoCarta}`}
+                                          fill
+                                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                          quality={90}
+                                        />
+                                      );
+                                    }
+                                    return (
+                                      <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                                        <div className="text-center text-white/70">
+                                          <div className="text-4xl mb-2">🔮</div>
+                                          <div className="text-xs px-2">Sem Imagem</div>
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    );
+                                  })()}
                                   {/* Gradiente overlay para melhor legibilidade */}
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                                 </div>
@@ -665,22 +709,27 @@ export default function PaginaInventarioDeCartas() {
                                   </div>
 
                                   {/* Stats */}
-                                  {(ataqueCarta !== "-" || defesaCarta !== "-" || vidaCarta !== "-") && (
-                                    <div className="grid grid-cols-3 gap-1 text-xs pt-2 border-t border-white/10">
-                                      <div className="text-center">
-                                        <div className="text-red-400 font-bold">ATQ</div>
-                                        <div className="text-white">{ataqueCarta}</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="text-blue-400 font-bold">DEF</div>
-                                        <div className="text-white">{defesaCarta}</div>
-                                      </div>
-                                      <div className="text-center">
-                                        <div className="text-green-400 font-bold">VIDA</div>
-                                        <div className="text-white">{vidaCarta}</div>
-                                      </div>
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    if (ataqueCarta !== "-" || defesaCarta !== "-" || vidaCarta !== "-") {
+                                      return (
+                                        <div className="grid grid-cols-3 gap-1 text-xs pt-2 border-t border-white/10">
+                                          <div className="text-center">
+                                            <div className="text-red-400 font-bold">ATQ</div>
+                                            <div className="text-white">{ataqueCarta}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-blue-400 font-bold">DEF</div>
+                                            <div className="text-white">{defesaCarta}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-green-400 font-bold">VIDA</div>
+                                            <div className="text-white">{vidaCarta}</div>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
 
                                 {/* Hover Effect */}

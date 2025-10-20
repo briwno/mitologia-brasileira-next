@@ -252,23 +252,27 @@ export default function MapaInterativo() {
 
   return (
     <LayoutDePagina>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
             🗺️ Mapa Interativo do Brasil
           </h1>
-          <p className="text-xl text-green-300 mb-4">Explore as lendas de cada região</p>
+          <p className="text-base sm:text-lg md:text-xl text-green-300 mb-2 sm:mb-4 px-2">Explore as lendas de cada região</p>
           
           {/* Dica de interação */}
-          <div className="mb-6 text-sm text-gray-400">
+          <div className="mb-4 sm:mb-6 text-xs sm:text-sm text-gray-400 px-2">
             {selectedRegion ? (
-              <div className="inline-flex items-center gap-2 bg-black/30 rounded-lg px-4 py-2 border border-gray-600/30">
-                <span>{selectedRegion.emoji}</span>
-                <span>Região <strong className="text-white">{selectedRegion.name}</strong> selecionada - Role para baixo para ver as cartas</span>
+              <div className="inline-flex flex-col sm:flex-row items-center gap-2 bg-black/30 rounded-lg px-3 sm:px-4 py-2 border border-gray-600/30 max-w-full">
+                <div className="flex items-center gap-2">
+                  <span>{selectedRegion.emoji}</span>
+                  <span className="text-center sm:text-left">
+                    Região <strong className="text-white">{selectedRegion.name}</strong> selecionada
+                  </span>
+                </div>
                 <button 
                   onClick={() => setSelectedRegion(null)}
-                  className="text-gray-400 hover:text-white ml-2"
+                  className="text-gray-400 hover:text-white"
                 >
                   ✕
                 </button>
@@ -298,7 +302,7 @@ export default function MapaInterativo() {
         </div>
 
         {/* Grid de regiões */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           {regions.map((region) => {
             const progress = getRegionProgress(region.regionKey);
             const isUnlocked = isRegionUnlocked(region);
