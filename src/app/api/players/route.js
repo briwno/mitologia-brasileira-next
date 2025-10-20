@@ -61,18 +61,43 @@ export async function GET(req) {
       return NextResponse.json({ player: data });
     }
 
-    // Buscar por nickname
+    // Buscar por nickname (busca parcial - case insensitive)
     if (nickname) {
+      // Se for um UUID, buscar exato por ID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(nickname)) {
+        const { data, error } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', nickname)
+          .maybeSingle();
+        
+        if (error) throw error;
+        if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+        
+        return NextResponse.json({ player: data });
+      }
+
+      // Busca parcial por nickname (case insensitive)
       const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('nickname', nickname)
-        .maybeSingle();
+        .ilike('nickname', `%${nickname}%`)
+        .eq('banned', false)
+        .limit(20);
       
       if (error) throw error;
-      if (!data) return NextResponse.json({ error: 'Jogador não encontrado' }, { status: 404 });
+      if (!data || data.length === 0) {
+        return NextResponse.json({ error: 'Nenhum jogador encontrado' }, { status: 404 });
+      }
       
-      return NextResponse.json({ player: data });
+      // Se encontrou apenas um, retornar como objeto único
+      // Se encontrou vários, retornar como array
+      return NextResponse.json({ 
+        players: data,
+        total: data.length,
+        isMultiple: data.length > 1
+      });
     }
 
     // Listar top players (ranking)

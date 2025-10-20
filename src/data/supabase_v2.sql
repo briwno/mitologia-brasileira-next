@@ -70,6 +70,17 @@ CREATE TABLE public.decks (
   CONSTRAINT decks_pkey PRIMARY KEY (id),
   CONSTRAINT decks_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.players(id)
 );
+CREATE TABLE public.friends (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  player_id uuid NOT NULL,
+  friend_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'accepted'::text, 'rejected'::text, 'blocked'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT friends_pkey PRIMARY KEY (id),
+  CONSTRAINT friends_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT friends_friend_id_fkey FOREIGN KEY (friend_id) REFERENCES public.players(id)
+);
 CREATE TABLE public.item_cards (
   id text NOT NULL,
   name text NOT NULL,
