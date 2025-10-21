@@ -156,31 +156,8 @@ export default function SelecaoDeDeck() {
     }
 
     try {
-      // Criar sala de batalha no servidor
-      const response = await fetch('/api/battle-rooms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          gameMode,
-          deck: deck.cards,
-          difficulty: botDifficulty,
-          playerId: user?.id || 'guest',
-          playerName: user?.name || user?.email || 'Jogador'
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar sala de batalha');
-      }
-
-      console.log('[Deck Selection] Sala criada:', data.roomId);
-
-      // Redirecionar para a sala com ID seguro
-      router.push(data.redirectUrl);
+      // TODO: Implementar novo sistema de batalha
+      alert('Sistema de batalha em desenvolvimento. Em breve!');
 
     } catch (error) {
       console.error('Erro ao iniciar partida:', error);

@@ -88,11 +88,9 @@ export const ENDPOINTS_API = {
   AUTH: '/api/auth',
   PLAYERS: '/api/players',
   CARDS: '/api/cards',
-  BATTLE_ROOMS: '/api/battle-rooms',
   COLLECTION: '/api/collection',
   DECKS: '/api/decks',
-  CONTOS: '/api/contos',
-  MATCH: '/api/match'
+  CONTOS: '/api/contos'
 };
 
 export const TIPOS_DE_CONQUISTA = {
