@@ -20,6 +20,7 @@ export default function BattleRoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playerCards, setPlayerCards] = useState([]);
+  const [botCards, setBotCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(true);
 
   // Carregar dados da sala
@@ -63,7 +64,7 @@ export default function BattleRoomPage() {
         }
 
         // Carregar dados das cartas após ter os dados da sala
-        await loadPlayerCards(data.room.deck);
+        await loadPlayerCards(data.room.deck, data.room.gameMode, data.room.difficulty);
 
       } catch (err) {
         console.error('Erro ao carregar sala:', err);
@@ -74,7 +75,7 @@ export default function BattleRoomPage() {
     }
 
     // Função para carregar os dados detalhados das cartas do deck
-    async function loadPlayerCards(deckIds) {
+    async function loadPlayerCards(deckIds, gameMode, difficulty) {
       if (!deckIds || !Array.isArray(deckIds)) {
         setLoadingCards(false);
         return;
@@ -100,7 +101,7 @@ export default function BattleRoomPage() {
           .map(cardId => {
             const card = allAvailableCards.find(c => c.id === cardId);
             if (!card) {
-              console.warn(`[Battle Room] Cart não encontrada: ${cardId}`);
+              console.warn(`[Battle Room] Carta não encontrada: ${cardId}`);
               return null;
             }
 
@@ -124,20 +125,106 @@ export default function BattleRoomPage() {
               habilidade: card.ability || card.habilidade,
               descricao: card.description || card.descricao || card.history || card.historia,
               habilidades: card.abilities || card.habilidades || null,
-              abilities: card.abilities || null
+              abilities: card.abilities || null,
+              elemento: card.element || card.elemento || 'neutro',
+              regiao: card.region || card.regiao || 'brasil',
             };
           })
           .filter(Boolean);
 
         console.log('[Battle Room] Cartas do deck carregadas:', deckCards);
         setPlayerCards(deckCards);
+        
+        // Se for modo bot, gerar deck do bot
+        if (gameMode === 'bot') {
+          const botDeck = generateBotDeckFromAllCards(
+            allAvailableCards, 
+            difficulty || 'normal', 
+            deckCards.length
+          );
+          console.log('[Battle Room] Deck do bot gerado:', botDeck.length, 'cartas');
+          setBotCards(botDeck);
+        }
 
       } catch (err) {
         console.error('Erro ao carregar cartas:', err);
         setPlayerCards([]);
+        setBotCards([]);
       } finally {
         setLoadingCards(false);
       }
+    }
+    
+    // Função auxiliar para gerar deck do bot
+    function generateBotDeckFromAllCards(allCards, difficulty, targetSize) {
+      const lendas = allCards.filter(c => c.category === 'lenda');
+      const itens = allCards.filter(c => c.category === 'item');
+
+      const lendasCount = Math.min(5, Math.floor(targetSize * 0.2));
+      const itensCount = targetSize - lendasCount;
+
+      const shuffleArray = (array) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      let selectedLendas = [];
+      let selectedItens = [];
+
+      switch (difficulty) {
+        case 'easy':
+          selectedLendas = lendas
+            .sort((a, b) => (a.attack || 0) - (b.attack || 0))
+            .slice(0, lendasCount);
+          selectedItens = shuffleArray(itens).slice(0, itensCount);
+          break;
+
+        case 'hard':
+          selectedLendas = lendas
+            .sort((a, b) => (b.attack || 0) - (a.attack || 0))
+            .slice(0, lendasCount);
+          selectedItens = itens
+            .sort((a, b) => (b.value || 0) - (a.value || 0))
+            .slice(0, itensCount);
+          break;
+
+        default:
+          selectedLendas = shuffleArray(lendas).slice(0, lendasCount);
+          selectedItens = shuffleArray(itens).slice(0, itensCount);
+          break;
+      }
+
+      const selectedCards = [...selectedLendas, ...selectedItens];
+      
+      return selectedCards.map(card => {
+        const inferredCost = inferirCustoParaJogar(card);
+        const finalCost = typeof inferredCost === 'number'
+          ? inferredCost
+          : (card.value || card.valor || 1);
+
+        return {
+          id: card.id,
+          tipo: card.category === 'lenda' ? 'lenda' : 'item',
+          nome: card.name || card.nome,
+          imagem: card.images?.retrato || card.image || '/images/placeholder.svg',
+          ataque: card.attack || card.ataque || 0,
+          defesa: card.defense || card.defesa || 0,
+          vida: card.life || card.vida || 0,
+          custo: finalCost,
+          tipo_item: card.category === 'item' ? (card.type_item || 'utilitario') : null,
+          valor: card.value || card.valor || 1,
+          habilidade: card.ability || card.habilidade,
+          descricao: card.description || card.descricao || card.history || card.historia,
+          habilidades: card.abilities || card.habilidades || null,
+          abilities: card.abilities || null,
+          elemento: card.element || card.elemento || 'neutro',
+          regiao: card.region || card.regiao || 'brasil',
+        };
+      });
     }
 
     loadRoomData();
@@ -168,6 +255,56 @@ export default function BattleRoomPage() {
     };
   }, [roomId]);
 
+  // Função para gerar deck aleatório do bot
+  const generateBotDeck = useCallback((allCards, difficulty, targetSize) => {
+    const lendas = allCards.filter(c => c.category === 'lenda');
+    const itens = allCards.filter(c => c.category === 'item');
+
+    const lendasCount = Math.min(5, Math.floor(targetSize * 0.2));
+    const itensCount = targetSize - lendasCount;
+
+    let selectedLendas = [];
+    let selectedItens = [];
+
+    // Função auxiliar para embaralhar array
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    switch (difficulty) {
+      case 'easy':
+        // Bot fácil: cartas mais fracas
+        selectedLendas = lendas
+          .sort((a, b) => (a.attack || 0) - (b.attack || 0))
+          .slice(0, lendasCount);
+        selectedItens = shuffleArray(itens).slice(0, itensCount);
+        break;
+
+      case 'hard':
+        // Bot difícil: cartas mais fortes
+        selectedLendas = lendas
+          .sort((a, b) => (b.attack || 0) - (a.attack || 0))
+          .slice(0, lendasCount);
+        selectedItens = itens
+          .sort((a, b) => (b.value || 0) - (a.value || 0))
+          .slice(0, itensCount);
+        break;
+
+      default:
+        // Bot normal: cartas aleatórias
+        selectedLendas = shuffleArray(lendas).slice(0, lendasCount);
+        selectedItens = shuffleArray(itens).slice(0, itensCount);
+        break;
+    }
+
+    return [...selectedLendas, ...selectedItens];
+  }, []);
+
   // Criar jogadores mock baseados nos dados da sala
   const mockPlayers = useMemo(() => {
     if (!roomData || !playerCards.length || loadingCards) return [];
@@ -184,22 +321,14 @@ export default function BattleRoomPage() {
     // Criar oponente baseado no modo de jogo
     let opponent;
     if (roomData.gameMode === 'bot') {
-      // Bot com deck gerado
-      const botCards = playerCards.map(card => ({
-        ...card,
-        // Pequenas variações para o bot
-        nome: `Bot ${card.nome}`,
-        ataque: Math.max(1, (card.ataque || 0) + Math.floor(Math.random() * 3) - 1),
-        defesa: Math.max(1, (card.defesa || 0) + Math.floor(Math.random() * 3) - 1)
-      }));
-
       opponent = {
         id: 'bot',
-        nome: `Bot ${roomData.difficulty.charAt(0).toUpperCase() + roomData.difficulty.slice(1)}`,
+        nome: `Bot ${(roomData.difficulty || 'normal').charAt(0).toUpperCase() + (roomData.difficulty || 'normal').slice(1)}`,
         avatar: '/images/avatars/player.jpg',
-        ranking: roomData.difficulty === 'easy' ? 'Bronze I' : roomData.difficulty === 'normal' ? 'Prata II' : 'Ouro I',
+        ranking: roomData.difficulty === 'easy' ? 'Bot' : roomData.difficulty === 'normal' ? 'Bot' : 'Bot',
+        mmr: roomData.difficulty === 'easy' ? 800 : roomData.difficulty === 'normal' ? 1200 : 1600,
         energia: roomData.difficulty === 'easy' ? 2 : roomData.difficulty === 'normal' ? 3 : 4,
-        deck: botCards
+        deck: botCards.length > 0 ? botCards : playerCards // Usar deck do bot se disponível
       };
     } else {
       // PvP - oponente genérico (será substituído quando outro jogador entrar)
@@ -213,8 +342,14 @@ export default function BattleRoomPage() {
       };
     }
 
+    console.log('[Battle Room] Jogadores criados:', {
+      player: { nome: player.nome, cartas: player.deck.length },
+      opponent: { nome: opponent.nome, cartas: opponent.deck.length, isBot: roomData.gameMode === 'bot' },
+      cartasIguais: roomData.gameMode === 'bot' && player.deck[0]?.id === opponent.deck[0]?.id
+    });
+
     return [player, opponent];
-  }, [roomData, playerCards, loadingCards]);
+  }, [roomData, playerCards, loadingCards, botCards]);
 
   // Hook de estado do jogo
   const { gameState, executeAction, endTurn, currentPlayer, opponent } = useGameState(

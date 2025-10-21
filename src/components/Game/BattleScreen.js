@@ -1,4 +1,4 @@
-// src/components/Game/BattleScreen.js
+﻿// src/components/Game/BattleScreen.js
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,8 +12,12 @@ import {
 } from "@/utils/constants";
 import { MotorDeJogo } from "@/utils/gameLogic";
 import { useGameCards } from "@/hooks/useGameCards";
+import { useAuth } from "@/hooks/useAuth";
+import { useMMR } from "@/hooks/useMMR";
+import { usePlayerData } from "@/hooks/usePlayerData";
 import { cardsAPI } from "@/utils/api";
 import { mapearCartaDaApi } from "@/utils/cardUtils";
+import { calcularRankingPorMMR } from "@/utils/mmrUtils";
 
 // Card size scaling relative to stage (approx based on SVG):
 // small ≈ 4.5% width x 7% height, medium ≈ 5.5% x 8.5%, large ≈ 8.5% x 12%
@@ -29,6 +33,8 @@ function PlayerInfo({
   position = "bottom",
   isCurrentPlayer = false,
   posStyle,
+  level = 1,
+  mmr = 0,
 }) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -45,26 +51,73 @@ function PlayerInfo({
     setShowEmojiPicker(false); // Fecha o picker após selecionar
   };
 
+  console.log(`[PlayerInfo ${position}]`, {
+    nome: player?.nome,
+    avatar: player?.avatar,
+    ranking: player?.ranking,
+    level,
+    mmr,
+    player
+  });
+
   return (
     <div className={`absolute ${positionClasses}`} style={posStyle}>
       <div className="bg-orange-500/90 rounded-lg p-3 border border-orange-400 shadow-lg backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700 border-2 border-orange-300">
-            <Image
-              src={player.avatar || "/images/avatars/player.jpg"}
-              alt={`Avatar de ${player.nome}`}
-              width={48}
-              height={48}
-              className="object-cover"
-              quality={100}
-              decoding="async"
-              priority={isCurrentPlayer}
-            />
+          <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-orange-300 flex items-center justify-center">
+            {player.avatar && player.avatar.startsWith('http') ? (
+              <Image
+                src={player.avatar}
+                alt={`Avatar de ${player.nome}`}
+                fill
+                className="object-cover"
+                sizes="48px"
+                quality={100}
+                priority={isCurrentPlayer}
+                unoptimized
+                onError={(e) => {
+                  console.error('Erro ao carregar avatar:', player.avatar);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : player.avatar && !player.avatar.startsWith('http') ? (
+              <Image
+                src={player.avatar}
+                alt={`Avatar de ${player.nome}`}
+                fill
+                className="object-cover"
+                sizes="48px"
+                quality={100}
+                priority={isCurrentPlayer}
+                onError={(e) => {
+                  console.error('Erro ao carregar avatar local:', player.avatar);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+                {player.nome?.charAt(0)?.toUpperCase() || "?"}
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-white font-bold text-sm">{player.nome}</div>
-            <div className="text-orange-100 text-xs">
-              {player.ranking || "Iniciante"}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1">
+              <div className="text-white font-bold text-sm leading-tight truncate">{player.nome}</div>
+              {isCurrentPlayer && level > 1 && (
+                <span className="text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded-full font-bold">
+                  Nv{level}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 mt-1">
+              <div className="text-orange-200 text-xs font-semibold bg-black/30 px-2 py-0.5 rounded inline-block">
+                {player.ranking || "Não Ranqueado"}
+              </div>
+              {isCurrentPlayer && mmr > 0 && (
+                <span className="text-[10px] text-blue-300">
+                  {mmr} MMR
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -805,6 +858,21 @@ export default function BattleScreen({
     error: cardsError,
     getPlayerData,
   } = useGameCards();
+  
+  // Hooks de autenticação, MMR e dados do jogador
+  const { user, loading: authLoading } = useAuth();
+  const { ranking: dadosRanking, mmr: mmrDoUsuario, level: levelDoUsuario, loading: mmrLoading } = useMMR();
+  const { coins, loading: coinsLoading } = usePlayerData();
+
+  console.log('[BattleScreen] Estado dos dados:', {
+    user: user ? { id: user.id, name: user.name || user.nickname, mmr: user.mmr, avatar: user.avatar_url } : null,
+    dadosRanking,
+    mmrDoUsuario,
+    levelDoUsuario,
+    authLoading,
+    mmrLoading,
+    cardsLoading
+  });
 
   // Anchor-aware position helper: x/y are percentages of viewport; choose anchors
   const posPercent = ({
@@ -1135,10 +1203,50 @@ export default function BattleScreen({
       ? zonasOriginais[ZONAS_CAMPO.MAO_ITENS]
       : [null, null, null];
 
-    return {
-      nome: playerData?.nome || defaultName,
-      avatar: playerData?.avatar || "/images/avatars/player.jpg",
-      ranking: playerData?.ranking || defaultRanking,
+    // Determinar nome, avatar e ranking reais
+    let nome, avatar, ranking;
+    
+    if (!isOpponent && user) {
+      // Jogador autenticado - usar dados reais do banco (prioridade máxima)
+      nome = user.nickname || user.name || playerData?.nome || defaultName;
+      
+      // Avatar: priorizar avatar_url do user autenticado
+      avatar = user.avatar_url || playerData?.avatar || "/images/avatars/player.jpg";
+      
+      // Ranking baseado no MMR real (múltiplas fontes de fallback)
+      if (dadosRanking?.ranking) {
+        // 1ª prioridade: dados do hook useMMR
+        ranking = dadosRanking.ranking;
+      } else if (mmrDoUsuario !== undefined && mmrDoUsuario !== 0) {
+        // 2ª prioridade: MMR do hook
+        ranking = calcularRankingPorMMR(mmrDoUsuario);
+      } else if (user.mmr !== undefined) {
+        // 3ª prioridade: MMR direto do user
+        ranking = calcularRankingPorMMR(user.mmr);
+      } else if (playerData?.ranking) {
+        // 4ª prioridade: ranking dos dados do player
+        ranking = playerData.ranking;
+      } else {
+        // Fallback final
+        ranking = "Não Ranqueado";
+      }
+    } else {
+      // Oponente ou jogador não autenticado
+      nome = playerData?.nome || defaultName;
+      avatar = playerData?.avatar || "/images/avatars/player.jpg";
+      
+      // Para oponente, usar MMR se disponível
+      if (playerData?.mmr !== undefined) {
+        ranking = calcularRankingPorMMR(playerData.mmr);
+      } else {
+        ranking = playerData?.ranking || defaultRanking;
+      }
+    }
+
+    const player = {
+      nome,
+      avatar,
+      ranking,
       zonas: {
         [ZONAS_CAMPO.LENDA_ATIVA]: activeCard,
         [ZONAS_CAMPO.BANCO_LENDAS]: bankCards,
@@ -1149,28 +1257,76 @@ export default function BattleScreen({
           zonasOriginais[ZONAS_CAMPO.PILHA_ITENS] || [],
       },
     };
+
+    console.log(`[BattleScreen] getRealPlayer ${isOpponent ? '(Oponente)' : '(Jogador)'}:`, {
+      tipo: isOpponent ? 'OPONENTE' : 'JOGADOR AUTENTICADO',
+      fontesDados: {
+        userAuth: user ? { 
+          id: user.id, 
+          name: user.name || user.nickname, 
+          mmr: user.mmr,
+          avatar_url: user.avatar_url 
+        } : null,
+        dadosRanking: dadosRanking ? {
+          ranking: dadosRanking.ranking,
+          mmr: dadosRanking.mmr
+        } : null,
+        mmrDoUsuario,
+        playerData: playerData ? {
+          nome: playerData.nome,
+          ranking: playerData.ranking,
+          mmr: playerData.mmr
+        } : null
+      },
+      resultadoFinal: {
+        nome: player.nome,
+        avatar: player.avatar,
+        ranking: player.ranking,
+        cartasNoTabuleiro: {
+          ativa: !!player.zonas[ZONAS_CAMPO.LENDA_ATIVA],
+          banco: player.zonas[ZONAS_CAMPO.BANCO_LENDAS]?.length || 0,
+          maoItens: player.zonas[ZONAS_CAMPO.MAO_ITENS]?.length || 0
+        }
+      }
+    });
+
+    return player;
   };
 
   const realCurrentPlayer = getRealPlayer(
     currentPlayer,
-    "Jogador 1",
-    "Bronze II",
+    user?.name || user?.nickname || "Jogador",
+    dadosRanking?.ranking || "Carregando...",
     false
   );
-  const realOpponent = getRealPlayer(opponent, "Oponente", "Prata I", true);
+  const realOpponent = getRealPlayer(
+    opponent, 
+    opponent?.nome || "Oponente", 
+    opponent?.ranking || "Não Ranqueado", 
+    true
+  );
 
-  // Se ainda estiver carregando cartas reais da API, mostrar loading
-  if (cardsLoading || loadingCards) {
+  // Verificar se está carregando dados essenciais
+  const isLoadingEssentialData = authLoading || mmrLoading || cardsLoading || loadingCards;
+
+  if (isLoadingEssentialData) {
     return (
       <div className="fixed inset-0 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
           <div className="text-white text-lg font-bold">
-            Carregando Cartas Reais da API...
+            {authLoading ? 'Autenticando jogador...' : 
+             mmrLoading ? 'Carregando ranking...' :
+             'Carregando cartas...'}
           </div>
           <div className="text-yellow-400 text-sm mt-2">
-            Buscando habilidades autênticas
+            Preparando batalha
           </div>
+          {user && (
+            <div className="text-white/70 text-xs mt-4">
+              Jogador: {user.name || user.nickname}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1225,6 +1381,8 @@ export default function BattleScreen({
           position="bottom"
           posStyle={POS.playerBottom}
           isCurrentPlayer={true}
+          level={levelDoUsuario || user?.level || 1}
+          mmr={mmrDoUsuario || user?.mmr || 0}
         />
         <BankCards
           cards={realCurrentPlayer.zonas[ZONAS_CAMPO.BANCO_LENDAS]}
@@ -1264,6 +1422,9 @@ export default function BattleScreen({
           player={realOpponent}
           position="top"
           posStyle={POS.playerTop}
+          isCurrentPlayer={false}
+          level={opponent?.level || 1}
+          mmr={opponent?.mmr || 0}
         />
         <BankCards
           cards={realOpponent.zonas[ZONAS_CAMPO.BANCO_LENDAS]}
