@@ -32,12 +32,10 @@ export default function NavegacaoGlobal() {
     setCarregado(true);
   }, []);
 
-  // Oculta a navegação na tela de sala de jogo (durante a partida)
-  if (pathname?.startsWith('/pvp/game')) {
-    return null;
-  }
-
-  if (pathname?.startsWith('/divulgar')) {
+  // Oculta a navegação nas telas de batalha
+  if (pathname?.startsWith('/pvp/game') || 
+      pathname?.startsWith('/pvp/battle') ||
+      pathname?.startsWith('/divulgar')) {
     return null;
   }
 

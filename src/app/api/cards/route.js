@@ -46,6 +46,7 @@ function formatCardForAPI(card) {
     unlockCondition: card.unlock_condition,
     seasonalBonus: card.seasonal_bonus,
     isStarter: card.is_starter,
+    novo: card.novo || false,
     createdAt: card.created_at,
     updatedAt: card.updated_at
   };

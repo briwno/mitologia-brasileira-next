@@ -203,7 +203,7 @@ export default function CatalogoComContos() {
           return;
         }
 
-        const cartasNormalizadas = valorQuandoVerdadeiro(dados?.cartas, []).map((carta, indice) => {
+        const cartasNormalizadas = valorQuandoVerdadeiro(dados?.cartas, []).map((carta) => {
           const imagensBrutas = valorQuandoVerdadeiro(carta.imagens, carta.images);
           const imagens = valorQuandoVerdadeiro(imagensBrutas, {});
           const imagemPrincipal = primeiroValorDefinido(
@@ -240,14 +240,14 @@ export default function CatalogoComContos() {
             tipo: tipoNormalizado,
             raridade: valorComPadrao(carta.raridade, traduzirValor(carta.rarity, TRANSLATION_MAPS.RARITY)),
             regiao: valorComPadrao(carta.regiao, traduzirValor(carta.region, TRANSLATION_MAPS.REGION)),
-            categoria: valorComPadrao(carta.categoria, traduzirValor(carta.category, TRANSLATION_MAPS.CATEGORY)),
+            categoria: valorComPadrao(carta.categoria, traduzirValor(carta.category, TRANSLATION_MAPS.CATEGORIA)),
             elemento: valorComPadrao(carta.elemento, traduzirValor(carta.element, TRANSLATION_MAPS.ELEMENT)),
             bonusSazonal,
-            novo: valorComPadrao(carta.novo, indice === 5),
+            novo: valorComPadrao(carta.novo, false),
           };
         });
 
-        const itensNormalizados = valorQuandoVerdadeiro(dados?.itens, []).map((item, indice) => {
+        const itensNormalizados = valorQuandoVerdadeiro(dados?.itens, []).map((item) => {
           const imagensBrutas = valorQuandoVerdadeiro(item.imagens, item.images);
           const imagens = valorQuandoVerdadeiro(imagensBrutas, {});
           const imagemPrincipal = primeiroValorDefinido(
@@ -286,7 +286,7 @@ export default function CatalogoComContos() {
             images: imagens,
             imagem: imagemPrincipal,
             image: imagemPrincipal,
-            novo: valorComPadrao(item.novo, indice < 4),
+            novo: valorComPadrao(item.novo, false),
           };
         });
 

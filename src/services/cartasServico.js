@@ -110,6 +110,7 @@ function prepararItemParaJogo(itemBruto) {
     descricao: primeiroValorDefinido(itemBruto.description, itemBruto.descricao),
     isTradeable: primeiroValorDefinido(itemBruto.isTradeable, itemBruto.is_tradeable, true),
     unlockCondition: primeiroValorDefinido(itemBruto.unlockCondition, itemBruto.unlock_condition),
+    novo: itemBruto.novo || false, // ← IMPORTANTE: campo novo
     imagens: {
       retrato: estruturaImagens.retrato,
       completa: estruturaImagens.completa
@@ -126,6 +127,10 @@ export async function carregarDadosDeCartas(filtros = {}) {
   } else {
     cartasBrutas = [];
   }
+  
+  console.log('🔍 [carregarDadosDeCartas] Total de cartas recebidas:', cartasBrutas.length);
+  console.log('🔍 [carregarDadosDeCartas] Primeira carta (raw):', cartasBrutas[0]);
+  
   const cartas = cartasBrutas
     .map((carta) => {
       const local = mapearCartaDaApi(carta);
@@ -146,7 +151,7 @@ export async function carregarDadosDeCartas(filtros = {}) {
         carta.images?.completa
       );
 
-      return {
+      const cartaFinal = {
         ...local,
         imagem: primeiroValorDefinido(retrato, completa, '/images/placeholder.svg'),
         imagens: {
@@ -161,7 +166,14 @@ export async function carregarDadosDeCartas(filtros = {}) {
         defesa: primeiroValorDefinido(local.defesa, carta.defense, 3),
         vida: primeiroValorDefinido(local.vida, carta.life, local.defesa, 3),
         raridade: primeiroValorDefinido(local.raridade, carta.rarity, 'Comum'),
+        novo: carta.novo || false, // ← IMPORTANTE: pega do objeto original da API
       };
+      
+      if (cartaFinal.novo) {
+        console.log('🆕 Carta marcada como NOVO:', cartaFinal.nome || cartaFinal.name, '| novo =', cartaFinal.novo);
+      }
+      
+      return cartaFinal;
     })
     .filter(Boolean);
 
@@ -172,6 +184,9 @@ export async function carregarDadosDeCartas(filtros = {}) {
     limite: filtros.limiteItens,
     deslocamento: filtros.deslocamentoItens,
   });
+  
+  console.log('🔍 [carregarDadosDeCartas] Total de itens recebidos:', itensBrutos.length);
+  
   const itens = itensBrutos.map((item) => prepararItemParaJogo(item)).filter(Boolean);
 
   return {

@@ -21,6 +21,7 @@ CREATE TABLE public.cards (
   is_starter boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  novo boolean DEFAULT false,
   CONSTRAINT cards_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.collections (
@@ -94,6 +95,7 @@ CREATE TABLE public.item_cards (
   is_tradeable boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  novo boolean DEFAULT false,
   CONSTRAINT item_cards_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.item_cards_backup (

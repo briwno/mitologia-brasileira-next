@@ -20,6 +20,7 @@ function formatItemCardForAPI(item) {
     images: item.images,
     unlockCondition: item.unlock_condition,
     isTradeable: item.is_tradeable,
+    novo: item.novo || false,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
   };
