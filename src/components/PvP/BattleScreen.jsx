@@ -209,7 +209,7 @@ export default function BattleScreen({
       </div>
 
       {/* Info da Sala */}
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute left-1/2 top-1 -translate-x-1/2 z-50">
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-yellow-600/30">
           <div className="text-xs text-gray-400">Sala</div>
           <div className="text-sm font-mono font-bold text-yellow-400">
@@ -257,7 +257,7 @@ export default function BattleScreen({
 
           {/* Carta Oponente - TOPO */}
           {battleData.opponent?.activeLegend && (
-            <div className="absolute" style={{ top: '10%', left: '50%', transform: 'translateX(-50%)' }}>
+            <div className="absolute" style={{ top: '4%', left: '50%', transform: 'translateX(-50%)' }}>
               <LegendCard
                 legend={battleData.opponent.activeLegend}
                 isActive={true}
@@ -325,7 +325,7 @@ export default function BattleScreen({
 
           {/* Carta Jogador - BASE */}
           {battleData.myPlayer?.activeLegend && (
-            <div className="absolute" style={{ bottom: '10%', left: '50%', transform: 'translateX(-50%)' }}>
+            <div className="absolute" style={{ bottom: '4%', left: '50%', transform: 'translateX(-50%)' }}>
               <LegendCard
                 legend={battleData.myPlayer.activeLegend}
                 isActive={true}
@@ -405,7 +405,7 @@ export default function BattleScreen({
           )}
 
           {/* Log de Batalha */}
-          <div className="absolute right-4 top-4">
+          <div className="absolute right-20 top-40">
             <BattleLog logs={logs} />
           </div>
         </div>

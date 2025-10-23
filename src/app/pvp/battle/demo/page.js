@@ -404,17 +404,6 @@ export default function BattleDemoPage() {
           </div>
         </div>
       </div>
-
-      {/* Indicador de Target Selecionado */}
-      {selectedTarget && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-          <div className="bg-cyan-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg flex items-center gap-2 animate-bounce">
-            <span>🎯 Alvo:</span>
-            <span>{selectedTarget.name}</span>
-            <button onClick={() => setSelectedTarget(null)} className="ml-2 hover:text-red-300">✕</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

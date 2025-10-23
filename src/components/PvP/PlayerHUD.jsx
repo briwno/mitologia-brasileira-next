@@ -92,7 +92,7 @@ export default function PlayerHUD({
   }
 
   return (
-    <div className={`${bgColor} border-2 rounded-xl px-3 py-2 shadow-lg`}>
+    <div className={`${bgColor} border-2 rounded-xl px-10 py-5 shadow-lg`}>
       <div className="flex items-center gap-2">
         <div className={`w-10 h-10 rounded-full bg-black/30 border-2 ${borderColor} flex items-center justify-center overflow-hidden`}>
           {avatarUrl && !isBot ? (
