@@ -19,6 +19,24 @@ export async function GET(req) {
     const supabase = requireSupabaseAdmin();
     const { searchParams } = new URL(req.url);
     const ownerId = searchParams.get('ownerId');
+    const deckId = searchParams.get('id');
+    
+    // Buscar deck específico por ID
+    if (deckId) {
+      const { data, error } = await supabase.from('decks').select('*').eq('id', deckId).single();
+      if (error) {
+        console.error('[Decks API] Error fetching deck by id:', error);
+        if (error.code === 'PGRST116') {
+          return NextResponse.json({ error: 'Deck não encontrado' }, { status: 404 });
+        }
+        return NextResponse.json({ error: 'database_error' }, { status: 500 });
+      }
+      const deck = { ...data, ownerId: data.owner_id };
+      delete deck.owner_id;
+      return NextResponse.json({ deck });
+    }
+    
+    // Buscar decks por owner
     if (ownerId) {
       const { data, error } = await supabase.from('decks').select('*').eq('owner_id', ownerId);
       if (error) {
@@ -29,6 +47,8 @@ export async function GET(req) {
       mapped.forEach((m) => delete m.owner_id);
       return NextResponse.json({ decks: mapped });
     }
+    
+    // Buscar todos os decks
     const { data: all, error } = await supabase.from('decks').select('*');
     if (error) {
       console.error('[Decks API] Error fetching decks:', error);

@@ -1,222 +1,190 @@
 "use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useGameState } from '@/hooks/useGameState';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 import LegendCard from './LegendCard';
 import BattleLog from './BattleLog';
 import ItemHand from './ItemHand';
-import BenchSlots from './BenchSlots';
-import SkillPanel from './SkillPanel';
 import TurnController from './TurnController';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import BattleDecorations from './BattleDecorations';
+import PlayerHUD from './PlayerHUD';
+import BenchRow from './BenchRow';
+import { formatRoomCodeDisplay } from '@/utils/roomCodes';
 
 /**
  * Componente principal da tela de batalha PvP
- * Implementa sistema completo de batalha baseado no documento batalha.md
+ * Implementa sistema completo de batalha usando dados reais dos decks
+ * @param {string} mode - Modo de jogo: 'bot', 'ranked', 'custom'
+ * @param {string} roomCode - Código da sala
+ * @param {Array} playerDeck - Deck do jogador (5 lendas)
+ * @param {Array} opponentDeck - Deck do oponente (5 lendas)
+ * @param {string} botDifficulty - Dificuldade do bot (se mode='bot')
+ * @param {Array} allCards - Todas as cartas disponíveis
+ * @param {Array} allItems - Todos os itens disponíveis
+ * @param {Function} onExit - Callback ao sair da batalha
  */
-export default function BattleScreen() {
+export default function BattleScreen({ 
+  mode,
+  roomCode,
+  playerDeck,
+  opponentDeck,
+  botDifficulty = 'normal',
+  allCards = [],
+  allItems = [],
+  onExit
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useAuth();
-  
-  // Parâmetros da batalha
-  const roomCode = searchParams.get('room');
-  const mode = searchParams.get('mode') || 'pvp';
-  const deckId = searchParams.get('deck');
 
-  const [playerDeck, setPlayerDeck] = useState(null);
   const [selectedTarget, setSelectedTarget] = useState(null);
-  const [selectedCard, setSelectedCard] = useState(null); // Carta clicada para mostrar skills
-  const [showSkillPanel, setShowSkillPanel] = useState(false);
-  const [cards, setCards] = useState([]);
-  const [loadingCards, setLoadingCards] = useState(true);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isMyTurn, setIsMyTurn] = useState(true);
+  const [currentTurn, setCurrentTurn] = useState(1);
+  const [logs, setLogs] = useState([
+    { type: 'inicio', text: 'Batalha iniciada!', timestamp: new Date().toISOString(), formatted: 'A batalha começou!' }
+  ]);
 
-  // Hook principal do estado do jogo
-  const {
-    gameState,
-    isMyTurn,
-    currentPhase,
-    battleLog,
-    isLoading,
-    error,
-    actions
-  } = useGameState(roomCode, user?.id, playerDeck, mode);
-
-  // Carregar deck do jogador
-  useEffect(() => {
-    if (!deckId) return;
-
-    const loadDeck = async () => {
-      // TODO: Buscar deck do Supabase
-      // Por enquanto, usar dados de teste
-      const testDeck = {
-        legends: [
-          {
-            id: 'saci',
-            name: 'Saci-Pererê',
-            image: '/images/cards/portraits/saci.jpg',
-            hp: 80,
-            maxHp: 80,
-            atk: 7,
-            def: 5,
-            element: 'Ar',
-            skills: [
-              {
-                id: 'redemoinho',
-                name: 'Redemoinho',
-                description: 'Causa dano de vento no oponente',
-                power: 25,
-                element: 'Ar',
-                cooldown: 0
-              },
-              {
-                id: 'travessura',
-                name: 'Travessura',
-                description: 'Reduz defesa do oponente',
-                power: 15,
-                element: 'Ar',
-                cooldown: 0
-              }
-            ],
-            ultimate: {
-              name: 'Furacão do Saci',
-              description: 'Ultimate devastadora de vento',
-              power: 60,
-              requiredTurns: 5
-            },
-            passive: {
-              name: 'Pulo da Sorte',
-              description: 'Ganha evasão extra',
-              effect: 'buff_def',
-              value: 0.1,
-              trigger: 'turn_start'
-            }
-          },
-          // Adicionar mais lendas...
-        ],
-        items: [
-          {
-            id: 'pocao_cura',
-            name: 'Poção de Cura',
-            type: 'heal',
-            value: 30,
-            description: 'Restaura 30 HP',
-            uses: 1
-          },
-          // Adicionar mais itens...
-        ]
-      };
-      
-      setPlayerDeck(testDeck);
+  // Transformar dados das cartas do deck para formato de batalha
+  const transformCardData = (card, hp, maxHp) => {
+    if (!card) return null;
+    
+    const nome = card.nome || card.name || 'Carta Desconhecida';
+    const imagem = card.imagens?.retrato || card.images?.portrait || card.imagem || `/images/cards/portraits/${card.id}.jpg`;
+    
+    // ✅ Acessar habilidades como no CardDetail
+    const habilidades = card.habilidades || {};
+    
+    // ✅ Extrair skills 1-5
+    const blocos = [
+      habilidades.skill1,
+      habilidades.skill2,
+      habilidades.skill3,
+      habilidades.skill4,
+      habilidades.skill5,
+    ].filter(Boolean);
+    
+    const skills = blocos.map((habilidade, indice) => ({
+      id: `skill${indice + 1}`,
+      name: habilidade.name,
+      description: habilidade.description || '',
+      power: habilidade.power || habilidade.damage || 0,
+      pp: habilidade.pp || habilidade.cost || (indice + 2),
+      maxPP: habilidade.ppMax || habilidade.maxPP || (indice + 2),
+      cooldown: habilidade.cooldown || indice,
+      image: habilidade.image,
+      isUltimate: indice === 4
+    }));
+    
+    // ✅ Habilidade Passiva
+    const passive = habilidades.passive ? {
+      name: habilidades.passive.name,
+      description: habilidades.passive.description || '',
+      effect: habilidades.passive.effect || 'buff',
+      value: habilidades.passive.value || 0.1,
+      trigger: habilidades.passive.trigger || 'turn_start',
+      image: habilidades.passive.image
+    } : null;
+    
+    return {
+      id: card.id,
+      name: nome,
+      image: imagem,
+      hp: hp !== undefined ? hp : (card.vida || card.life || card.hp || 100),
+      maxHp: maxHp !== undefined ? maxHp : (card.vida || card.life || card.max_hp || card.hp || 100),
+      atk: card.ataque || card.attack || card.atk || 7,
+      def: card.defesa || card.defense || card.def || 5,
+      element: card.elemento || card.element || 'Neutro',
+      shields: 0,
+      statusEffects: [],
+      skills: skills,
+      passive: passive
     };
+  };
 
-    loadDeck();
-  }, [deckId]);
+  // Inicializar dados da batalha
+  const [battleData, setBattleData] = useState(() => {
+    // Preparar lendas do jogador (5 cartas)
+    const myLegends = playerDeck.slice(0, 5).map((card, i) => 
+      transformCardData(card, undefined, undefined)
+    );
+    
+    // Preparar lendas do oponente (5 cartas)
+    const enemyLegends = opponentDeck.slice(0, 5).map((card, i) => 
+      transformCardData(card, undefined, undefined)
+    );
+    
+    // TODO: Preparar itens (20 do deck, comprar 5, escolher 3)
+    const myItems = [
+      { id: 'pocao', name: 'Poção de Cura', type: 'heal', value: 30, description: 'Restaura 30 HP', uses: 1 },
+      { id: 'escudo', name: 'Escudo Místico', type: 'defensivo', value: 15, description: 'Adiciona 15 de defesa', uses: 2 }
+    ];
 
-  // Carregar cartas do banco de dados para enriquecer dados
-  useEffect(() => {
-    async function loadCards() {
-      try {
-        const { data, error } = await supabase
-          .from('cards')
-          .select('*')
-          .limit(10);
-
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setCards(data);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar cartas do banco:', error);
-      } finally {
-        setLoadingCards(false);
-      }
-    }
-
-    loadCards();
-  }, []);
-
-  // Função para transformar dados do banco em formato de batalha
-  const transformCardData = (card, hp, maxHp) => ({
-    id: card.id,
-    name: card.name || card.nome,
-    image: card.image_url || `/images/cards/portraits/${card.id}.jpg`,
-    hp: hp || card.hp || 80,
-    maxHp: maxHp || card.max_hp || card.hp || 100,
-    atk: card.atk || card.attack || 7,
-    def: card.def || card.defense || 5,
-    element: card.element || card.elemento || 'Neutro',
-    shields: card.shields || 0,
-    statusEffects: [],
-    skills: card.skills || [
-      { 
-        id: 'skill1', 
-        name: card.skill1_name || 'Ataque Básico', 
-        description: card.skill1_description || 'Ataque simples', 
-        power: card.skill1_power || 20,
-        element: card.element || 'Neutro',
-        cooldown: 0 
+    return {
+      myPlayer: {
+        name: user?.username || user?.email || 'Jogador',
+        activeLegend: myLegends[0], // Primeira lenda ativa
+        bench: myLegends.slice(1), // Outras 4 no banco
+        itemHand: myItems,
+        turnsPlayed: 0
       },
-      ...(card.skill2_name ? [{
-        id: 'skill2',
-        name: card.skill2_name,
-        description: card.skill2_description || '',
-        power: card.skill2_power || 25,
-        element: card.element || 'Neutro',
-        cooldown: 1
-      }] : [])
-    ],
-    ultimate: {
-      name: card.ultimate_name || 'Ultimate',
-      description: card.ultimate_description || 'Poder supremo',
-      power: card.ultimate_power || 60,
-      requiredTurns: 3
-    },
-    passive: {
-      name: card.passive_name || 'Passiva',
-      description: card.passive_description || 'Efeito passivo',
-      effect: 'buff',
-      value: 0.1,
-      trigger: 'turn_start'
-    }
+      opponent: {
+        name: mode === 'bot' ? `Bot (${botDifficulty})` : 'Oponente',
+        activeLegend: enemyLegends[0],
+        bench: enemyLegends.slice(1),
+        itemHand: [{}, {}, {}] // Oponente não mostra itens
+      }
+    };
   });
 
-  if (isLoading || !gameState) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a2332] via-[#0f1821] to-[#0a1118] flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const handleAddLog = (type, message) => {
+    setLogs(prev => [...prev, {
+      type,
+      text: message,
+      formatted: message,
+      timestamp: new Date().toLocaleTimeString('pt-BR')
+    }]);
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a2332] via-[#0f1821] to-[#0a1118] flex items-center justify-center text-white">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-500 mb-4">Erro</h2>
-          <p>{error}</p>
-          <button 
-            onClick={() => router.push('/pvp')}
-            className="mt-4 px-6 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-full"
-          >
-            Voltar ao Menu
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleUseSkill = (skill) => {
+    if (!isMyTurn) return;
+    
+    handleAddLog('usar_skill', `${battleData.myPlayer.name} usou ${skill.name}`);
+    // TODO: Implementar lógica de dano, PP, etc
+  };
 
-  const myPlayer = gameState.players.find(p => p.id === user?.id);
-  const opponent = gameState.players.find(p => p.id !== user?.id);
+  const handleSwitchLegend = (legend) => {
+    if (!isMyTurn) return;
+    
+    handleAddLog('trocar_lenda', `${battleData.myPlayer.name} trocou para ${legend.name}`);
+    setBattleData(prev => ({
+      ...prev,
+      myPlayer: {
+        ...prev.myPlayer,
+        activeLegend: legend,
+        bench: [prev.myPlayer.activeLegend, ...prev.myPlayer.bench.filter(l => l.id !== legend.id)]
+      }
+    }));
+    setIsMyTurn(false);
+  };
 
-  if (!myPlayer) {
-    return <div>Erro: Jogador não encontrado</div>;
-  }
+  const handleEndTurn = () => {
+    handleAddLog('fim_turno', `${battleData.myPlayer.name} encerrou o turno`);
+    setIsMyTurn(false);
+    setCurrentTurn(prev => prev + 1);
+    setBattleData(prev => ({
+      ...prev,
+      myPlayer: {
+        ...prev.myPlayer,
+        turnsPlayed: prev.myPlayer.turnsPlayed + 1
+      }
+    }));
+    
+    // TODO: Lógica do oponente (bot ou realtime)
+    setTimeout(() => {
+      setIsMyTurn(true);
+    }, 2000);
+  };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-[#1a2332] via-[#0f1821] to-[#0a1118] text-white overflow-hidden">
@@ -231,98 +199,70 @@ export default function BattleScreen() {
       {/* Botão de saída */}
       <div className="absolute top-4 left-4 z-50">
         <button 
-          onClick={() => router.push('/pvp')}
+          onClick={onExit || (() => router.push('/pvp'))}
           className="px-3 py-1.5 bg-red-600/90 hover:bg-red-700 text-xs font-semibold rounded-lg transition-colors shadow-lg"
         >
           ← Sair da Batalha
         </button>
       </div>
 
-      {/* Loading Indicator */}
-      {loadingCards && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 px-4 py-2 rounded-lg">
-          <div className="text-cyan-400 text-sm animate-pulse">⏳ Carregando cartas...</div>
+      {/* Info da Sala */}
+      <div className="absolute top-4 right-4 z-50">
+        <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-yellow-600/30">
+          <div className="text-xs text-gray-400">Sala</div>
+          <div className="text-sm font-mono font-bold text-yellow-400">
+            {formatRoomCodeDisplay(roomCode)}
+          </div>
+          <div className="text-xs text-gray-500">{mode === 'bot' ? '🤖 vs Bot' : mode === 'ranked' ? '🏆 Ranqueada' : '🏠 Personalizada'}</div>
         </div>
-      )}
+      </div>
 
-      {/* Layout Principal - NOVO TCG */}
+      {/* Layout Principal - TCG */}
       <div className="relative z-10 h-screen flex flex-col py-4">
         
         {/* ========== TOPO: OPONENTE + BANCO ========== */}
         <div className="px-6 flex items-start justify-between mb-2">
-          {/* HUD Oponente + Banco Horizontal */}
-          {opponent && (
-            <div className="flex items-center gap-4">
-              {/* Avatar Oponente */}
-              <div className="bg-orange-600/80 border-2 border-orange-400 rounded-xl px-3 py-2 shadow-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-black/30 border-2 border-orange-300 flex items-center justify-center">
-                    <span className="text-lg">👤</span>
-                  </div>
-                  <div>
-                    <div className="font-bold text-xs text-white">{opponent.name || 'Oponente'}</div>
-                    <div className="text-[9px] text-orange-200">Rank: Bronze</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Banco do Oponente - 4 cartas horizontais */}
-              <div className="flex gap-2">
-                {opponent.bench?.slice(0, 4).map((legend, i) => (
-                  <div
-                    key={i}
-                    className={`relative w-14 h-20 rounded-lg overflow-hidden border-2 bg-black/50 hover:border-orange-400 transition-all cursor-pointer ${
-                      selectedCard?.id === legend.id ? 'border-yellow-400 animate-pulse' : 'border-orange-500/60'
-                    }`}
-                    title={legend.name}
-                    onClick={() => setSelectedCard(selectedCard?.id === legend.id ? null : legend)}
-                  >
-                    <img src={legend.image} alt={legend.name} className="w-full h-full object-cover" />
-                    {legend.hp === 0 && (
-                      <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-                        <span className="text-xl">💀</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <PlayerHUD player={battleData.opponent} isEnemy={true} />
+            <BenchRow 
+              legends={battleData.opponent.bench}
+              onSelectCard={(legend) => setSelectedCard(selectedCard?.id === legend.id ? null : legend)}
+              selectedCard={selectedCard}
+              isEnemy={true}
+            />
+          </div>
 
           {/* Itens Oponente */}
-          {opponent && (
-            <div className="flex gap-2">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={`w-10 h-14 rounded border ${
-                    i < (opponent.itemHand?.length || 0)
-                      ? 'bg-green-900/30 border-green-600/50'
-                      : 'bg-black/20 border-neutral-700/30 opacity-40'
-                  } flex items-center justify-center`}
-                >
-                  {i < (opponent.itemHand?.length || 0) && <span className="text-xs text-green-400">?</span>}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className={`w-10 h-14 rounded border ${
+                  i < 2
+                    ? 'bg-green-900/30 border-green-600/50'
+                    : 'bg-black/20 border-neutral-700/30 opacity-40'
+                } flex items-center justify-center`}
+              >
+                {i < 2 && <span className="text-xs text-green-400">?</span>}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ========== CENTRO: CAMPO DE BATALHA ========== */}
         <div className="flex-1 relative flex items-center justify-center">
-          {/* Oval Grande */}
           <div className="absolute w-[900px] h-[500px] rounded-full border-4 border-yellow-600/40 opacity-60" />
 
           {/* Carta Oponente - TOPO */}
-          {opponent && (
+          {battleData.opponent?.activeLegend && (
             <div className="absolute" style={{ top: '10%', left: '50%', transform: 'translateX(-50%)' }}>
               <LegendCard
-                legend={opponent.activeLegend}
+                legend={battleData.opponent.activeLegend}
                 isActive={true}
                 isEnemy={true}
                 onClick={() => {
-                  setSelectedTarget(opponent.activeLegend);
-                  setSelectedCard(selectedCard?.id === opponent.activeLegend.id ? null : opponent.activeLegend);
+                  setSelectedTarget(battleData.opponent.activeLegend);
+                  setSelectedCard(selectedCard?.id === battleData.opponent.activeLegend.id ? null : battleData.opponent.activeLegend);
                 }}
                 showStats={true}
               />
@@ -330,7 +270,7 @@ export default function BattleScreen() {
           )}
 
           {/* Painel de Skills do Oponente - Ao lado da carta */}
-          {selectedCard && opponent && selectedCard.id === opponent.activeLegend?.id && (
+          {selectedCard && battleData.opponent && selectedCard.id === battleData.opponent.activeLegend?.id && (
             <div 
               className="absolute z-30 bg-black/95 border-2 border-red-500/70 rounded-xl p-4 shadow-2xl"
               style={{ top: '10%', left: 'calc(50% + 180px)' }}
@@ -376,20 +316,20 @@ export default function BattleScreen() {
                 <span>⚔️</span>
               </div>
               <div className="text-xs text-neutral-300 mt-0.5 text-center">
-                Turno {gameState.turn} - {isMyTurn ? 'Sua Vez!' : 'Oponente'}
+                Turno {currentTurn} - {isMyTurn ? 'Sua Vez!' : 'Oponente'}
               </div>
             </div>
           </div>
 
           {/* Carta Jogador - BASE */}
-          {myPlayer && (
+          {battleData.myPlayer?.activeLegend && (
             <div className="absolute" style={{ bottom: '10%', left: '50%', transform: 'translateX(-50%)' }}>
               <LegendCard
-                legend={myPlayer.activeLegend}
+                legend={battleData.myPlayer.activeLegend}
                 isActive={true}
                 isEnemy={false}
                 onClick={() => {
-                  setSelectedCard(selectedCard?.id === myPlayer.activeLegend.id ? null : myPlayer.activeLegend);
+                  setSelectedCard(selectedCard?.id === battleData.myPlayer.activeLegend.id ? null : battleData.myPlayer.activeLegend);
                 }}
                 showStats={true}
               />
@@ -397,7 +337,7 @@ export default function BattleScreen() {
           )}
 
           {/* Painel de Skills do Jogador - Ao lado da carta */}
-          {selectedCard && myPlayer && selectedCard.id === myPlayer.activeLegend?.id && (
+          {selectedCard && battleData.myPlayer && selectedCard.id === battleData.myPlayer.activeLegend?.id && (
             <div 
               className="absolute z-30 bg-black/95 border-2 border-cyan-500/70 rounded-xl p-4 shadow-2xl"
               style={{ bottom: '10%', left: 'calc(50% + 180px)' }}
@@ -438,12 +378,12 @@ export default function BattleScreen() {
                 {selectedCard.ultimate && (
                   <div 
                     className={`bg-purple-900/40 border border-purple-500/50 rounded-lg p-2 transition-all ${
-                      isMyTurn && (myPlayer.turnsPlayed || 0) >= 3 
+                      isMyTurn && (battleData.myPlayer.turnsPlayed || 0) >= 3 
                         ? 'hover:bg-purple-800/50 cursor-pointer' 
                         : 'opacity-60 cursor-not-allowed'
                     }`}
                     onClick={() => {
-                      if (isMyTurn && (myPlayer.turnsPlayed || 0) >= 3 && selectedTarget) {
+                      if (isMyTurn && (battleData.myPlayer.turnsPlayed || 0) >= 3 && selectedTarget) {
                         actions.useUltimate(selectedTarget.id);
                         setSelectedCard(null);
                         setSelectedTarget(null);
@@ -453,7 +393,7 @@ export default function BattleScreen() {
                     <div className="font-bold text-xs text-purple-300">💫 {selectedCard.ultimate.name}</div>
                     <div className="text-[10px] text-neutral-300 mt-1">{selectedCard.ultimate.description}</div>
                     <div className="text-[9px] text-orange-400 mt-2">⚡ {selectedCard.ultimate.power}</div>
-                    {(myPlayer.turnsPlayed || 0) < 3 && (
+                    {(battleData.myPlayer.turnsPlayed || 0) < 3 && (
                       <div className="text-[9px] text-red-400 mt-1">Requer 3 turnos</div>
                     )}
                   </div>
@@ -464,7 +404,7 @@ export default function BattleScreen() {
 
           {/* Log de Batalha */}
           <div className="absolute right-4 top-4">
-            <BattleLog logs={battleLog} />
+            <BattleLog logs={logs} />
           </div>
         </div>
 
@@ -472,49 +412,35 @@ export default function BattleScreen() {
         <div className="px-6 flex items-end justify-between gap-6 mb-2">
           
           {/* HUD Jogador */}
-          {myPlayer && (
-            <div className="bg-cyan-600/80 border-2 border-cyan-400 rounded-xl px-3 py-2 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-black/30 border-2 border-cyan-300 flex items-center justify-center">
-                  <span className="text-lg">🎮</span>
-                </div>
-                <div>
-                  <div className="font-bold text-xs text-white">{myPlayer.name || 'Jogador 1'}</div>
-                  <div className="text-[9px] text-cyan-200">Rank: Bronze II</div>
-                </div>
-              </div>
-            </div>
-          )}
+          <PlayerHUD 
+            player={battleData.myPlayer}
+            isOpponent={false}
+          />
 
           {/* BANCO + ITENS - CENTRO */}
-          {myPlayer && (
+          {battleData.myPlayer && (
             <div className="flex-1 flex flex-col items-center gap-3">
               {/* Banco de Cartas */}
-              <div className="bg-cyan-900/40 border border-cyan-500/60 rounded-xl px-4 py-2 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">Banco de Cartas</span>
-                  <div className="flex gap-2">
-                    <BenchSlots
-                      legends={myPlayer.bench}
-                      onSelectLegend={(legend) => {
-                        if (isMyTurn) {
-                          actions.switchLegend(legend.id);
-                        }
-                      }}
-                      disabled={!isMyTurn}
-                    />
-                  </div>
-                </div>
-              </div>
+              <BenchRow
+                legends={battleData.myPlayer.bench}
+                onSelectCard={(legend) => {
+                  if (isMyTurn) {
+                    handleSwitchLegend(legend);
+                  }
+                }}
+                selectedCard={selectedCard}
+                disabled={!isMyTurn}
+                isEnemy={false}
+              />
 
               {/* Seus Itens */}
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-emerald-400 uppercase font-semibold">Seus Itens</span>
                 <ItemHand
-                  items={myPlayer.itemHand}
+                  items={battleData.myPlayer.itemHand}
                   onUseItem={(item) => {
                     if (isMyTurn && selectedTarget) {
-                      actions.useItem(item.id, selectedTarget.id);
+                      handleAddLog('item', `Item ${item.name} usado`);
                       setSelectedTarget(null);
                     }
                   }}
@@ -528,10 +454,10 @@ export default function BattleScreen() {
           <div>
             <TurnController
               isMyTurn={isMyTurn}
-              currentTurn={gameState.turn}
-              currentPhase={currentPhase}
-              onEndTurn={actions.endTurn}
-              disabled={!isMyTurn || currentPhase !== 'ACAO'}
+              currentTurn={currentTurn}
+              currentPhase="ACAO"
+              onEndTurn={handleEndTurn}
+              disabled={!isMyTurn}
             />
           </div>
         </div>

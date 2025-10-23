@@ -53,85 +53,51 @@ export default function BattleDemoPage() {
   }, []);
 
   // Transformar dados do banco em formato de batalha
+  // ✅ USANDO A MESMA LÓGICA DO CardDetail.js
   const transformCardData = (card, hp, maxHp) => {
-    // Usar dados vindos do banco já normalizados pelo serviço
+    if (!card) return null;
+    
     const nome = card.nome || card.name || 'Carta Desconhecida';
     const imagem = card.imagens?.retrato || card.images?.portrait || card.imagem || `/images/cards/portraits/${card.id}.jpg`;
     
-    // ✅ CARREGAR TODAS AS 5 SKILLS DO BANCO (abilities é JSONB)
-    const abilities = card.habilidades || card.abilities || {};
+    // ✅ Acessar habilidades como no CardDetail (card.habilidades vem do mapearCartaDaApi)
+    const habilidades = card.habilidades || {};
     
-    const skills = [
-      // Skill 1
-      abilities.skill1 && {
-        id: 'skill1',
-        name: abilities.skill1.name,
-        description: abilities.skill1.description || '',
-        power: abilities.skill1.power || abilities.skill1.damage || 20,
-        pp: abilities.skill1.pp || abilities.skill1.cost || 2,
-        maxPP: abilities.skill1.ppMax || abilities.skill1.maxPP || abilities.skill1.pp || 2,
-        cooldown: abilities.skill1.cooldown || 0,
-        image: abilities.skill1.image
-      },
-      // Skill 2
-      abilities.skill2 && {
-        id: 'skill2',
-        name: abilities.skill2.name,
-        description: abilities.skill2.description || '',
-        power: abilities.skill2.power || abilities.skill2.damage || 25,
-        pp: abilities.skill2.pp || abilities.skill2.cost || 3,
-        maxPP: abilities.skill2.ppMax || abilities.skill2.maxPP || abilities.skill2.pp || 3,
-        cooldown: abilities.skill2.cooldown || 1,
-        image: abilities.skill2.image
-      },
-      // Skill 3
-      abilities.skill3 && {
-        id: 'skill3',
-        name: abilities.skill3.name,
-        description: abilities.skill3.description || '',
-        power: abilities.skill3.power || abilities.skill3.damage || 30,
-        pp: abilities.skill3.pp || abilities.skill3.cost || 4,
-        maxPP: abilities.skill3.ppMax || abilities.skill3.maxPP || abilities.skill3.pp || 4,
-        cooldown: abilities.skill3.cooldown || 2,
-        image: abilities.skill3.image
-      },
-      // Skill 4
-      abilities.skill4 && {
-        id: 'skill4',
-        name: abilities.skill4.name,
-        description: abilities.skill4.description || '',
-        power: abilities.skill4.power || abilities.skill4.damage || 35,
-        pp: abilities.skill4.pp || abilities.skill4.cost || 5,
-        maxPP: abilities.skill4.ppMax || abilities.skill4.maxPP || abilities.skill4.pp || 5,
-        cooldown: abilities.skill4.cooldown || 3,
-        image: abilities.skill4.image
-      },
-      // Skill 5 (Ultimate)
-      abilities.skill5 && {
-        id: 'skill5',
-        name: abilities.skill5.name,
-        description: abilities.skill5.description || '',
-        power: abilities.skill5.power || abilities.skill5.damage || 60,
-        pp: abilities.skill5.pp || abilities.skill5.cost || 6,
-        maxPP: abilities.skill5.ppMax || abilities.skill5.maxPP || abilities.skill5.pp || 6,
-        cooldown: abilities.skill5.cooldown || 4,
-        image: abilities.skill5.image,
-        isUltimate: true
-      }
-    ].filter(Boolean); // Remover skills inexistentes
+    // ✅ Extrair skills 1-5 EXATAMENTE como CardDetail faz
+    const blocos = [
+      habilidades.skill1,
+      habilidades.skill2,
+      habilidades.skill3,
+      habilidades.skill4,
+      habilidades.skill5,
+    ].filter(Boolean);
     
-    // Habilidade Passiva (separada das skills)
-    const passive = abilities.passive ? {
-      name: abilities.passive.name,
-      description: abilities.passive.description || '',
-      effect: abilities.passive.effect || 'buff',
-      value: abilities.passive.value || 0.1,
-      trigger: abilities.passive.trigger || 'turn_start',
-      image: abilities.passive.image
+    // Transformar para formato de batalha
+    const skills = blocos.map((habilidade, indice) => ({
+      id: `skill${indice + 1}`,
+      name: habilidade.name,
+      description: habilidade.description || '',
+      power: habilidade.power || habilidade.damage || 0,
+      pp: habilidade.pp || habilidade.cost || (indice + 2),
+      maxPP: habilidade.ppMax || habilidade.maxPP || (indice + 2),
+      cooldown: habilidade.cooldown || indice,
+      image: habilidade.image,
+      isUltimate: indice === 4 // Skill 5 é ultimate
+    }));
+    
+    // ✅ Habilidade Passiva exatamente como CardDetail
+    const passive = habilidades.passive ? {
+      name: habilidades.passive.name,
+      description: habilidades.passive.description || '',
+      effect: habilidades.passive.effect || 'buff',
+      value: habilidades.passive.value || 0.1,
+      trigger: habilidades.passive.trigger || 'turn_start',
+      image: habilidades.passive.image
     } : null;
     
     // 🐛 DEBUG: Ver quantas skills foram carregadas
     console.log(`📊 [${nome}] Skills carregadas: ${skills.length}`, {
+      habilidades_raw: card.habilidades,
       skills: skills.map(s => s.name),
       passive: passive?.name || 'Nenhuma'
     });

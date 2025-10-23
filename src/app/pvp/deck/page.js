@@ -9,6 +9,7 @@ import { useCollection } from "@/hooks/useCollection";
 import { cardsAPI } from "@/utils/api";
 import Icon from "@/components/UI/Icon";
 import { validateDeck, DECK_RULES } from "@/utils/deckValidation";
+import MatchmakingLobby from "@/components/Matchmaking/MatchmakingLobby";
 
 export default function SelecaoDeDeck() {
   const router = useRouter();
@@ -139,6 +140,8 @@ export default function SelecaoDeDeck() {
     }
   }, [user, isAuthenticated, availableCards]);
 
+  const [showMatchmaking, setShowMatchmaking] = useState(false);
+
   const iniciarPartida = async () => {
     if (!deckSelecionado) return;
 
@@ -155,14 +158,8 @@ export default function SelecaoDeDeck() {
       return;
     }
 
-    try {
-      // TODO: Implementar novo sistema de batalha
-      alert('Sistema de batalha em desenvolvimento. Em breve!');
-
-    } catch (error) {
-      console.error('Erro ao iniciar partida:', error);
-      alert(`Erro ao iniciar partida: ${error.message}`);
-    }
+    // Abrir tela de matchmaking
+    setShowMatchmaking(true);
   };
 
   const handleSaveDeck = async (cardIds) => {
@@ -427,6 +424,17 @@ export default function SelecaoDeDeck() {
           title={`Construir Deck para ${gameMode.toUpperCase()}`}
           subtitle="Monte um deck poderoso para suas batalhas"
         />
+
+        {/* Matchmaking Lobby */}
+        {showMatchmaking && (
+          <MatchmakingLobby
+            mode={gameMode}
+            deck={decksSalvos.find((d) => d.id === deckSelecionado)}
+            botDifficulty={botDifficulty}
+            playerName={user?.username || user?.email || 'Jogador'}
+            onCancel={() => setShowMatchmaking(false)}
+          />
+        )}
       </div>
     </LayoutDePagina>
   );
