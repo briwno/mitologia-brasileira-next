@@ -129,7 +129,9 @@ export default function BattleScreen({
         turnsPlayed: 0
       },
       opponent: {
-        name: mode === 'bot' ? `Bot (${botDifficulty})` : 'Oponente',
+        name: mode === 'bot' ? 'Bot' : 'Oponente',
+        difficulty: mode === 'bot' ? botDifficulty : undefined,
+        isBot: mode === 'bot',
         activeLegend: enemyLegends[0],
         bench: enemyLegends.slice(1),
         itemHand: [{}, {}, {}] // Oponente não mostra itens
@@ -476,7 +478,7 @@ export default function BattleScreen({
 
       {/* Hint de interação */}
       {isMyTurn && !selectedCard && (
-        <div className="fixed bottom-4 left-4 z-50 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-neutral-300">
+        <div className="fixed bottom-40 left-4 z-50 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-neutral-300">
           💡 Clique nas cartas para ver skills
         </div>
       )}
