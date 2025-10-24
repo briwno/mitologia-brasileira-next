@@ -28,17 +28,19 @@ export default function SelecaoDeDeck() {
   const [loadingCards, setLoadingCards] = useState(true);
   const [botDifficulty, setBotDifficulty] = useState('normal');
 
-  // Carregar todas as cartas da API
+  // Carregar todas as cartas da API (apenas lendas)
   useEffect(() => {
     const loadCards = async () => {
       try {
-        const [cardsResponse, itemCardsResponse] = await Promise.all([
-          cardsAPI.getAll(),
-          fetch('/api/item-cards').then(res => res.json())
-        ]);
+        const cardsResponse = await cardsAPI.getAll();
+        // DESATIVADO: Sistema de itens - não carregar item cards
+        // const [cardsResponse, itemCardsResponse] = await Promise.all([
+        //   cardsAPI.getAll(),
+        //   fetch('/api/item-cards').then(res => res.json())
+        // ]);
         
         setAllCards(cardsResponse.cards || []);
-        setAllItemCards(itemCardsResponse.itemCards || []);
+        // setAllItemCards([]); // DESATIVADO
       } catch (error) {
         console.error('Erro ao carregar cartas:', error);
       } finally {
@@ -49,59 +51,52 @@ export default function SelecaoDeDeck() {
     loadCards();
   }, []);
 
-  // Monta a coleção disponível
+  // Monta a coleção disponível (apenas lendas)
   const availableCards = useMemo(() => {
     if (loadingCards) return [];
     
-    if (isAuthenticated() && !loadingCollection && (ownedCardIds?.length || ownedItemCardIds?.length)) {
-      const allAvailableCards = [];
+    if (isAuthenticated() && !loadingCollection && ownedCardIds?.length) {
+      // Adicionar apenas cartas regulares (lendas) que o usuário possui
+      const cardMap = new Map(allCards.map(c => [c.id, { ...c, category: 'lenda', type: 'lenda' }]));
+      const userCards = ownedCardIds
+        .map(id => cardMap.get(id))
+        .filter(Boolean);
+      return userCards;
       
-      // Adicionar cartas regulares (lendas) que o usuário possui
-      if (ownedCardIds?.length) {
-        const cardMap = new Map(allCards.map(c => [c.id, { ...c, category: 'lenda', type: 'lenda' }]));
-        const userCards = ownedCardIds
-          .map(id => cardMap.get(id))
-          .filter(Boolean);
-        allAvailableCards.push(...userCards);
-      }
-      
-      // Adicionar item cards que o usuário possui
-      if (ownedItemCardIds?.length) {
-        const itemCardMap = new Map(allItemCards.map(c => [c.id, { ...c, category: 'item', type: 'item' }]));
-        const userItemCards = ownedItemCardIds
-          .map(id => itemCardMap.get(id))
-          .filter(Boolean);
-        allAvailableCards.push(...userItemCards);
-      }
-      
-      return allAvailableCards;
+      // DESATIVADO: Sistema de itens
+      // const allAvailableCards = [];
+      // if (ownedItemCardIds?.length) {
+      //   const itemCardMap = new Map(allItemCards.map(c => [c.id, { ...c, category: 'item', type: 'item' }]));
+      //   const userItemCards = ownedItemCardIds.map(id => itemCardMap.get(id)).filter(Boolean);
+      //   allAvailableCards.push(...userItemCards);
+      // }
+      // return allAvailableCards;
     }
     
-    // Fallback para cartas starter - incluir tanto lendas quanto itens
-    const starterLegends = allCards.filter(c => c?.is_starter || c?.id).slice(0, 15).map(c => ({ ...c, category: 'lenda', type: 'lenda' }));
-    const starterItems = allItemCards.filter(c => c?.is_starter || c?.id).slice(0, 15).map(c => ({ ...c, category: 'item', type: 'item' }));
-    return [...starterLegends, ...starterItems];
-  }, [allCards, allItemCards, loadingCards, ownedCardIds, ownedItemCardIds, isAuthenticated, loadingCollection]);
+    // Fallback para cartas starter - apenas lendas
+    return allCards.filter(c => c?.is_starter || c?.id).slice(0, 15).map(c => ({ ...c, category: 'lenda', type: 'lenda' }));
+  }, [allCards, loadingCards, ownedCardIds, isAuthenticated, loadingCollection]);
 
   // Carregar decks salvos
   useEffect(() => {
     async function carregarDecks() {
       if (!isAuthenticated() || !user?.id) {
         // Deck demo usando cartas starter
-        // Criar deck inicial balanceado
+        // Criar deck inicial balanceado (apenas lendas)
         const lendas = availableCards.filter(c => {
           const category = (c.category || '').toLowerCase();
           const type = (c.type || '').toLowerCase();
           return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
         }).slice(0, DECK_RULES.REQUIRED_LENDAS);
         
-        const itens = availableCards.filter(c => {
-          const category = (c.category || '').toLowerCase();
-          const type = (c.type || '').toLowerCase();
-          return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
-        }).slice(0, DECK_RULES.REQUIRED_ITENS);
+        // DESATIVADO: Sistema de itens
+        // const itens = availableCards.filter(c => {
+        //   const category = (c.category || '').toLowerCase();
+        //   const type = (c.type || '').toLowerCase();
+        //   return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
+        // }).slice(0, DECK_RULES.REQUIRED_ITENS);
         
-        const starterCards = [...lendas.map(c => c.id), ...itens.map(c => c.id)];
+        const starterCards = lendas.map(c => c.id);
         const decksFicticios = [
           {
             id: "starter",
@@ -225,7 +220,7 @@ export default function SelecaoDeDeck() {
             {gameMode === "custom" && "🏠 Partida personalizada"}
           </p>
           <div className="text-sm text-green-300 mt-2">
-            Regras: {DECK_RULES.REQUIRED_LENDAS} lendas + {DECK_RULES.REQUIRED_ITENS} itens = {DECK_RULES.MAX_SIZE} cartas • 1 cópia por carta • Apenas cartas da sua coleção
+            Regras: {DECK_RULES.REQUIRED_LENDAS} lendas • 1 cópia por carta • Apenas cartas da sua coleção
           </div>
         </div>
 
@@ -294,24 +289,16 @@ export default function SelecaoDeDeck() {
                   {deck.isDefault && (
                     <span className="text-yellow-400 ml-2">⭐ Padrão</span>
                   )}
-                  {/* Contagem de lendas e itens */}
+                  {/* Contagem de lendas */}
                   {availableCards.length > 0 && deck.cards && (
                     <div className="text-xs mt-1 flex gap-3">
                       <span className="text-purple-300">
-                        L: {deck.cards.filter(cardId => {
+                        🔮 Lendas: {deck.cards.filter(cardId => {
                           const card = availableCards.find(c => c.id == cardId);
                           const category = (card?.category || '').toLowerCase();
                           const type = (card?.type || '').toLowerCase();
                           return category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend';
                         }).length}/5
-                      </span>
-                      <span className="text-blue-300">
-                        I: {deck.cards.filter(cardId => {
-                          const card = availableCards.find(c => c.id == cardId);
-                          const category = (card?.category || '').toLowerCase();
-                          const type = (card?.type || '').toLowerCase();
-                          return category === 'item' || type === 'item' || category === 'itens' || type === 'itens';
-                        }).length}/20
                       </span>
                     </div>
                   )}

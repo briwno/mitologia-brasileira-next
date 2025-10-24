@@ -6,12 +6,14 @@ import { useEffect, useState } from 'react';
 import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
 import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import Icon from '@/components/UI/Icon';
+import PatchNotesModal from '@/components/UI/PatchNotesModal';
 
 // Layout de página compartilhado
 export default function LayoutDePagina({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [mostrarModalConfiguracoes, definirMostrarModalConfiguracoes] = useState(false);
   const [mostrarModalInformacoes, definirMostrarModalInformacoes] = useState(false);
+  const [definirMostrarModalPatchNotes, setDefinirMostrarModalPatchNotes] = useState(false);
   
   const contextoAutenticacao = usarAutenticacao();
   const {
@@ -115,24 +117,7 @@ export default function LayoutDePagina({ children }) {
               </div>
               
               {/* Moedas do jogador — exibidas apenas se autenticado */}
-              {estaAutenticado && moedas && (
-                <div className="hidden md:flex items-center gap-3 ml-2">
-                  <div className="flex items-center gap-1 text-xs">
-                    <Icon name="coins" size={16} className="text-yellow-400" />
-                    <span className="text-yellow-300 font-semibold">{moedas.gold?.toLocaleString() || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs">
-                    <Icon name="gem" size={16} className="text-blue-400" />
-                    <span className="text-blue-300 font-semibold">{moedas.gems?.toLocaleString() || 0}</span>
-                  </div>
-                  {(moedas.tokens > 0) && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <Icon name="star" size={16} className="text-purple-400" />
-                      <span className="text-purple-300 font-semibold">{moedas.tokens}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+  
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -149,6 +134,14 @@ export default function LayoutDePagina({ children }) {
               onClick={() => definirMostrarModalInformacoes(true)}
             >
               <Icon name="scroll" size={20} />
+            </button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
+              onClick={() => setDefinirMostrarModalPatchNotes(true)}
+              title="Patch Notes"
+            >
+              <Icon name="notes" size={20} />
             </button>
             {/* Login/logout minimalista */}
             {estaAutenticado ? (
@@ -240,6 +233,12 @@ export default function LayoutDePagina({ children }) {
             </div>
           </div>
         )}
+    {/* Modal de Patch Notes */}
+        <PatchNotesModal 
+          isOpen={definirMostrarModalPatchNotes} 
+          onClose={() => setDefinirMostrarModalPatchNotes(false)} 
+        />
+        
       </div>
     </main>
   );

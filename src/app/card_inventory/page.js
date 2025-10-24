@@ -331,11 +331,12 @@ export default function PaginaInventarioDeCartas() {
     () => ownedCards.filter(ehCartaDeLenda).length,
     [ownedCards]
   );
-  const itemsCount = useMemo(
-    () => ownedCards.filter(ehCartaDeItem).length,
-    [ownedCards]
-  );
-  const canBuildDeck = legendsCount >= 5 && itemsCount >= 20;
+  // DESATIVADO: Sistema de itens
+  // const itemsCount = useMemo(
+  //   () => ownedCards.filter(ehCartaDeItem).length,
+  //   [ownedCards]
+  // );
+  const canBuildDeck = legendsCount >= 5; // Apenas lendas necessárias
   const exibindoCarregamento = [loadingCards, loadingCollection].some(Boolean);
 
   // Handler para salvar deck
@@ -429,24 +430,6 @@ export default function PaginaInventarioDeCartas() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-900/40 backdrop-blur-sm rounded-xl p-6 border-2 border-purple-500/50 hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-purple-200 font-semibold">📦 Inventário</div>
-              <div className="text-xs px-2 py-1 bg-purple-500/30 rounded-full text-purple-200">
-                Total
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">
-              {allItems.length}
-            </div>
-            <div className="text-xs text-purple-300">Itens Disponíveis</div>
-            {/* Stats adicionais */}
-            <div className="mt-3 flex gap-2 text-xs">
-              <div className="px-2 py-1 bg-purple-500/20 rounded">⚔️ Equipamentos</div>
-              <div className="px-2 py-1 bg-purple-500/20 rounded">🧪 Consumíveis</div>
-            </div>
-          </div>
-
           <div className="bg-gradient-to-br from-green-600/20 to-green-900/40 backdrop-blur-sm rounded-xl p-6 border-2 border-green-500/50 hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-green-200 font-semibold">⚔️ Deck Builder</div>
@@ -463,12 +446,14 @@ export default function PaginaInventarioDeCartas() {
                   {legendsCount}/5
                 </span>
               </div>
+              {/* DESATIVADO: Sistema de itens
               <div className="flex justify-between items-center">
                 <span className="text-xs text-green-300">⚔️ Itens</span>
                 <span className={itemsCount >= 20 ? "text-sm font-bold text-green-400" : "text-sm font-bold text-yellow-400"}>
                   {itemsCount}/20
                 </span>
               </div>
+              */}
             </div>
             <button
               onClick={() => setShowDeckBuilder(true)}
@@ -480,7 +465,7 @@ export default function PaginaInventarioDeCartas() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - DESATIVADO: Sistema de itens */}
         <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-gray-600/30 mb-6">
           <div className="flex border-b border-gray-600/30">
             <button
@@ -493,6 +478,7 @@ export default function PaginaInventarioDeCartas() {
             >
               🃏 Cartas ({ownedCards.length})
             </button>
+            {/* DESATIVADO: Tab de itens
             <button
               onClick={() => setActiveTab("items")}
               className={`flex-1 p-4 font-semibold transition-colors ${
@@ -502,6 +488,13 @@ export default function PaginaInventarioDeCartas() {
               }`}
             >
               📦 Itens ({ownedItems.length})
+            </button>
+            */}
+            <button
+              disabled
+              className="flex-1 p-4 font-semibold text-gray-500 cursor-not-allowed opacity-50"
+            >
+              📦 Itens (Em breve)
             </button>
           </div>
 
@@ -574,9 +567,11 @@ export default function PaginaInventarioDeCartas() {
                         <option value="lendas">
                           🔮 Apenas Lendas ({legendsCount})
                         </option>
+                        {/* DESATIVADO: Sistema de itens
                         <option value="itens">
                           ⚔️ Apenas Itens ({itemsCount})
                         </option>
+                        */}
                       </select>
                     </div>
 
@@ -745,92 +740,20 @@ export default function PaginaInventarioDeCartas() {
               </>
             )}
 
+            {/* DESATIVADO: Sistema de itens */}
             {activeTab === "items" && (
-              <>
-                {!isAuthenticated() ? (
-                  <div className="text-center py-16">
-                    <div className="text-5xl mb-4">🔒</div>
-                    <div className="text-lg mb-4 text-gray-300">
-                      Faça login para ver sua coleção de itens
-                    </div>
-                    <Link
-                      href="/login"
-                      className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold"
-                    >
-                      Ir para Login
-                    </Link>
-                  </div>
-                ) : (
-                  <>
-                    {/* Filtros para itens */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                      <input
-                        type="text"
-                        placeholder="Buscar itens..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
-                      />
-                      <select
-                        value={rarity}
-                        onChange={(e) => setRarity(e.target.value)}
-                        className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="all">Todas as Raridades</option>
-                        <option value="COMMON">Comum</option>
-                        <option value="RARE">Raro</option>
-                        <option value="EPIC">Épico</option>
-                        <option value="LEGENDARY">Lendário</option>
-                        <option value="MYTHIC">Mítico</option>
-                      </select>
-                      <select
-                        onChange={(e) => {
-                          const itemType = e.target.value;
-                          setCategory(itemType === "all" ? "all" : itemType);
-                        }}
-                        className="px-3 py-2 bg-black/50 border border-gray-600 rounded text-white focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="all">Todos os Tipos</option>
-                        <option value="CONSUMABLE">Consumível</option>
-                        <option value="EQUIPMENT">Equipamento</option>
-                        <option value="ARTIFACT">Artefato</option>
-                        <option value="RELIC">Relíquia</option>
-                        <option value="SCROLL">Pergaminho</option>
-                      </select>
-                    </div>
-
-                    {loadingCards ? (
-                      <div className="text-center text-gray-400">
-                        Carregando itens...
-                      </div>
-                    ) : cardsError ? (
-                      <div className="text-center py-12 text-red-400">
-                        Erro ao carregar itens: {cardsError}
-                      </div>
-                    ) : allItems.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        Nenhum item disponível para exibição.
-                      </div>
-                    ) : filteredItems.length === 0 ? (
-                      <div className="text-center py-12 text-gray-400">
-                        Nenhum item atende aos filtros atuais.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {filteredItems.map((item) => (
-                          <ItemCard
-                            key={item.id}
-                            item={item}
-                            onClick={() => setSelectedCard(item)}
-                            className="hover:scale-105 transition-transform"
-                            isOwned={ownedItemIds.includes(item.id)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">�</div>
+                <div className="text-2xl font-bold mb-4 text-gray-300">
+                  Sistema de Itens em Desenvolvimento
+                </div>
+                <p className="text-gray-400 mb-6">
+                  Estamos trabalhando para trazer um incrível sistema de itens para você!
+                </p>
+                <div className="text-sm text-gray-500">
+                  Fique ligado nas próximas atualizações 🎮
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -849,7 +772,7 @@ export default function PaginaInventarioDeCartas() {
           onSave={handleSaveDeck}
           availableCards={ownedCards}
           title="Montar Deck da Coleção"
-          subtitle={`Selecione 5 lendas e 20 itens de sua coleção (${legendsCount} lendas e ${itemsCount} itens disponíveis)`}
+          subtitle={`Selecione 5 lendas de sua coleção (${legendsCount} lendas disponíveis)`}
         />
       </div>
     </LayoutDePagina>

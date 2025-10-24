@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import LegendCard from './LegendCard';
 import BattleLog from './BattleLog';
-import ItemHand from './ItemHand';
+// import ItemHand from './ItemHand'; // DESATIVADO: Sistema de itens
 import TurnController from './TurnController';
 import BattleDecorations from './BattleDecorations';
 import PlayerHUD from './PlayerHUD';
@@ -114,18 +114,18 @@ export default function BattleScreen({
       transformCardData(card, undefined, undefined)
     );
     
-    // TODO: Preparar itens (20 do deck, comprar 5, escolher 3)
-    const myItems = [
-      { id: 'pocao', name: 'Poção de Cura', type: 'heal', value: 30, description: 'Restaura 30 HP', uses: 1 },
-      { id: 'escudo', name: 'Escudo Místico', type: 'defensivo', value: 15, description: 'Adiciona 15 de defesa', uses: 2 }
-    ];
+    // DESATIVADO: Sistema de itens
+    // const myItems = [
+    //   { id: 'pocao', name: 'Poção de Cura', type: 'heal', value: 30, description: 'Restaura 30 HP', uses: 1 },
+    //   { id: 'escudo', name: 'Escudo Místico', type: 'defensivo', value: 15, description: 'Adiciona 15 de defesa', uses: 2 }
+    // ];
 
     return {
       myPlayer: {
         name: user?.username || user?.email || 'Jogador',
         activeLegend: myLegends[0], // Primeira lenda ativa
         bench: myLegends.slice(1), // Outras 4 no banco
-        itemHand: myItems,
+        // itemHand: myItems, // DESATIVADO
         turnsPlayed: 0
       },
       opponent: {
@@ -134,7 +134,7 @@ export default function BattleScreen({
         isBot: mode === 'bot',
         activeLegend: enemyLegends[0],
         bench: enemyLegends.slice(1),
-        itemHand: [{}, {}, {}] // Oponente não mostra itens
+        // itemHand: [{}, {}, {}] // DESATIVADO
       }
     };
   });
@@ -234,8 +234,8 @@ export default function BattleScreen({
             />
           </div>
 
-          {/* Itens Oponente */}
-          <div className="flex gap-2">
+          {/* DESATIVADO: Itens Oponente */}
+          {/* <div className="flex gap-2">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -248,7 +248,7 @@ export default function BattleScreen({
                 {i < 2 && <span className="text-xs text-green-400">?</span>}
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
 
         {/* ========== CENTRO: CAMPO DE BATALHA ========== */}
@@ -435,8 +435,8 @@ export default function BattleScreen({
                 isEnemy={false}
               />
 
-              {/* Seus Itens */}
-              <div className="flex items-center gap-2">
+              {/* DESATIVADO: Seus Itens */}
+              {/* <div className="flex items-center gap-2">
                 <span className="text-[9px] text-emerald-400 uppercase font-semibold">Seus Itens</span>
                 <ItemHand
                   items={battleData.myPlayer.itemHand}
@@ -448,7 +448,7 @@ export default function BattleScreen({
                   }}
                   disabled={!isMyTurn}
                 />
-              </div>
+              </div> */}
             </div>
           )}
 

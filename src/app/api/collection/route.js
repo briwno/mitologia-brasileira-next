@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireSupabaseAdmin } from '@/lib/supabase';
 
+// ATUALIZADO: Removido itemCards (sistema de itens desativado)
 const UpsertSchema = z.object({
   playerId: z.string().uuid(),
   cards: z.array(z.string().min(1)).default([]),
-  itemCards: z.array(z.string().min(1)).default([]),
+  // itemCards: z.array(z.string().min(1)).default([]), // REMOVIDO
 });
 
 export async function GET(req) {
@@ -27,7 +28,7 @@ export async function GET(req) {
 
     const { data: row, error } = await supabase
       .from('collections')
-      .select('cards, item_cards')
+      .select('cards') // ATUALIZADO: Removido item_cards
       .eq('player_id', playerId)
       .maybeSingle();
       
@@ -54,18 +55,9 @@ export async function GET(req) {
       }
     }
 
-    let itemCards = row?.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0) {
-      if (typeof itemCards[0] === 'object') {
-        // Filtrar apenas objetos válidos com 'id' e extrair IDs únicos
-        itemCards = itemCards
-          .filter(c => c && c.id) // Remove objetos sem ID
-          .map(c => c.id);
-        itemCards = [...new Set(itemCards)]; // Remove duplicatas
-      } else if (typeof itemCards[0] === 'string') {
-        itemCards = [...new Set(itemCards)]; // Já são strings, apenas remove duplicatas
-      }
-    }
+    // REMOVIDO: Sistema de itens desativado
+    // let itemCards = row?.item_cards || [];
+    const itemCards = []; // Sempre retorna array vazio
 
     console.log('[Collection API] Returning response:', { cards: cards.length, itemCards: itemCards.length });
     return NextResponse.json({ cards, itemCards });
@@ -84,14 +76,15 @@ export async function POST(req) {
     const supabase = requireSupabaseAdmin();
 
     const upsertData = { player_id: parsed.data.playerId, cards: parsed.data.cards };
-    if (parsed.data.itemCards && parsed.data.itemCards.length > 0) {
-      upsertData.item_cards = parsed.data.itemCards;
-    }
+    // REMOVIDO: Sistema de itens desativado
+    // if (parsed.data.itemCards && parsed.data.itemCards.length > 0) {
+    //   upsertData.item_cards = parsed.data.itemCards;
+    // }
     
     const { data, error } = await supabase
       .from('collections')
       .upsert(upsertData, { onConflict: 'player_id' })
-      .select('cards, item_cards')
+      .select('cards') // ATUALIZADO: Removido item_cards
       .single();
     if (error) {
       console.error('[Collection API] Error upserting collection (POST):', error);
@@ -109,15 +102,8 @@ export async function POST(req) {
       }
     }
     
-    let itemCards = data.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0) {
-      if (typeof itemCards[0] === 'object') {
-        itemCards = itemCards
-          .filter(c => c && c.id)
-          .map(c => c.id);
-        itemCards = [...new Set(itemCards)];
-      }
-    }
+    // REMOVIDO: Sistema de itens desativado
+    const itemCards = []; // Sempre retorna array vazio
     
     return NextResponse.json({ cards, itemCards, created: false });
   } catch (e) {
@@ -128,7 +114,8 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   try {
-    const { playerId, add, remove, addItemCard, removeItemCard } = await req.json();
+    const { playerId, add, remove } = await req.json();
+    // REMOVIDO: addItemCard, removeItemCard (sistema de itens desativado)
     if (!playerId) return NextResponse.json({ error: 'playerId required' }, { status: 400 });
     const supabase = requireSupabaseAdmin();
 
@@ -148,14 +135,8 @@ export async function PATCH(req) {
       }
     }
 
-    let nextItemCards = existing?.item_cards || [];
-    if (Array.isArray(nextItemCards) && nextItemCards.length > 0) {
-      if (typeof nextItemCards[0] === 'object') {
-        nextItemCards = nextItemCards
-          .filter(c => c && c.id)
-          .map(c => c.id);
-      }
-    }
+    // REMOVIDO: Sistema de itens desativado
+    // let nextItemCards = existing?.item_cards || [];
 
     // Operações com cards normais
     if (add) {
@@ -167,25 +148,17 @@ export async function PATCH(req) {
       nextCards = nextCards.filter((c) => c !== String(remove));
     }
 
-    // Operações com item cards
-    if (addItemCard) {
-      const set = new Set(nextItemCards);
-      set.add(String(addItemCard));
-      nextItemCards = Array.from(set);
-    }
-    if (removeItemCard) {
-      nextItemCards = nextItemCards.filter((c) => c !== String(removeItemCard));
-    }
+    // REMOVIDO: Operações com item cards desativadas
+    // if (addItemCard) { ... }
+    // if (removeItemCard) { ... }
 
     const upsertData = { player_id: playerId, cards: nextCards };
-    if (nextItemCards.length > 0 || existing?.item_cards) {
-      upsertData.item_cards = nextItemCards;
-    }
+    // REMOVIDO: item_cards não é mais inserido
 
     const { data, error } = await supabase
       .from('collections')
       .upsert(upsertData, { onConflict: 'player_id' })
-      .select('cards, item_cards')
+      .select('cards') // ATUALIZADO: Removido item_cards
       .single();
     if (error) {
       console.error('[Collection API] Error upserting collection (PATCH):', error);
@@ -203,15 +176,8 @@ export async function PATCH(req) {
       }
     }
     
-    let itemCards = data.item_cards || [];
-    if (Array.isArray(itemCards) && itemCards.length > 0) {
-      if (typeof itemCards[0] === 'object') {
-        itemCards = itemCards
-          .filter(c => c && c.id)
-          .map(c => c.id);
-        itemCards = [...new Set(itemCards)];
-      }
-    }
+    // REMOVIDO: Sistema de itens desativado
+    const itemCards = []; // Sempre retorna array vazio
     
     return NextResponse.json({ cards, itemCards, created: !existing });
   } catch (e) {

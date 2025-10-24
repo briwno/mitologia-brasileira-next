@@ -21,7 +21,7 @@ export const metadata = {
 
 // Layout raiz da aplicação
 export default function LayoutPrincipal({ children }) {
-  const versaoAplicacao = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0-alpha';
+  const versaoAplicacao = process.env.NEXT_PUBLIC_APP_VERSION || '0.2.0-alpha';
   return (
     <html lang="pt-BR">
       <body

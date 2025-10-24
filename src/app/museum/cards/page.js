@@ -420,6 +420,7 @@ export default function CatalogoComContos() {
             >
               🃏 Cartas ({filteredCards.length}/{cards.length})
             </button>
+            {/* DESATIVADO: Sistema de itens
             <button
               onClick={() => setSelectedTab('items')}
               className={`px-6 py-2 rounded-md font-semibold transition-all ${
@@ -429,6 +430,13 @@ export default function CatalogoComContos() {
               }`}
             >
               📦 Itens ({filteredItems.length}/{itemCards.length})
+            </button>
+            */}
+            <button
+              disabled
+              className="px-6 py-2 rounded-md font-semibold text-gray-500 cursor-not-allowed opacity-50"
+            >
+              📦 Itens (Em breve)
             </button>
           </div>
 
@@ -566,7 +574,14 @@ export default function CatalogoComContos() {
                 </>
               )}
 
-              {/* Filtros específicos para itens */}
+              {/* Filtros específicos para itens - DESATIVADO */}
+              {selectedTab === 'items' && (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-4xl mb-4">🚧</div>
+                  <p className="text-gray-400">Sistema de itens em desenvolvimento</p>
+                </div>
+              )}
+              {/* CÓDIGO ANTERIOR COMENTADO
               {selectedTab === 'items' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Item</label>
@@ -584,6 +599,7 @@ export default function CatalogoComContos() {
                   </select>
                 </div>
               )}
+              */}
             </div>
 
             {/* Resumo dos Filtros Ativos */}

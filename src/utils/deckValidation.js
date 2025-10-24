@@ -2,18 +2,18 @@
 
 export const DECK_RULES = {
   TAMANHO_DECK_LENDAS: 5,      // 5 Lendas únicas no deck
-  TAMANHO_DECK_ITENS: 20,      // 20 Itens no deck  
-  TAMANHO_MAXIMO_MAO_ITENS: 3, // Máximo 3 itens na mão
+  // TAMANHO_DECK_ITENS: 20,      // DESATIVADO: Sistema de itens
+  // TAMANHO_MAXIMO_MAO_ITENS: 3, // DESATIVADO: Sistema de itens
   BANCO_LENDAS: 4,              // 4 lendas no banco (reserva)
   LENDA_ATIVA: 1,               // 1 lenda ativa em campo
   LIMITE_TEMPO_TURNO: 300,      // 5 minutos
   
   // Regras derivadas
-  MIN_SIZE: 25, // 5 lendas + 20 itens = 25 cartas mínimo
-  MAX_SIZE: 25, // Deck fixo de 25 cartas
+  MIN_SIZE: 5, // Apenas 5 lendas
+  MAX_SIZE: 5, // Deck fixo de 5 lendas
   MAX_COPIES_PER_CARD: 1, // Apenas 1 cópia de cada carta
   REQUIRED_LENDAS: 5,     // Exatamente 5 lendas
-  REQUIRED_ITENS: 20,     // Exatamente 20 itens
+  // REQUIRED_ITENS: 20,     // DESATIVADO: Sistema de itens
   REQUIRED_FIELDS: ['id', 'name', 'category']
 };
 
@@ -73,11 +73,10 @@ export function validateDeck(deckCards, availableCards = []) {
     errors.push(`Cartas não encontradas na coleção: ${invalidCards.join(', ')}`);
   }
 
-  // Validar composição por categoria (Lendas e Itens)
+  // Validar composição por categoria (apenas Lendas)
   if (availableCards.length > 0) {
     const cardsByType = {
-      lendas: [],
-      itens: []
+      lendas: []
     };
 
     deckCards.forEach(cardId => {
@@ -89,8 +88,6 @@ export function validateDeck(deckCards, availableCards = []) {
         
         if (category === 'lenda' || type === 'lenda' || category === 'legend' || type === 'legend') {
           cardsByType.lendas.push(cardId);
-        } else if (category === 'item' || type === 'item' || category === 'itens' || type === 'itens') {
-          cardsByType.itens.push(cardId);
         }
       }
     });
@@ -98,11 +95,6 @@ export function validateDeck(deckCards, availableCards = []) {
     // Validar quantidade de lendas
     if (cardsByType.lendas.length !== DECK_RULES.REQUIRED_LENDAS) {
       errors.push(`Deck deve ter exatamente ${DECK_RULES.REQUIRED_LENDAS} lendas. Atual: ${cardsByType.lendas.length}`);
-    }
-
-    // Validar quantidade de itens
-    if (cardsByType.itens.length !== DECK_RULES.REQUIRED_ITENS) {
-      errors.push(`Deck deve ter exatamente ${DECK_RULES.REQUIRED_ITENS} itens. Atual: ${cardsByType.itens.length}`);
     }
   }
 

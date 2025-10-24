@@ -214,23 +214,24 @@ async function abrirBoosterHandler(supabase, playerId, boosterInicial = false) {
     }
   }
 
-  // 3. Buscar cartas lendas e itens do banco
+  // 3. Buscar cartas lendas do banco
   const { data: cartasLendas, error: lendasError } = await supabase
     .from("cards")
     .select("*");
 
   if (lendasError) throw lendasError;
 
-  const { data: cartasItens, error: itensError } = await supabase
-    .from("item_cards")
-    .select("*");
+  // Log para verificar raridades no banco
+  console.log('[Boosters API] Cartas no banco:', cartasLendas?.length || 0);
+  console.log('[Boosters API] Amostra de raridades:', cartasLendas?.slice(0, 5).map(c => ({
+    nome: c.name || c.nome,
+    raridade: c.raridade || c.rarity,
+    raridadeUpper: (c.raridade || c.rarity || '').toUpperCase()
+  })));
 
-  if (itensError) throw itensError;
-
-  // 4. Abrir booster usando o sistema
+  // 4. Abrir booster usando o sistema (agora retorna 5 lendas)
   const resultado = abrirBooster(
     cartasLendas || [],
-    cartasItens || [],
     boosterData.pity_mitico || 0
   );
 
@@ -238,14 +239,13 @@ async function abrirBoosterHandler(supabase, playerId, boosterInicial = false) {
   console.log("[Boosters] Cartas sorteadas:", resultado.cartas.map(c => ({
     nome: c.name || c.nome,
     tipo: c.tipo,
-    images: c.images,
-    raridade: c.raridadeSorteada
+    raridade: c.rarity || c.raridade
   })));
 
   // 5. Atualizar coleção do jogador (adicionar cartas - permitir repetidas)
   const { data: colecao, error: colecaoError } = await supabase
     .from("collections")
-    .select("cards, item_cards")
+    .select("cards")
     .eq("player_id", playerId)
     .maybeSingle();
 
@@ -257,23 +257,13 @@ async function abrirBoosterHandler(supabase, playerId, boosterInicial = false) {
     cartasAtuais = cartasAtuais.filter(c => c && c.id); // Remove objetos sem ID
   }
 
-  let itensAtuais = colecao?.item_cards || [];
-  if (Array.isArray(itensAtuais)) {
-    itensAtuais = itensAtuais.filter(c => c && c.id); // Remove objetos sem ID
-  }
-
-  // Adicionar cartas obtidas (permitindo duplicadas)
+  // Adicionar todas as cartas obtidas (agora são todas lendas)
   resultado.cartas.forEach((carta) => {
-    if (carta.tipo === 'lenda') {
-      cartasAtuais.push({ id: carta.id, quantidade: 1 });
-    } else {
-      itensAtuais.push({ id: carta.id, quantidade: 1 });
-    }
+    cartasAtuais.push({ id: carta.id, quantidade: 1 });
   });
 
   // Consolidar cartas repetidas (somar quantidades)
   const cartasConsolidadas = consolidarCartas(cartasAtuais);
-  const itensConsolidados = consolidarCartas(itensAtuais);
 
   // Atualizar coleção
   const { error: updateColecaoError } = await supabase
@@ -281,7 +271,6 @@ async function abrirBoosterHandler(supabase, playerId, boosterInicial = false) {
     .upsert({
       player_id: playerId,
       cards: cartasConsolidadas,
-      item_cards: itensConsolidados,
     });
 
   if (updateColecaoError) throw updateColecaoError;

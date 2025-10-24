@@ -11,9 +11,52 @@ const temaPorRaridade = {
 	COMUM: 'border-gray-600',
 	INCOMUM: 'border-green-500/60',
 	RARO: 'border-blue-500/60',
+	EPIC: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.25)]',
 	EPICO: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.25)]',
+	LEGENDARY: 'border-amber-400/80 shadow-[0_0_24px_rgba(251,191,36,0.35)]',
 	LENDARIO: 'border-amber-400/80 shadow-[0_0_24px_rgba(251,191,36,0.35)]',
+	MYTHIC: 'border-rose-500/90 shadow-[0_0_28px_rgba(244,63,94,0.4)]',
 	MITICO: 'border-rose-500/90 shadow-[0_0_28px_rgba(244,63,94,0.4)]',
+};
+
+// Tradução de raridades (inglês -> português)
+const traduzirRaridade = (rarity) => {
+	const mapa = {
+		'MYTHIC': 'Mítico',
+		'LEGENDARY': 'Lendário',
+		'EPIC': 'Épico',
+		'RARE': 'Raro',
+		'UNCOMMON': 'Incomum',
+		'COMMON': 'Comum',
+		'MITICO': 'Mítico',
+		'LENDARIO': 'Lendário',
+		'EPICO': 'Épico',
+		'RARO': 'Raro',
+		'INCOMUM': 'Incomum',
+		'COMUM': 'Comum',
+	};
+	return mapa[rarity?.toUpperCase()] || rarity;
+};
+
+// Cores das badges de raridade
+const coresBadgeRaridade = (rarity) => {
+	const key = rarity?.toUpperCase();
+	if (key === 'MYTHIC' || key === 'MITICO') {
+		return 'bg-rose-500/30 text-rose-300 border border-rose-500/50';
+	}
+	if (key === 'LEGENDARY' || key === 'LENDARIO') {
+		return 'bg-amber-500/30 text-amber-300 border border-amber-500/50';
+	}
+	if (key === 'EPIC' || key === 'EPICO') {
+		return 'bg-purple-500/30 text-purple-300 border border-purple-500/50';
+	}
+	if (key === 'RARE' || key === 'RARO') {
+		return 'bg-blue-500/30 text-blue-300 border border-blue-500/50';
+	}
+	if (key === 'UNCOMMON' || key === 'INCOMUM') {
+		return 'bg-green-500/30 text-green-300 border border-green-500/50';
+	}
+	return 'bg-gray-500/30 text-gray-300 border border-gray-500/50';
 };
 
 // Função para extrair URL da imagem de forma segura
@@ -183,7 +226,7 @@ export default function PaginaShopBoosters() {
 				<div className="text-center mb-6">
 					<h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300">Loja de Boosters</h1>
 					<p className="text-gray-300">Descubra novas lendas do folclore brasileiro</p>
-					<p className="text-sm text-gray-400 mt-2">Cada booster contém 4 itens + 1 lenda (épica ou superior)</p>
+					<p className="text-sm text-gray-400 mt-2">Cada booster contém 5 lendas (épicas, lendárias ou míticas)</p>
 				</div>
 
 				<div className="flex flex-wrap items-center justify-center gap-3 mb-6">
@@ -237,7 +280,7 @@ export default function PaginaShopBoosters() {
 							</div>
 							<div className="absolute bottom-3 left-3 right-3">
 								<h3 className="text-xl font-extrabold">Pacote de Cartas</h3>
-								<p className="text-gray-300 text-xs">5 cartas • 4 itens + 1 lenda épica+</p>
+								<p className="text-gray-300 text-xs">5 lendas (épicas, lendárias ou míticas)</p>
 							</div>
 						</div>
 						<div className="p-4 border-t border-white/10">
@@ -289,69 +332,36 @@ export default function PaginaShopBoosters() {
 							<button onClick={() => setMostrarResultado(false)} className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold">Fechar</button>
 						</div>
 
-						{/* Layout: Lenda no centro, itens ao redor */}
+						{/* Layout: Todas as cartas são lendas agora */}
 						<div className="flex flex-col items-center gap-6">
-							{/* Lenda - Carta Principal no Centro */}
-							{resultadoAbertura.cartas.filter(c => c.tipo === 'lenda').map((lenda, i) => {
-								const imagem = getImageUrl(lenda, 'lenda');
-								return (
-									<div key={`lenda-${i}`} className="w-full max-w-md">
-										<div className={`relative rounded-2xl p-4 border-2 ${temaPorRaridade[lenda.raridadeSorteada] || 'border-purple-500'} bg-black/40 transform hover:scale-105 transition-transform duration-300`}>
-											<div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-sm">
-												⚡ LENDA
-											</div>
-											<div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-3 border-2 border-white/20">
-												<Image 
-													src={imagem}
-													alt={lenda.name || lenda.nome || 'Lenda'} 
-													fill 
-													className="object-cover" 
-													unoptimized
-													onError={(e) => {
-														console.error('[Shop] Erro ao carregar imagem da lenda:', imagem);
-														e.currentTarget.src = '/images/placeholder.svg';
-													}}
-												/>
-											</div>
-											<div className="text-center">
-												<h4 className="text-xl font-bold text-white mb-1">{lenda.name || lenda.nome}</h4>
-												<div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-													lenda.raridadeSorteada === 'MITICO' ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50' :
-													lenda.raridadeSorteada === 'LENDARIO' ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50' :
-													'bg-purple-500/30 text-purple-300 border border-purple-500/50'
-												}`}>
-													{lenda.raridadeSorteada}
-												</div>
-											</div>
-										</div>
-									</div>
-								);
-							})}
-
-							{/* Itens - Grade ao redor */}
+							{/* Todas as 5 cartas de lendas */}
 							<div className="w-full">
-								<p className="text-center text-gray-400 text-sm mb-3">🎒 Itens Obtidos</p>
-								<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-									{resultadoAbertura.cartas.filter(c => c.tipo === 'item').map((item, i) => {
-										const imagem = getImageUrl(item, 'item');
+								<p className="text-center text-amber-400 text-lg font-bold mb-4">⚡ Cartas Obtidas</p>
+								<div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+									{resultadoAbertura.cartas.map((lenda, i) => {
+										const imagem = getImageUrl(lenda, 'lenda');
+										const raridade = lenda.rarity || lenda.raridade || 'EPIC';
+										const raridadeTraduzida = traduzirRaridade(raridade);
 										return (
-											<div key={`item-${i}`} className={`relative rounded-xl p-3 border ${temaPorRaridade[item.raridadeSorteada] || 'border-gray-600'} bg-black/30 hover:scale-105 transition-transform duration-200`}>
-												<div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-2 border border-white/10">
+											<div key={`lenda-${i}`} className={`relative rounded-xl p-3 border-2 ${temaPorRaridade[raridade?.toUpperCase()] || temaPorRaridade['EPIC']} bg-black/40 hover:scale-105 transition-transform duration-300`}>
+												<div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-2 border-2 border-white/20">
 													<Image 
 														src={imagem}
-														alt={item.name || item.nome || 'Item'} 
+														alt={lenda.name || lenda.nome || 'Lenda'} 
 														fill 
 														className="object-cover" 
 														unoptimized
 														onError={(e) => {
-															console.error('[Shop] Erro ao carregar imagem do item:', imagem);
+															console.error('[Shop] Erro ao carregar imagem da lenda:', imagem);
 															e.currentTarget.src = '/images/placeholder.svg';
 														}}
 													/>
 												</div>
 												<div className="text-center">
-													<div className="text-sm font-semibold text-white line-clamp-1">{item.name || item.nome}</div>
-													<div className="text-xs text-gray-400 mt-1">{item.raridadeSorteada}</div>
+													<h4 className="text-sm font-bold text-white mb-1 line-clamp-1">{lenda.name || lenda.nome}</h4>
+													<div className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${coresBadgeRaridade(raridade)}`}>
+														{raridadeTraduzida}
+													</div>
 												</div>
 											</div>
 										);
@@ -364,34 +374,34 @@ export default function PaginaShopBoosters() {
 						<div className="mt-6 p-4 rounded-xl bg-black/40 border border-white/10">
 							<p className="text-sm text-gray-300 mb-2 text-center font-semibold">📊 Resumo das Raridades</p>
 							<div className="flex flex-wrap justify-center gap-2">
-								{resultadoAbertura.estatisticas.MITICO > 0 && (
+								{(resultadoAbertura.estatisticas.MITICO > 0 || resultadoAbertura.estatisticas.MYTHIC > 0) && (
 									<div className="px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/50 text-rose-300 text-sm font-semibold">
-										✨ Mítico: {resultadoAbertura.estatisticas.MITICO}
+										✨ Mítico: {resultadoAbertura.estatisticas.MITICO || resultadoAbertura.estatisticas.MYTHIC || 0}
 									</div>
 								)}
-								{resultadoAbertura.estatisticas.LENDARIO > 0 && (
+								{(resultadoAbertura.estatisticas.LENDARIO > 0 || resultadoAbertura.estatisticas.LEGENDARY > 0) && (
 									<div className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-sm font-semibold">
-										⭐ Lendário: {resultadoAbertura.estatisticas.LENDARIO}
+										⭐ Lendário: {resultadoAbertura.estatisticas.LENDARIO || resultadoAbertura.estatisticas.LEGENDARY || 0}
 									</div>
 								)}
-								{resultadoAbertura.estatisticas.EPICO > 0 && (
+								{(resultadoAbertura.estatisticas.EPICO > 0 || resultadoAbertura.estatisticas.EPIC > 0) && (
 									<div className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/50 text-purple-300 text-sm font-semibold">
-										💜 Épico: {resultadoAbertura.estatisticas.EPICO}
+										💜 Épico: {resultadoAbertura.estatisticas.EPICO || resultadoAbertura.estatisticas.EPIC || 0}
 									</div>
 								)}
-								{resultadoAbertura.estatisticas.RARO > 0 && (
+								{(resultadoAbertura.estatisticas.RARO > 0 || resultadoAbertura.estatisticas.RARE > 0) && (
 									<div className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/50 text-blue-300 text-sm font-semibold">
-										💎 Raro: {resultadoAbertura.estatisticas.RARO}
+										💎 Raro: {resultadoAbertura.estatisticas.RARO || resultadoAbertura.estatisticas.RARE || 0}
 									</div>
 								)}
-								{resultadoAbertura.estatisticas.INCOMUM > 0 && (
+								{(resultadoAbertura.estatisticas.INCOMUM > 0 || resultadoAbertura.estatisticas.UNCOMMON > 0) && (
 									<div className="px-3 py-1 rounded-full bg-green-500/20 border border-green-500/50 text-green-300 text-sm font-semibold">
-										🟢 Incomum: {resultadoAbertura.estatisticas.INCOMUM}
+										🟢 Incomum: {resultadoAbertura.estatisticas.INCOMUM || resultadoAbertura.estatisticas.UNCOMMON || 0}
 									</div>
 								)}
-								{resultadoAbertura.estatisticas.COMUM > 0 && (
+								{(resultadoAbertura.estatisticas.COMUM > 0 || resultadoAbertura.estatisticas.COMMON > 0) && (
 									<div className="px-3 py-1 rounded-full bg-gray-500/20 border border-gray-500/50 text-gray-300 text-sm font-semibold">
-										⚪ Comum: {resultadoAbertura.estatisticas.COMUM}
+										⚪ Comum: {resultadoAbertura.estatisticas.COMUM || resultadoAbertura.estatisticas.COMMON || 0}
 									</div>
 								)}
 							</div>
