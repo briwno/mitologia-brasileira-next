@@ -10,6 +10,7 @@ import TurnController from './TurnController';
 import BattleDecorations from './BattleDecorations';
 import PlayerHUD from './PlayerHUD';
 import BenchRow from './BenchRow';
+import { generateRelicPool, drawRelic } from '@/utils/relicSystem';
 import { formatRoomCodeDisplay } from '@/utils/roomCodes';
 
 /**
@@ -125,6 +126,8 @@ export default function BattleScreen({
         name: user?.nickname || user?.email || 'Jogador',
         activeLegend: myLegends[0], // Primeira lenda ativa
         bench: myLegends.slice(1), // Outras 4 no banco
+        relicPool: generateRelicPool(10),
+        storedRelic: null,
         // itemHand: myItems, // DESATIVADO
         turnsPlayed: 0
       },
@@ -134,10 +137,30 @@ export default function BattleScreen({
         isBot: mode === 'bot',
         activeLegend: enemyLegends[0],
         bench: enemyLegends.slice(1),
+        relicPool: generateRelicPool(10),
+        storedRelic: null,
         // itemHand: [{}, {}, {}] // DESATIVADO
       }
     };
   });
+
+  // Start-of-turn processing: se for sua vez e não tiver relíquia guardada, comprar uma
+  // Observa: mantemos pity/turnos e demais regras no futuro em gameLogic
+  useEffect(() => {
+    if (!isMyTurn) return;
+
+    setBattleData(prev => {
+      const me = { ...prev.myPlayer };
+      if (!me.storedRelic && Array.isArray(me.relicPool) && me.relicPool.length > 0) {
+        const { relic, pool } = drawRelic(me.relicPool);
+        me.storedRelic = relic || null;
+        me.relicPool = pool;
+        const newLogs = [...logs, { type: 'relic_draw', text: `${me.name} recebeu uma Relíquia guardada: ${relic?.name || 'Desconhecida'}`, timestamp: new Date().toLocaleTimeString('pt-BR'), formatted: '' }];
+        setLogs(newLogs);
+      }
+      return { ...prev, myPlayer: me };
+    });
+  }, [isMyTurn]);
 
   const handleAddLog = (type, message) => {
     setLogs(prev => [...prev, {
