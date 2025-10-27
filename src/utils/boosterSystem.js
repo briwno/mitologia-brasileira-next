@@ -13,8 +13,8 @@ export const BOOSTER_CONFIG = {
   // Taxa de drop base para LENDAS - com pity system
   // Lendas só podem ser Épicas, Lendárias ou Míticas
   DROP_RATES_LENDAS: {
-    MITICO: 0.005,      // 0.5%
-    LENDARIO: 0.045,    // 4.5%
+    MITICO: 0.0001,      // 0.01%
+    LENDARIO: 0.005,    // 0.5%
     EPICO: 0.950,       // 95% (resto da probabilidade)
   },
 
@@ -33,6 +33,9 @@ export const BOOSTER_CONFIG = {
   
   // Booster inicial gratuito
   BOOSTER_INICIAL_CARTAS: 5, // 5 cartas de lendas (épicas, lendárias ou míticas)
+
+  // Permitir que a mesma carta possa aparecer mais de uma vez no mesmo booster
+  ALLOW_DUPLICATES_IN_BOOSTER: true,
 };
 
 /**
@@ -114,13 +117,17 @@ export function abrirBooster(cartasLendas, pityMitico) {
 
   let miticoSorteado = false;
 
+  // Trabalhar sobre uma cópia mutável do pool de cartas para suportar
+  // seleção com ou sem reposição, conforme config
+  const pool = Array.isArray(cartasLendas) ? [...cartasLendas] : [];
+
   // Sortear 5 cartas de LENDAS
   // IMPORTANTE: Usar o mesmo pity para todas as 5 cartas do booster
   for (let i = 0; i < BOOSTER_CONFIG.CARTAS_POR_BOOSTER; i++) {
     const raridade = calcularRaridadeLenda(pityMitico);
     
-    // Filtrar lendas da raridade sorteada
-    const lendasFiltradas = cartasLendas.filter((lenda) => {
+    // Filtrar lendas da raridade sorteada dentro do pool atual
+    let lendasFiltradas = pool.filter((lenda) => {
       const raridadeLenda = primeiroValorDefinido(lenda.rarity, lenda.raridade, '').toUpperCase();
       return raridadeLenda === raridade;
     });
@@ -133,11 +140,27 @@ export function abrirBooster(cartasLendas, pityMitico) {
     if (lendasFiltradas.length > 0) {
       const indiceAleatorio = Math.floor(Math.random() * lendasFiltradas.length);
       legendaSorteada = lendasFiltradas[indiceAleatorio];
+      // Se duplicatas NÃO são permitidas, removemos a carta escolhida do pool
+      if (!BOOSTER_CONFIG.ALLOW_DUPLICATES_IN_BOOSTER) {
+        // localizar índice real dentro do pool e remover
+        const idxNoPool = pool.findIndex((c) => c.id === legendaSorteada.id || c === legendaSorteada);
+        if (idxNoPool >= 0) pool.splice(idxNoPool, 1);
+      }
     } else {
-      // Fallback: sortear qualquer lenda e avisar
+      // Fallback: sortear qualquer lenda do pool (se disponível) e avisar
       console.warn(`[Booster] AVISO: Não encontrou cartas ${raridade} no banco! Usando fallback.`);
-      const indiceAleatorio = Math.floor(Math.random() * cartasLendas.length);
-      legendaSorteada = cartasLendas[indiceAleatorio];
+      if (pool.length > 0) {
+        const indiceAleatorio = Math.floor(Math.random() * pool.length);
+        legendaSorteada = pool[indiceAleatorio];
+        if (!BOOSTER_CONFIG.ALLOW_DUPLICATES_IN_BOOSTER) {
+          pool.splice(indiceAleatorio, 1);
+        }
+      } else {
+        // Se pool vazio, tentar usar cartasLendas original como último recurso
+        const fallbackPool = Array.isArray(cartasLendas) ? cartasLendas : [];
+        const indiceAleatorio = Math.floor(Math.random() * Math.max(1, fallbackPool.length));
+        legendaSorteada = fallbackPool[indiceAleatorio] || null;
+      }
     }
 
     // Usar a raridade real da carta do banco, não a sorteada
