@@ -122,7 +122,7 @@ export default function BattleScreen({
 
     return {
       myPlayer: {
-        name: user?.username || user?.email || 'Jogador',
+        name: user?.nickname || user?.email || 'Jogador',
         activeLegend: myLegends[0], // Primeira lenda ativa
         bench: myLegends.slice(1), // Outras 4 no banco
         // itemHand: myItems, // DESATIVADO
@@ -411,7 +411,7 @@ export default function BattleScreen({
         </div>
 
         {/* ========== BASE: JOGADOR + BANCO + ITENS ========== */}
-        <div className="px-6 flex items-end justify-between gap-6 mb-2">
+        <div className="px-8 flex items-end justify-between gap-6 mb-2">
           
           {/* HUD Jogador */}
           <PlayerHUD 
@@ -421,7 +421,7 @@ export default function BattleScreen({
 
           {/* BANCO + ITENS - CENTRO */}
           {battleData.myPlayer && (
-            <div className="flex-1 flex flex-col items-center gap-3">
+            <div className="flex-1 flex flex-col ml-115 pb-2 gap-3">
               {/* Banco de Cartas */}
               <BenchRow
                 legends={battleData.myPlayer.bench}

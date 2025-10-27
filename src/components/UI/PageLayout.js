@@ -218,7 +218,7 @@ export default function LayoutDePagina({ children }) {
                   </p>
                 </section>
                 <section className="text-xs text-gray-400 pt-2 border-t border-white/10">
-                  Versão: 0.1.0 • Build preview
+                  Equipe Ka&apos;aguy © 2025.
                 </section>
               </div>
               <div className="mt-4 flex justify-end gap-2">

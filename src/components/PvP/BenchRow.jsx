@@ -21,7 +21,7 @@ export default function BenchRow({
       {legends.slice(0, maxCards).map((legend, i) => (
         <div
           key={legend.id || i}
-          className={`relative w-24 h-32 rounded-lg overflow-hidden border-2 bg-black/50 transition-all cursor-pointer
+          className={`relative w-28 h-40 rounded-lg overflow-hidden border-2 bg-black/50 transition-all cursor-pointer
             ${selectedCard?.id === legend.id ? 'border-yellow-400 ring-2 ring-yellow-400' : `${borderColor} ${hoverColor}`}
           `}
           title={legend.name}

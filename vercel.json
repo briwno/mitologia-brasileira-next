@@ -1,15 +1,11 @@
 {
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/((?!images|_next|api|favicon\\.ico|.*\\..*).*)",
+      "source": "/",
       "has": [
-        {
-          "type": "host",
-          "value": "promo.kaaguy.app"
-        }
+        { "type": "host", "value": "promo.kaaguy.app" }
       ],
-      "destination": "/divulgar",
-      "permanent": false
+      "destination": "/divulgar"
     }
   ]
 }
