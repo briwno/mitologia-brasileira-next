@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import LegendCard from '@/components/PvP/LegendCard';
 import BattleLog from '@/components/PvP/BattleLog';
-import ItemHand from '@/components/PvP/ItemHand';
 import BenchSlots from '@/components/PvP/BenchSlots';
 import TurnController from '@/components/PvP/TurnController';
 import BattleDecorations from '@/components/PvP/BattleDecorations';
@@ -143,7 +142,6 @@ export default function BattleDemoPage() {
       transformCardData(cards[3], 50, 75),
       transformCardData(cards[4], 0, 65)
     ],
-    itemHand: [{}, {}, {}]
   };
 
   const myPlayer = {
@@ -175,10 +173,6 @@ export default function BattleDemoPage() {
       transformCardData(cards[7], 50, 70),
       transformCardData(cards[8], 0, 85),
       transformCardData(cards[9], 75, 75)
-    ],
-    itemHand: [
-      { id: 'pocao', name: 'Poção de Cura', type: 'heal', value: 30, description: 'Restaura 30 HP', uses: 1 },
-      { id: 'escudo', name: 'Escudo Místico', type: 'defensivo', value: 15, description: 'Adiciona 15 de defesa', uses: 2 }
     ],
     turnsPlayed: 3
   };
@@ -375,16 +369,6 @@ export default function BattleDemoPage() {
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Seus Itens */}
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] text-emerald-400 uppercase font-semibold">Seus Itens</span>
-              <ItemHand
-                items={myPlayer.itemHand}
-                onUseItem={(item) => handleAddLog('usar_item', `Usou ${item.name}`)}
-                disabled={!isMyTurn}
-              />
             </div>
           </div>
 
