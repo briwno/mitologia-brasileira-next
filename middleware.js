@@ -1,22 +1,22 @@
-// middleware.js
 import { NextResponse } from 'next/server';
 
 export function middleware(req) {
-  const host = req.headers.get('host') || '';
+  const host = (req.headers.get('host') || '').toLowerCase();
   const url = req.nextUrl;
 
-  if (host === 'promo.kaaguy.app') {
-    if (url.pathname !== '/divulgar') {
-      const rewriteUrl = new URL('/divulgar', url);
-      return NextResponse.rewrite(rewriteUrl);
-    }
+  const isPromo =
+    host === 'promo.kaaguy.app' || host === 'www.promo.kaaguy.app';
+
+  if (!isPromo) return NextResponse.next();
+
+  const accept = req.headers.get('accept') || '';
+  const isHtml = accept.includes('text/html');
+
+  if (!isHtml || url.pathname === '/divulgar') {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  return NextResponse.rewrite(new URL('/divulgar', url));
 }
 
-export const config = {
-  matcher: [
-    '/((?!_next|api|favicon.ico|robots.txt|sitemap.xml|images|.*\\..*).*)',
-  ],
-};
+export const config = { matcher: '/:path*' };
