@@ -46,12 +46,12 @@ const ModalPerfil = dynamic(() => import('@/components/Profile/ProfileModal'), {
 
 
 // Cartão clicável para cada modo da página inicial
-function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, destaque = false, caminhoImagem }) {
+function CartaoModo({ destino, titulo,  disponivel = true, subtitulo, destaque = false, caminhoImagem }) {
   const [erroAoCarregarImagem, definirErroAoCarregarImagem] = useState(false);
 
   // Verificação de segurança para props obrigatórias
-  if (!titulo || !nomeIcone) {
-    console.warn('CartaoModo: propriedades titulo e nomeIcone são obrigatórias');
+  if (!titulo) {
+    console.warn('CartaoModo: propriedade titulo é obrigatória');
     return null;
   }
   
@@ -95,7 +95,6 @@ function CartaoModo({ destino, titulo, nomeIcone, disponivel = true, subtitulo, 
         {destaque && <div className="absolute inset-0 animate-pulse bg-cyan-200/5" />}
       </div>
       <div className="absolute top-4 right-4">
-        <Icon name={nomeIcone} size={32} />
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/70 border-t border-white/10 p-4">
         <div className={`text-center font-extrabold ${(() => {
@@ -209,16 +208,16 @@ export default function Inicio() {
       <div className="mx-auto mt-6 max-w-7xl px-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div onClick={() => setMostrarPvPModal(true)}>
-            <CartaoModo destino="#" titulo="BATALHA" nomeIcone="battle" subtitulo="Duelar contra outros jogadores" caminhoImagem="/images/banners/menubatalha.png" />
+            <CartaoModo destino="#" titulo="BATALHA" subtitulo="Duelar contra outros jogadores" caminhoImagem="/images/banners/menubatalha.png" />
           </div>
           <div onClick={() => setMostrarMuseuModal(true)}>
-            <CartaoModo destino="#" titulo="MUSEU" nomeIcone="museum" subtitulo="Explore as lendas" caminhoImagem="/images/banners/menumuseu.png" />
+            <CartaoModo destino="#" titulo="MUSEU" subtitulo="Explore as lendas" caminhoImagem="/images/banners/menumuseu.png" />
           </div>
           <div onClick={() => setMostrarRankingModal(true)}>
-            <CartaoModo destino="#" titulo="RANKING" nomeIcone="trophy" subtitulo="Top jogadores" caminhoImagem="/images/banners/menuranking.png" />
+            <CartaoModo destino="#" titulo="RANKING" subtitulo="Top jogadores" caminhoImagem="/images/banners/menuranking.png" />
           </div>
           <div onClick={() => setMostrarPerfilModal(true)}>
-            <CartaoModo destino="#" titulo="PERFIL" nomeIcone="profile" subtitulo="Suas conquistas" caminhoImagem="/images/banners/menuperfil.png" />
+            <CartaoModo destino="#" titulo="PERFIL"  subtitulo="Suas conquistas" caminhoImagem="/images/banners/menuperfil.png" />
           </div>
         </div>
       </div>

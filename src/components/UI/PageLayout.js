@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
 import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import Icon from '@/components/UI/Icon';
@@ -14,6 +15,7 @@ export default function LayoutDePagina({ children }) {
   const [mostrarModalConfiguracoes, definirMostrarModalConfiguracoes] = useState(false);
   const [mostrarModalInformacoes, definirMostrarModalInformacoes] = useState(false);
   const [definirMostrarModalPatchNotes, setDefinirMostrarModalPatchNotes] = useState(false);
+  const [mostrarModalDuvidas, setMostrarModalDuvidas] = useState(false);
   
   const contextoAutenticacao = usarAutenticacao();
   const {
@@ -38,6 +40,97 @@ export default function LayoutDePagina({ children }) {
   }
   
   useEffect(() => setIsLoaded(true), []);
+  const pathname = usePathname();
+
+  function renderDuvidasParaTela(path) {
+    // Conteúdo simples e orientador por rota
+    switch (true) {
+      case path === '/' || path === '/home':
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Esta é a tela inicial. Use os cartões para navegar rápido:</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li><strong>BATALHA</strong> — Inicia duelos e acessa matchmaking.</li>
+              <li><strong>MUSEU</strong> — Explore as lendas e o quiz cultural.</li>
+              <li><strong>LOJA</strong> — Abra pacotes e veja ofertas.</li>
+              <li><strong>PERFIL</strong> — Visualize seu progresso e conquistas.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/shop'):
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Loja — aqui você compra e abre boosters.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Escolha um pacote e clique em &quot;Abrir&quot; para ver as cartas sorteadas.</li>
+              <li>As cartas são automaticamente adicionadas à sua coleção.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/pvp'):
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">PvP — informações rápidas sobre o fluxo de batalha.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Pré-batalha: verifique seu deck e habilidades.</li>
+              <li>Durante a partida: use ações no painel lateral e acompanhe o log.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/museum'):
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Museu — explore cartas e quizzes.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Use filtros para encontrar cartas por região ou raridade.</li>
+              <li>O quiz testa seu conhecimento sobre as lendas mostradas.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/card_inventory'):
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Seu inventário de cartas — gerencie sua coleção.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Ordene por raridade, nome ou data de aquisição.</li>
+              <li>Use o botão de detalhes para ver habilidades e histórico.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/ranking'):
+        return(
+          <div>
+            <p className="text-sm text-white/80 mb-3">Ranking — veja a classificação dos jogadores.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Os jogadores são classificados por MMR.</li>
+              <li>MMR: Significa seus pontos de classificação. Quanto maior, melhor.</li>
+              <li>Ganhe MMR vencendo partidas contra outros jogadores.</li>
+              <li>Suba no ranking participando de batalhas PvP.</li>
+            </ul>
+          </div>
+        );
+      case path?.startsWith('/profile'):
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Perfil — veja seu progresso e amigos.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Edite avatar, nome e informações públicas aqui.</li>
+              <li>Verifique conquistas e estatísticas.</li>
+            </ul>
+          </div>
+        );
+      default:
+        return (
+          <div>
+            <p className="text-sm text-white/80 mb-3">Ajuda rápida — orientações gerais.</p>
+            <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
+              <li>Procure ações principais no topo ou na lateral.</li>
+              <li>Se algo não funcionar, abra um issue no repositório ou peça suporte.</li>
+            </ul>
+          </div>
+        );
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0a1420] via-[#0b1d2e] to-[#07131f] text-white">
@@ -143,6 +236,14 @@ export default function LayoutDePagina({ children }) {
             >
               <Icon name="notes" size={20} />
             </button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 hover:border-white/30 transition flex items-center justify-center"
+              onClick={() => setMostrarModalDuvidas(true)}
+              title="Dúvidas"
+            >
+              <Icon name="question" size={20} />
+            </button>
             {/* Login/logout minimalista */}
             {estaAutenticado ? (
               <button
@@ -238,6 +339,34 @@ export default function LayoutDePagina({ children }) {
           isOpen={definirMostrarModalPatchNotes} 
           onClose={() => setDefinirMostrarModalPatchNotes(false)} 
         />
+        {/* Modal de Dúvidas contextuais */}
+        {mostrarModalDuvidas && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarModalDuvidas(false)}>
+            <div className="bg-[#0f1724] rounded-xl shadow-lg p-6 min-w-[320px] max-w-[720px] relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
+                onClick={() => setMostrarModalDuvidas(false)}
+                title="Fechar"
+              >
+                ×
+              </button>
+              <h2 className="text-lg font-bold mb-3">Dúvidas rápidas</h2>
+              <div className="text-sm text-white/80 space-y-3">
+                {renderDuvidasParaTela(pathname)}
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-black/40 border border-white/20 hover:border-white/40"
+                  onClick={() => setMostrarModalDuvidas(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
       </div>
     </main>

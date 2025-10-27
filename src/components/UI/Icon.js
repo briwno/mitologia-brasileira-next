@@ -16,8 +16,9 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'trophy': 'https://img.icons8.com/fluency/48/trophy.png',
     
     // Interface
+    'notes': 'https://img.icons8.com/?size=100&id=12085&format=png&color=000000',
     'settings': 'https://img.icons8.com/fluency/48/settings.png',
-    'scroll': 'https://img.icons8.com/fluency/48/scroll.png',
+    'scroll': 'https://img.icons8.com/?size=100&id=LC4SM48lJHpZ&format=png&color=000000',
     'leaf': 'https://img.icons8.com/fluency/48/leaf.png',
     'close': 'https://img.icons8.com/fluency/48/delete-sign.png',
     'x': 'https://img.icons8.com/fluency/48/delete-sign.png',
@@ -38,8 +39,8 @@ const Icon = ({ name, size = 24, className = '' }) => {
     'plus': 'https://img.icons8.com/fluency/48/plus.png',
     
     // Jogo e cartas
-    'cards': 'https://img.icons8.com/?size=100&id=ce72bFahG6vd&format=png&color=000000',
-    'shop': 'https://img.icons8.com/fluency/48/shopping-cart.png',
+    'cards': 'https://img.icons8.com/?size=100&id=mMZu06PhZnbJ&format=png&color=000000',
+    'shop': 'https://img.icons8.com/?size=100&id=XrEFnp33pJYw&format=png&color=000000',
     'magic': 'https://img.icons8.com/fluency/48/magic-wand.png',
     'star': 'https://img.icons8.com/fluency/48/star.png',
     'sparkles': 'https://img.icons8.com/fluency/48/sparkles.png',
