@@ -4,6 +4,7 @@ const nextConfig = {
     domains: ['img.icons8.com', 'icons8.com', 'ebsjwcxutgubeligobai.supabase.co'],
     formats: ['image/webp'],
   },
+  output: 'server',
 };
 
 export default nextConfig;
