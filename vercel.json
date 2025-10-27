@@ -2,13 +2,13 @@
   "rewrites": [
     {
       "source": "/",
+      "destination": "https://promo.kaaguy.app/divulgar",
       "has": [
         {
           "type": "host",
           "value": "promo.kaaguy.app"
         }
-      ],
-      "destination": "/divulgar"
+      ]
     }
   ]
 }
