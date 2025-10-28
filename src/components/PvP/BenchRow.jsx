@@ -18,6 +18,7 @@ export default function BenchRow({
 
   return (
     <div className="flex gap-2">
+      
       {legends.slice(0, maxCards).map((legend, i) => (
         <div
           key={legend.id || i}
@@ -61,6 +62,13 @@ export default function BenchRow({
           )}
         </div>
       ))}
+      {/* Slot vazio fixo à direita do primeiro cartão */}
+      <div
+        className={`relative w-28 h-40 rounded-lg overflow-hidden border-2 bg-black/30 border-dashed border-white/6 flex items-center justify-center text-neutral-400`}
+        title="Slot vazio"
+      >
+        <div className="text-xs text-neutral-300">Vazio</div>
+      </div>
     </div>
   );
 }

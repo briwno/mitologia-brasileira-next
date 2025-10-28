@@ -547,6 +547,9 @@ export default function BattleScreen({
             </div>
           )}
 
+            {/* Pet ao lado esquerdo */}
+            <PetWidget posicao="middle-left" tamanhoAvatar="xl" posicaoBubble="right" autoSaudar={false} situacao={"inicio_batalha"} />
+
           {/* Log de Batalha */}
           <div className="absolute right-20 top-40">
             <BattleLog logs={logs} />
@@ -564,9 +567,6 @@ export default function BattleScreen({
             isMyTurn={isMyTurn}
             onUseRelic={handleUseRelic}
             />
-
-            {/* Pet ao lado do HUD do jogador — posicionado bottom-left para ficar próximo */}
-            <PetWidget posicao="bottom-left" tamanhoAvatar="md" posicaoBubble="right" autoSaudar={false} situacao={"inicio_batalha"} />
           </div>
 
           {/* BANCO + ITENS - CENTRO */}
