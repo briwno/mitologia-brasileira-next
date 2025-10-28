@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePet } from '@/hooks/usePet';
 import PetAvatar from './PetAvatar';
 import PetBubble from './PetBubble';
@@ -13,6 +13,7 @@ export default function PetWidget({
   tamanhoAvatar = 'md',
   posicaoBubble = 'top',
   autoSaudar = true,
+  situacao = null,
   className = ''
 }) {
   const { 
@@ -21,24 +22,46 @@ export default function PetWidget({
     visivel, 
     animação,
     alternar,
-    saudar
+    saudar,
+    falar
   } = usePet();
 
-  // Saudação automática ao montar
+  // Coordenar saudação e fala contextual para evitar sobrescrever a mensagem
+  const _mounted = useRef(false);
   useEffect(() => {
-    if (autoSaudar) {
-      const timer = setTimeout(() => {
+    // Primeiro mount: se autoSaudar=true, saudar primeiro e depois falar a situacao (se houver)
+    if (!_mounted.current) {
+      _mounted.current = true;
+      if (autoSaudar) {
+        // iniciar saudação imediatamente
         saudar();
-      }, 1000);
-      return () => clearTimeout(timer);
+        // após a saudação (4s por padrão no hook), falar a situacao se fornecida
+        if (situacao && typeof falar === 'function') {
+          const t = setTimeout(() => {
+            falar(situacao);
+          }, 4200);
+          return () => clearTimeout(t);
+        }
+      } else {
+        // sem saudação automática: fala imediatamente a situacao
+        if (situacao && typeof falar === 'function') {
+          falar(situacao);
+        }
+      }
+    } else {
+      // Montado antes: qualquer mudança de `situacao` dispara fala imediata
+      if (situacao && typeof falar === 'function') {
+        falar(situacao);
+      }
     }
-  }, [autoSaudar, saudar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [situacao]);
 
   const posicoes = {
-    'bottom-right': 'fixed bottom-4 right-4 md:bottom-8 md:right-8',
-    'bottom-left': 'fixed bottom-4 left-4 md:bottom-8 md:left-8',
-    'top-right': 'fixed top-20 right-4 md:top-24 md:right-8',
-    'top-left': 'fixed top-20 left-4 md:top-24 md:left-8'
+    'bottom-right': 'fixed bottom-4 right-4 md:bottom-8 md:right-20',
+    'bottom-left': 'fixed bottom-4 left-4 md:bottom-8 md:left-20',
+    'top-right': 'fixed top-20 right-4 md:top-24 md:right-20',
+    'top-left': 'fixed top-20 left-4 md:top-24 md:left-20'
   };
 
   return (

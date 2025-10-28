@@ -4,6 +4,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const EMOCOES = {
   neutro: '😐',
@@ -59,8 +60,15 @@ export default function PetAvatar({
         title="Ybyra'í - Espírito da Ka'aguy"
       >
         {/* Ícone espiritual */}
-        <div className="relative">
-          <span className="drop-shadow-lg">🌿</span>
+        <div className="relative w-full h-full flex items-center justify-center">
+          <Image
+            src="/pet.svg"
+            alt="Ybyra'í"
+            width={tamanho === 'sm' ? 48 : tamanho === 'md' ? 64 : tamanho === 'lg' ? 96 : 128}
+            height={tamanho === 'sm' ? 48 : tamanho === 'md' ? 64 : tamanho === 'lg' ? 96 : 128}
+            className="w-full h-full object-contain drop-shadow-lg"
+            priority={false}
+          />
           {/* Expressão sobreposta */}
           <span 
             className="absolute -top-1 -right-1 text-xs"

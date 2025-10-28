@@ -9,6 +9,7 @@ import BattleLog from './BattleLog';
 import TurnController from './TurnController';
 import BattleDecorations from './BattleDecorations';
 import PlayerHUD from './PlayerHUD';
+import { PetWidget } from '@/components/Pet';
 import BenchRow from './BenchRow';
 import { generateRelicPool, drawRelic, applyRelicEffect } from '@/utils/relicSystem';
 import { formatRoomCodeDisplay } from '@/utils/roomCodes';
@@ -556,12 +557,17 @@ export default function BattleScreen({
         <div className="px-8 flex items-end justify-between gap-6 mb-2">
           
           {/* HUD Jogador */}
-          <PlayerHUD 
+          <div className="flex items-end gap-3">
+            <PlayerHUD 
             player={battleData.myPlayer}
             isOpponent={false}
             isMyTurn={isMyTurn}
             onUseRelic={handleUseRelic}
-          />
+            />
+
+            {/* Pet ao lado do HUD do jogador — posicionado bottom-left para ficar próximo */}
+            <PetWidget posicao="bottom-left" tamanhoAvatar="md" posicaoBubble="right" autoSaudar={false} situacao={"inicio_batalha"} />
+          </div>
 
           {/* BANCO + ITENS - CENTRO */}
           {battleData.myPlayer && (

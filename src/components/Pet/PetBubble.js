@@ -34,37 +34,50 @@ export default function PetBubble({
       `}
     >
       <div className="relative">
-        {/* Balão de fala */}
+        {/* Pequeno badge emoji no canto superior direito (estado amigável) */}
+        <div className="absolute -top-3 -right-3 z-60 flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-400/20 text-xs shadow-sm">
+          <span aria-hidden>🙂</span>
+        </div>
+
+        {/* Balão de fala aprimorado: largura reduzida para forçar quebra de linha vertical */}
         <div 
-          className="
-            bg-gradient-to-br from-green-800/90 to-emerald-900/90
+          role="status"
+          aria-live="polite"
+          className={
+            `
+            bg-gradient-to-br from-green-800/95 to-emerald-900/95
             backdrop-blur-sm
             text-white text-sm
-            px-4 py-3
-            rounded-lg
-            shadow-xl shadow-black/50
-            border border-green-400/30
-            max-w-xs
-            whitespace-normal
+            px-4 py-4
+            rounded-xl
+            shadow-2xl shadow-black/60
+            border border-emerald-400/30
+            min-w-[11rem]
+            max-w-[11rem]
+            w-fit
+            whitespace-pre-wrap
+            break-words
             animate-scale-in
-          "
+          `
+          }
         >
-          <p className="font-medium leading-relaxed italic">
+          <p className="font-medium leading-relaxed italic text-sm">
             &ldquo;{frase}&rdquo;
           </p>
         </div>
 
-        {/* Seta do balão */}
+        {/* Seta do balão (refinada) */}
         <div 
           className={`
             absolute w-0 h-0
             border-solid
             ${setas[posicao]}
           `}
+          aria-hidden
         />
 
-        {/* Brilho sutil */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-300/10 to-transparent rounded-lg pointer-events-none" />
+        {/* Brilho sutil interno */}
+        <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.02), transparent)' }} />
       </div>
     </div>
   );
