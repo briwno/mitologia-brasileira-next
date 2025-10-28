@@ -270,27 +270,7 @@ export default function LayoutDePagina({ children }) {
 
     {/* Conteúdo da página */}
         {children}
-        {/* Mascote global: aparece em todas as telas e muda conforme cada tela */}
-        {isLoaded && !pathname?.startsWith('/pvp') && (
-          <PetWidget 
-            posicao="bottom-right" 
-            tamanhoAvatar="md" 
-            posicaoBubble="top" 
-            autoSaudar={true}
-            situacao={(function mapPathToSituacao(p){
-              if(!p) return SITUACOES_MASCOTE.OCIOSO;
-              if(p === '/' || p === '/home') return SITUACOES_MASCOTE.SAUDACAO_MANHA; // saudações gerais (usePet.saudar also runs)
-              if(p.startsWith('/museum')) return SITUACOES_MASCOTE.MUSEU;
-              if(p.startsWith('/card_inventory')) return SITUACOES_MASCOTE.DECK;
-              if(p.startsWith('/shop')) return SITUACOES_MASCOTE.LOJA;
-              if(p.startsWith('/ranking')) return SITUACOES_MASCOTE.RANKING;
-              if(p.startsWith('/profile')) return SITUACOES_MASCOTE.OCIOSO;
-              if(p.startsWith('/pvp')) return SITUACOES_MASCOTE.INICIO_BATALHA;
-              if(p.startsWith('/museum/quiz')) return SITUACOES_MASCOTE.QUIZ;
-              return SITUACOES_MASCOTE.OCIOSO;
-            })(pathname)}
-          />
-        )}
+        {/* Mascote global agora é renderizado no root (GlobalPetPortal) para evitar problemas de stacking context/mobile nav */}
   {/* Modal de Configurações (renderizado fora do topo para evitar problemas de sobreposição/overflow) */}
         {mostrarModalConfiguracoes && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => definirMostrarModalConfiguracoes(false)}>

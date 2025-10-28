@@ -52,8 +52,8 @@ export default function PetBubble({
             rounded-xl
             shadow-2xl shadow-black/60
             border border-emerald-400/30
-            min-w-[11rem]
-            max-w-[11rem]
+            min-w-[1rem]
+            max-w-[20rem]
             w-fit
             whitespace-pre-wrap
             break-words

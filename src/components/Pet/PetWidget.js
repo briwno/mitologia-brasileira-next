@@ -58,8 +58,9 @@ export default function PetWidget({
   }, [situacao]);
 
   const posicoes = {
-    'bottom-right': 'fixed bottom-4 right-4 md:bottom-8 md:right-20',
-    'bottom-left': 'fixed bottom-4 left-4 md:bottom-8 md:left-20',
+    // on small screens we push the mascot higher (bottom-16) so it doesn't overlap the mobile nav
+    'bottom-right': 'fixed bottom-16 right-10 md:bottom-8 md:right-20',
+    'bottom-left': 'fixed bottom-16 left-4 md:bottom-8 md:left-20',
     'top-right': 'fixed top-20 right-4 md:top-24 md:right-20',
     'top-left': 'fixed top-20 left-4 md:top-24 md:left-20',
     'middle-right': 'fixed top-1/2 -translate-y-1/2 right-4 md:right-20',
@@ -70,7 +71,7 @@ export default function PetWidget({
     <div 
       className={`
         ${posicoes[posicao]}
-        z-40
+        z-[70]
         ${className}
       `}
       onClick={alternar}
