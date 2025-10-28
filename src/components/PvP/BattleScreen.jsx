@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import LegendCard from './LegendCard';
 import BattleLog from './BattleLog';
@@ -10,7 +10,7 @@ import TurnController from './TurnController';
 import BattleDecorations from './BattleDecorations';
 import PlayerHUD from './PlayerHUD';
 import BenchRow from './BenchRow';
-import { generateRelicPool, drawRelic } from '@/utils/relicSystem';
+import { generateRelicPool, drawRelic, applyRelicEffect } from '@/utils/relicSystem';
 import { formatRoomCodeDisplay } from '@/utils/roomCodes';
 
 /**
@@ -65,17 +65,26 @@ export default function BattleScreen({
       habilidades.skill5,
     ].filter(Boolean);
     
-    const skills = blocos.map((habilidade, indice) => ({
-      id: `skill${indice + 1}`,
-      name: habilidade.name,
-      description: habilidade.description || '',
-      power: habilidade.power || habilidade.damage || 0,
-      pp: habilidade.pp || habilidade.cost || (indice + 2),
-      maxPP: habilidade.ppMax || habilidade.maxPP || (indice + 2),
-      cooldown: habilidade.cooldown || indice,
-      image: habilidade.image,
-      isUltimate: indice === 4
-    }));
+    const skills = blocos.map((habilidade, indice) => {
+      // Seguir a mesma convenção usada em CardDetail.js: pp e ppMax
+  const ppMax = (typeof habilidade.ppMax === 'number') ? habilidade.ppMax : (typeof habilidade.maxPP === 'number' ? habilidade.maxPP : (indice + 2));
+  // Usar pp atual se definido, senão iniciar com ppMax (PP cheio). Não usar índice como fallback.
+  const pp = (typeof habilidade.pp === 'number') ? habilidade.pp : ppMax;
+
+      return {
+        id: `skill${indice + 1}`,
+        name: habilidade.name,
+        description: habilidade.description || '',
+        power: habilidade.power || habilidade.damage || 0,
+        pp,
+        ppMax,
+        // manter compatibilidade com outros componentes que usam maxPP
+        maxPP: ppMax,
+        cooldown: habilidade.cooldown || indice,
+        image: habilidade.image,
+        isUltimate: indice === 4
+      };
+    });
     
     // ✅ Habilidade Passiva
     const passive = habilidades.passive ? {
@@ -155,7 +164,7 @@ export default function BattleScreen({
         const { relic, pool } = drawRelic(me.relicPool);
         me.storedRelic = relic || null;
         me.relicPool = pool;
-        const newLogs = [...logs, { type: 'relic_draw', text: `${me.name} recebeu uma Relíquia guardada: ${relic?.name || 'Desconhecida'}`, timestamp: new Date().toLocaleTimeString('pt-BR'), formatted: '' }];
+        const newLogs = [...logs, { type: 'relic_draw', text: `${me.name} recebeu uma Relíquia guardada!`, timestamp: new Date().toLocaleTimeString('pt-BR'), formatted: '' }];
         setLogs(newLogs);
       }
       return { ...prev, myPlayer: me };
@@ -173,9 +182,70 @@ export default function BattleScreen({
 
   const handleUseSkill = (skill) => {
     if (!isMyTurn) return;
-    
+
+    setBattleData(prev => {
+      const next = { ...prev };
+      const me = { ...next.myPlayer };
+      const opp = { ...next.opponent };
+
+      // localizar a skill dentro da lenda ativa (referência por id)
+      const active = { ...me.activeLegend };
+      const skills = (active.skills || []).map(s => ({ ...s }));
+      const idx = skills.findIndex(s => s.id === skill.id);
+      const skillObj = idx >= 0 ? skills[idx] : skill;
+
+      // Verificar ultimate
+      if (skillObj.isUltimate) {
+        const requiredTurns = skillObj.requiredTurns || skillObj.required_turns || 3;
+        if ((me.turnsPlayed || 0) < requiredTurns) {
+          handleAddLog('erro', `Ultimate ${skillObj.name} não disponível ainda`);
+          return prev;
+        }
+        if (active.ultimateUsed) {
+          handleAddLog('erro', `Ultimate ${skillObj.name} já foi usada`);
+          return prev;
+        }
+
+        // Marcar ultimate usada
+        active.ultimateUsed = true;
+      } else {
+        // Consumir PP normal
+        const currentPP = typeof skillObj.pp === 'number' ? skillObj.pp : (typeof skillObj.ppCurrent === 'number' ? skillObj.ppCurrent : skillObj.ppMax || skillObj.maxPP || 0);
+        if (currentPP <= 0) {
+          handleAddLog('erro', `Sem PP para usar ${skillObj.name}`);
+          return prev;
+        }
+        // decrementar PP
+        if (idx >= 0) {
+          skills[idx] = { ...skills[idx], pp: currentPP - 1 };
+        }
+      }
+
+      // Aplicar efeitos simples: dano direto à lenda ativa do oponente
+      if (skillObj.power && opp.activeLegend) {
+        const dmg = skillObj.power;
+        const target = { ...opp.activeLegend };
+        const shields = target.shields || 0;
+        let remainingDmg = dmg;
+        if (shields > 0) {
+          const absorbed = Math.min(shields, remainingDmg);
+          target.shields = Math.max(0, shields - absorbed);
+          remainingDmg = Math.max(0, remainingDmg - absorbed);
+        }
+        target.hp = Math.max(0, (target.hp || target.maxHp) - remainingDmg);
+        opp.activeLegend = target;
+      }
+
+      // Atualizar estado
+      active.skills = skills;
+      me.activeLegend = active;
+      next.myPlayer = me;
+      next.opponent = opp;
+
+      return next;
+    });
+
     handleAddLog('usar_skill', `${battleData.myPlayer.name} usou ${skill.name}`);
-    // TODO: Implementar lógica de dano, PP, etc
   };
 
   const handleSwitchLegend = (legend) => {
@@ -209,6 +279,55 @@ export default function BattleScreen({
     setTimeout(() => {
       setIsMyTurn(true);
     }, 2000);
+  };
+
+  // Usar relíquia guardada (aplicação simples de efeitos: heal, damage, shield, skip_turn)
+  const handleUseRelic = () => {
+    const relic = battleData.myPlayer?.storedRelic;
+    if (!relic) return;
+
+    // Aplicar efeitos básicos diretamente aqui para demo
+    setBattleData(prev => {
+      const next = { ...prev };
+      const me = { ...next.myPlayer };
+      const opp = { ...next.opponent };
+
+      // exemplo: aplicar cura na lenda ativa
+      if (relic.effect?.heal) {
+        const heal = relic.effect.heal;
+        me.activeLegend = { ...me.activeLegend, hp: Math.min(me.activeLegend.maxHp, (me.activeLegend.hp || me.activeLegend.maxHp) + heal) };
+      }
+
+      // exemplo: dano ao oponente
+      if (relic.effect?.damage) {
+        const dmg = relic.effect.damage;
+        opp.activeLegend = { ...opp.activeLegend, hp: Math.max(0, (opp.activeLegend.hp || opp.activeLegend.maxHp) - dmg) };
+      }
+
+      // exemplo: shield
+      if (relic.effect?.shield) {
+        const sh = relic.effect.shield;
+        me.activeLegend = { ...me.activeLegend, shields: (me.activeLegend.shields || 0) + sh };
+      }
+
+      // exemplo: skip_turn
+      if (relic.effect?.skip_turn) {
+        // aplicar efeito simples: pular o turno do oponente (definido como setIsMyTurn true após timeout)
+        // aqui apenas geramos log e avançamos turno de forma simples
+        setTimeout(() => {
+          setIsMyTurn(true);
+        }, 1000);
+      }
+
+      // Registrar uso e limpar storedRelic
+      me.storedRelic = null;
+      next.myPlayer = me;
+      next.opponent = opp;
+      return next;
+    });
+
+    const res = applyRelicEffect(relic, { name: battleData.myPlayer?.name }, battleData);
+    handleAddLog('relic', res.message || `Usou ${relic.name}`);
   };
 
   return (
@@ -386,7 +505,7 @@ export default function BattleScreen({
                     }`}
                     onClick={() => {
                       if (isMyTurn && selectedTarget) {
-                        actions.useSkill(skill.id, selectedTarget.id);
+                        handleUseSkill(skill);
                         setSelectedCard(null);
                         setSelectedTarget(null);
                       }
@@ -395,8 +514,8 @@ export default function BattleScreen({
                     <div className="font-bold text-xs text-cyan-300">{skill.name}</div>
                     <div className="text-[10px] text-neutral-300 mt-1">{skill.description}</div>
                     <div className="flex gap-2 mt-2 text-[9px]">
-                      <span className="text-orange-400">⚡ {skill.power}</span>
-                      <span className="text-cyan-400">🔄 CD: {skill.cooldown}</span>
+                     
+                     
                     </div>
                   </div>
                 ))}
@@ -440,11 +559,13 @@ export default function BattleScreen({
           <PlayerHUD 
             player={battleData.myPlayer}
             isOpponent={false}
+            isMyTurn={isMyTurn}
+            onUseRelic={handleUseRelic}
           />
 
           {/* BANCO + ITENS - CENTRO */}
           {battleData.myPlayer && (
-            <div className="flex-1 flex flex-col ml-115 pb-2 gap-3">
+            <div className="flex-1 flex flex-col items-center pb-2 gap-3">
               {/* Banco de Cartas */}
               <BenchRow
                 legends={battleData.myPlayer.bench}
@@ -502,7 +623,7 @@ export default function BattleScreen({
       {/* Hint de interação */}
       {isMyTurn && !selectedCard && (
         <div className="fixed bottom-40 left-4 z-50 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-neutral-300">
-          💡 Clique nas cartas para ver skills
+          💡Use sua relíquia!
         </div>
       )}
     </div>

@@ -22,7 +22,7 @@ O sistema é construído para partidas rápidas, táticas e imprevisíveis, equi
 | **Relíquias** | 10 relíquias aleatórias concedidas pelo sistema. |
 | **Condição de Vitória** | Derrotar as 5 lendas do oponente. |
 | **Habilidades** | Cada lenda possui 4 habilidades, 1 ultimate e uma passiva. |
-| **Ultimate** | Pode ser usada uma vez por partida, após X turnos. |
+| **Ultimate** | Pode ser usada uma vez por partida, após X turnos ou outra forma de ativação. |
 
 ---
 

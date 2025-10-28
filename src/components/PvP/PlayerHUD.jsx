@@ -14,7 +14,9 @@ import { useAuth } from '@/hooks/useAuth';
 export default function PlayerHUD({ 
   player, 
   isOpponent = false,
-  isEnemy = false // Compatibilidade com BattleScreen
+  isEnemy = false, // Compatibilidade com BattleScreen
+  isMyTurn = false, // se é o turno do jogador local
+  onUseRelic = () => {} // callback quando jogador usa a relíquia
 }) {
   const { user } = useAuth();
   const { usuario: playerData } = usePlayerData();
@@ -111,6 +113,79 @@ export default function PlayerHUD({
           </div>
         </div>
       </div>
+      {/* Relíquia armazenada (apenas visível para o jogador local) - UI/UX melhorada com tooltip */}
+      {!isOponente && player?.storedRelic ? (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {/* Ícone com cor por raridade + tooltip ao passar o mouse */}
+            <div className="relative group">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold border-2 ${getRarityClass(player.storedRelic?.rarity)} bg-gradient-to-br from-black/20 to-white/3`}>🔮</div>
+
+              {/* Tooltip - aparece ao hover */}
+              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-2 hidden group-hover:block z-50">
+                <div className="max-w-xs p-3 bg-black/90 text-xs rounded shadow-lg border border-gray-700">
+                  <div className="font-semibold text-sm text-white truncate" title={player.storedRelic.name}>{player.storedRelic.name}</div>
+                  <div className="text-[12px] text-gray-200 mt-1">{player.storedRelic.effect?.description || player.storedRelic.type || 'Sem descrição'}</div>
+                  {player.storedRelic.effect && (
+                    <div className="text-[11px] text-gray-400 mt-2">
+                      <div><span className="font-semibold text-gray-200">Efeitos:</span> {renderEffectSummary(player.storedRelic.effect)}</div>
+                    </div>
+                  )}
+                  <div className="mt-2 text-[11px] text-gray-500">Clique em "Usar Relíquia" para ativar.</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-white truncate max-w-[200px]" title={player.storedRelic.name}>{player.storedRelic.name}</div>
+              <div className="text-[10px] text-gray-200">{player.storedRelic.rarity ? `${player.storedRelic.rarity}` : ''} {player.storedRelic.type ? `· ${player.storedRelic.type}` : ''}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-[10px] text-gray-300">Reliquia Disponivel</div>
+            <button
+              onClick={() => onUseRelic()}
+              disabled={!isMyTurn}
+              className={`px-3 py-1 rounded-md text-[12px] font-semibold transition ${isMyTurn ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-700/40 cursor-not-allowed opacity-60'} text-white`}
+            >
+              Usar Relíquia
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+// Helpers locais
+function getRarityClass(rarity) {
+  switch ((rarity || '').toString().toLowerCase()) {
+    case 'lendaria':
+    case 'lenda':
+    case 'mythic':
+    case 'mitica':
+      return 'border-yellow-400';
+    case 'epica':
+    case 'epic':
+      return 'border-purple-400';
+    case 'rara':
+    case 'rare':
+      return 'border-sky-400';
+    case 'comum':
+    case 'common':
+    default:
+      return 'border-gray-400';
+  }
+}
+
+function renderEffectSummary(effect) {
+  if (!effect) return '—';
+  const parts = [];
+  if (effect.heal) parts.push(`Cura ${effect.heal}`);
+  if (effect.damage) parts.push(`Dano ${effect.damage}`);
+  if (effect.shield) parts.push(`Escudo ${effect.shield}`);
+  if (effect.skip_turn) parts.push('Pula turno');
+  if (effect.duration) parts.push(`Duração ${effect.duration}`);
+  return parts.length ? parts.join(' · ') : 'Efeito especial';
 }

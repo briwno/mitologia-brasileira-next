@@ -68,7 +68,7 @@ export default function MatchmakingLobby({
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
-      alert('Batalha ainda em desenvolvimento!');
+      startBattle();
       //voltar para deck
       onCancel();
     }
