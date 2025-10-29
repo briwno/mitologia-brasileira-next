@@ -31,6 +31,7 @@ export default function BattleScreen({
   roomCode,
   playerDeck,
   opponentDeck,
+  opponentProfile = null,
   botDifficulty = 'normal',
   allCards = [],
   allItems = [],
@@ -142,7 +143,10 @@ export default function BattleScreen({
         turnsPlayed: 0
       },
       opponent: {
-        name: mode === 'bot' ? 'Bot' : 'Oponente',
+        // Se recebemos opponentProfile (do servidor), usamos nickname/avatar/mmr
+        name: opponentProfile?.nickname || opponentProfile?.name || (mode === 'bot' ? 'Bot' : 'Oponente'),
+        avatar_url: opponentProfile?.avatar_url || null,
+        mmr: opponentProfile?.mmr,
         difficulty: mode === 'bot' ? botDifficulty : undefined,
         isBot: mode === 'bot',
         activeLegend: enemyLegends[0],

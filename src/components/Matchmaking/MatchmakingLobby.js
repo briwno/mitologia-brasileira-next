@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import Icon from '@/components/UI/Icon';
+import { supabase } from '@/lib/supabase';
 import { 
   generateRoomCode, 
   validateRoomCode, 
@@ -23,12 +25,15 @@ export default function MatchmakingLobby({
   onCancel 
 }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [roomCode, setRoomCode] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [status, setStatus] = useState('waiting'); // waiting, searching, ready, error
   const [errorMessage, setErrorMessage] = useState('');
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
+  const pollingRef = useRef(null);
+  const [persistedRoomId, setPersistedRoomId] = useState(null);
 
   // Gerar código da sala ao montar
   useEffect(() => {
@@ -75,6 +80,29 @@ export default function MatchmakingLobby({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCountdown, countdown]);
 
+  // limpar polling ao desmontar
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        // pode ser um interval ID (number) ou um channel do Supabase
+        try {
+          if (typeof pollingRef.current.unsubscribe === 'function') {
+            // channel
+            // unsubscribe pode retornar promise
+            const unsub = pollingRef.current.unsubscribe();
+            if (unsub && typeof unsub.then === 'function') unsub.catch(() => {});
+          } else {
+            // interval id
+            clearInterval(pollingRef.current);
+          }
+        } catch (e) {
+          // ignora
+        }
+        pollingRef.current = null;
+      }
+    };
+  }, []);
+
   const handleBotMatch = async () => {
     // Simular criação de partida contra bot
     setStatus('ready');
@@ -94,28 +122,183 @@ export default function MatchmakingLobby({
 
   const handleCreateCustomRoom = async () => {
     setStatus('waiting');
-    // Aguardar outro jogador entrar com o código
-    // TODO: Usar Supabase Realtime para sincronizar
+    setErrorMessage('');
+
+    try {
+      if (!user?.id) {
+        setErrorMessage('Usuário não autenticado');
+        return;
+      }
+
+      // Tentar criar via endpoint padrão (server-side cria na tabela matches)
+      const res = await fetch('/api/matchmaking/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: user.id, deckId: deck.id })
+      });
+
+      let returnedRoomId = null;
+      if (!res.ok) {
+        const txt = await res.text();
+        setErrorMessage(txt || 'Erro ao criar sala');
+        setStatus('error');
+        return;
+      }
+      const data = await res.json();
+      returnedRoomId = data.roomId;
+
+      if (!returnedRoomId) {
+        setErrorMessage('Resposta inválida do servidor');
+        setStatus('error');
+        return;
+      }
+
+  // usar o roomId retornado e mostrar para o usuário
+  setRoomCode(returnedRoomId.toString());
+  setPersistedRoomId(returnedRoomId.toString());
+  setStatus('waiting');
+
+  // subscribir via Supabase Realtime para updates na partida
+  const pollingRoomId = returnedRoomId.toString();
+      // limpar subscription anterior se existir
+      if (pollingRef.current) {
+        try { await pollingRef.current.unsubscribe(); } catch (e) { /* ignore */ }
+        pollingRef.current = null;
+      }
+
+      try {
+        subscribeToMatch(pollingRoomId);
+      } catch (err) {
+        console.error('Erro ao abrir subscription Supabase:', err);
+      }
+    } catch (err) {
+      console.error('Erro ao criar sala custom:', err);
+      setErrorMessage(err.message || 'Erro desconhecido');
+      setStatus('error');
+    }
+  };
+
+  // helper: subscrever updates da partida via Supabase Realtime
+  const subscribeToMatch = (pollingRoomId) => {
+    try {
+      // limpar anterior
+      if (pollingRef.current && typeof pollingRef.current.unsubscribe === 'function') {
+        pollingRef.current.unsubscribe().catch(() => {});
+        pollingRef.current = null;
+      }
+
+      const channel = supabase
+        .channel(`match_${pollingRoomId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `room_id=eq.${pollingRoomId}` }, (payload) => {
+          const match = payload.new;
+          if (match && match.player_b_id) {
+            setStatus('ready');
+            setShowCountdown(true);
+            channel.unsubscribe().catch(() => {});
+            pollingRef.current = null;
+          }
+        })
+        .subscribe();
+
+      pollingRef.current = channel;
+    } catch (err) {
+      console.error('Erro subscribeToMatch:', err);
+    }
   };
 
   const handleJoinCustomRoom = async () => {
-    if (!validateRoomCode(customCode)) {
-      setErrorMessage('Código inválido! Use o formato: CUSTOM_XXXXX');
+    setErrorMessage('');
+
+    // aceitar tanto CUSTOM_XXXXX quanto apenas o id
+    let roomIdInput = customCode;
+    if (!roomIdInput) {
+      setErrorMessage('Digite o código da sala');
       return;
+    }
+    if (roomIdInput.includes('_')) {
+      const parts = roomIdInput.split('_');
+      roomIdInput = parts[1] || parts[0];
     }
 
     setStatus('searching');
-    
-    // TODO: Verificar se sala existe e tem vaga
-    setTimeout(() => {
-      setStatus('ready');
-      setShowCountdown(true);
-    }, 1000);
+
+    try {
+      if (!user?.id) {
+        setErrorMessage('Usuário não autenticado');
+        setStatus('error');
+        return;
+      }
+
+      // Tentar endpoint padrão (server-side atualiza a tabela matches)
+      const res = await fetch('/api/matchmaking/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: roomIdInput, playerId: user.id, deckId: deck.id })
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        setErrorMessage(txt || 'Erro ao entrar na sala');
+        setStatus('error');
+        return;
+      }
+
+      const j = await res.json();
+      const match = j.match || j;
+      if (match) {
+        // entrou com sucesso — iniciar contagem
+        setRoomCode(roomIdInput);
+        setStatus('ready');
+        setShowCountdown(true);
+      }
+    } catch (err) {
+      console.error('Erro ao entrar na sala:', err);
+      setErrorMessage(err.message || 'Erro desconhecido');
+      setStatus('error');
+    }
   };
 
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(roomCode);
-    alert('Código copiado! Compartilhe com seu oponente.');
+    (async () => {
+      try {
+        // se modo custom e a sala ainda não foi criada no DB, criar agora usando o código visível
+        if (mode === 'custom' && !persistedRoomId) {
+          // extrair raw id (sem prefixo custom_)
+          let raw = roomCode;
+          if (!raw) raw = generateRoomCode(mode);
+          if (raw.includes('_')) raw = raw.split('_')[1] || raw;
+
+          const res = await fetch('/api/matchmaking/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId: user?.id, deckId: deck.id, roomId: raw })
+          });
+
+          if (!res.ok) {
+            const txt = await res.text();
+            setErrorMessage(txt || 'Erro ao criar sala');
+            setStatus('error');
+            return;
+          }
+          const d = await res.json();
+          const created = d.roomId || d.room || raw;
+          setRoomCode(created.toString());
+          setPersistedRoomId(created.toString());
+          // iniciar subscription
+          subscribeToMatch(created.toString());
+          navigator.clipboard.writeText(created.toString());
+          alert('Código copiado! Sala criada e copiada. Compartilhe com seu oponente.');
+          return;
+        }
+
+        // caso já persistida ou outros modos
+        navigator.clipboard.writeText(roomCode);
+        alert('Código copiado! Compartilhe com seu oponente.');
+      } catch (err) {
+        console.error('Erro ao copiar/criar sala:', err);
+        setErrorMessage(err.message || 'Erro ao copiar código');
+      }
+    })();
   };
 
   return (
@@ -250,8 +433,8 @@ export default function MatchmakingLobby({
             {mode === 'custom' && status === 'waiting' && (
               <button
                 onClick={() => {
-                  setStatus('ready');
-                  setShowCountdown(true);
+                  // criar sala e aguardar
+                  handleCreateCustomRoom();
                 }}
                 className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-colors"
               >

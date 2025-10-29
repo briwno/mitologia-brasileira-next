@@ -1,227 +1,105 @@
-# Estrutura do Projeto - Mitologia Brasileira Card Game
+ # Estrutura do Projeto — Mitologia Brasileira (card game)
 
-## 📁 Estrutura de Diretórios
+ Este documento descreve a estrutura atual do repositório e os principais pontos de entrada.
 
-```
-mitologia-brasileira-next/
-│
-├── 📄 Arquivos de Configuração
-│   ├── eslint.config.mjs          # Configuração ESLint
-│   ├── jsconfig.json              # Configuração JavaScript
-│   ├── next.config.mjs            # Configuração Next.js
-│   ├── package.json               # Dependências do projeto
-│   ├── postcss.config.mjs         # Configuração PostCSS
-│   └── vercel.json                # Configuração Vercel
-│
-├── 📝 Documentação
-│   ├── README.md                  # Documentação principal
-│   ├── SISTEMA_BATALHA.md         # Documentação do sistema de batalha
-│   ├── TESTES_BATALHA.md          # Testes do sistema de batalha
-│   └── WARP.md                    # Documentação adicional
-│
-├── 🌐 public/
-│   └── images/
-│       ├── README.md              # Guia de recursos visuais
-│       ├── avatars/               # Avatares de jogadores
-│       ├── banners/               # Banners e imagens promocionais
-│       └── cards/
-│           └── portraits/         # Retratos das cartas
-│
-└── 💻 src/
-    │
-    ├── 📱 app/                    # Páginas e rotas (Next.js App Router)
-    │   ├── globals.css            # Estilos globais
-    │   ├── layout.js              # Layout principal
-    │   ├── loading.js             # Componente de loading
-    │   ├── page.js                # Página inicial
-    │   ├── providers.js           # Provedores de contexto
-    │   │
-    │   ├── adm/                   # Área administrativa
-    │   │   └── page.js
-    │   │
-    │   ├── api/                   # API Routes
-    │   │   ├── auth/              # Autenticação
-    │   │   ├── boosters/          # Sistema de boosters
-    │   │   ├── cards/             # Gerenciamento de cartas
-    │   │   ├── collection/        # Coleção de cartas
-    │   │   │   └── inventory/     # Inventário
-    │   │   ├── constants/         # Constantes da API
-    │   │   ├── contos/            # Histórias/Contos
-    │   │   ├── decks/             # Gerenciamento de decks
-    │   │   ├── friends/           # Sistema de amigos
-    │   │   ├── item-cards/        # Cartas de itens
-    │   │   ├── matchmaking/       # Sistema de matchmaking
-    │   │   │   ├── accept/        # Aceitar partida
-    │   │   │   ├── join/          # Entrar em partida
-    │   │   │   └── leave/         # Sair da partida
-    │   │   ├── players/           # Dados de jogadores
-    │   │   ├── profile/           # Perfil do jogador
-    │   │   └── quizzes/           # Sistema de quiz
-    │   │
-    │   ├── card_inventory/        # Inventário de cartas
-    │   │   └── page.js
-    │   │
-    │   ├── divulgar/              # Página de divulgação
-    │   │   └── page.js
-    │   │
-    │   ├── login/                 # Página de login
-    │   │   └── page.js
-    │   │
-    │   ├── museum/                # Museu de cultura
-    │   │   ├── page.js
-    │   │   ├── cards/             # Exposição de cartas
-    │   │   ├── map/               # Mapa das lendas
-    │   │   └── quiz/              # Quiz cultural
-    │   │
-    │   ├── profile/               # Perfil do jogador
-    │   │   ├── page.js
-    │   │   ├── friends/           # Lista de amigos
-    │   │   └── pet/               # Sistema de pet
-    │   │
-    │   ├── pvp/                   # Modo PvP
-    │   │   ├── page.js
-    │   │   └── deck/              # Seleção de deck
-    │   │
-    │   ├── ranking/               # Sistema de ranking
-    │   │   ├── page.js
-    │   │   ├── rewards/           # Recompensas
-    │   │   └── top/               # Top jogadores
-    │   │
-    │   └── shop/                  # Loja do jogo
-    │       └── page.js
-    │
-    ├── 🧩 components/             # Componentes React
-    │   ├── Admin/                 # Componentes administrativos
-    │   │   ├── AdminLayout.js
-    │   │   ├── adminSections.js
-    │   │   └── CrudSection.js
-    │   │
-    │   ├── Auth/                  # Componentes de autenticação
-    │   │
-    │   ├── Board/                 # Componentes do tabuleiro
-    │   │   └── BoardBackground.js
-    │   │
-    │   ├── Card/                  # Componentes de cartas
-    │   │   ├── CardDetail.js
-    │   │   ├── CardImage.js
-    │   │   ├── CardList.js
-    │   │   ├── CardModal.js
-    │   │   └── ItemCard.js
-    │   │
-    │   ├── Deck/                  # Componentes de deck
-    │   │   └── DeckBuilder.js
-    │   │
-    │   ├── Matchmaking/           # Componentes de matchmaking
-    │   │
-    │   ├── Museum/                # Componentes do museu
-    │   │   ├── BrazilMap.js
-    │   │   └── MuseumModal.js
-    │   │
-    │   ├── Pet/                   # Componentes do pet
-    │   │   ├── index.js
-    │   │   ├── PetAvatar.js
-    │   │   ├── PetBubble.js
-    │   │   └── PetWidget.js
-    │   │
-    │   ├── Player/                # Componentes do jogador
-    │   │   ├── PlayerCoins.js
-    │   │   └── PlayerProfile.js
-    │   │
-    │   ├── Profile/               # Componentes de perfil
-    │   │   ├── EditProfileModal.js
-    │   │   └── ProfileModal.js
-    │   │
-    │   ├── PvP/                   # Componentes PvP
-    │   │   └── PvPModal.js
-    │   │
-    │   ├── Ranking/               # Componentes de ranking
-    │   │   └── RankingModal.js
-    │   │
-    │   └── UI/                    # Componentes de interface
-    │       ├── GlobalNav.js
-    │       ├── Icon.js
-    │       ├── ItemTooltip.js
-    │       ├── LoadingSpinner.js
-    │       └── PageLayout.js
-    │
-    ├── 📊 data/                   # Dados do jogo
-    │   ├── correcaorlcs.sql       # Scripts SQL
-    │   ├── petPhrases.js          # Frases do pet
-    │   ├── supabase_v2.sql        # Schema do banco
-    │   ├── importado_banco/       # Dados importados (CSV)
-    │   │   ├── cards.csv
-    │   │   └── collections.csv
-    │   └── localData/             # Dados locais
-    │
-    ├── 🎣 hooks/                  # React Hooks customizados
-    │   ├── useAuth.js             # Hook de autenticação
-    │   ├── useCollection.js       # Hook de coleção
-    │   ├── useFriends.js          # Hook de amigos
-    │   ├── useMMR.js              # Hook de MMR/ranking
-    │   ├── usePet.js              # Hook do pet
-    │   └── usePlayerData.js       # Hook de dados do jogador
-    │
-    ├── 📚 lib/                    # Bibliotecas e configurações
-    │   ├── design.md              # Guia de design
-    │   └── supabase.js            # Cliente Supabase
-    │
-    ├── 🔧 services/               # Serviços
-    │   └── cartasServico.js       # Serviço de cartas
-    │
-    └── 🛠️ utils/                  # Utilitários
-        ├── api.js                 # Helpers de API
-        ├── boosterSystem.js       # Sistema de boosters
-        ├── cardUtils.js           # Utilitários de cartas
-        ├── constants.js           # Constantes do jogo
-        ├── constantsAPI.js        # Constantes de API
-        ├── deckValidation.js      # Validação de deck
-        ├── gameDataSeeder.js      # Populador de dados
-        ├── mmrUtils.js            # Utilitários de MMR
-        ├── normalizadores.js      # Funções de normalização
-        ├── seasonalEvents.js      # Eventos sazonais
-        └── valores.js             # Valores do jogo
-```
+ ## Visão rápida
 
-## 📋 Descrição dos Principais Módulos
+ - Nome: mitologia-brasileira-next
+ - Next.js: 15.4.5
+ - React: 19.1.0
+ - Estilização: Tailwind CSS (v4)
+ - Backend leve: Next.js API Routes + Supabase (Postgres)
+ - Deploy alvo: Vercel
 
-### 🎮 Sistema de Jogo
-- **PvP**: Modo jogador vs jogador (em desenvolvimento após remoção do sistema anterior)
-- **Matchmaking**: Sistema de emparelhamento de jogadores
-- **Deck Builder**: Construção e gerenciamento de decks
-- **Ranking**: Sistema de classificação e MMR
+ ## Estrutura de diretórios (resumo)
 
-### 🏛️ Museu Cultural
-- **Cards**: Exposição de cartas e lendas
-- **Map**: Mapa interativo do Brasil com lendas regionais
-- **Quiz**: Sistema de quiz sobre mitologia brasileira
+ ```
+ mitologia-brasileira-next/
+ ├─ package.json
+ ├─ next.config.mjs
+ ├─ eslint.config.mjs
+ ├─ postcss.config.mjs
+ ├─ vercel.json
+ ├─ public/
+ │  └─ images/ (avatars, banners, cards/, portraits/)
+ └─ src/
+        ├─ app/                   # Páginas (Next App Router)
+        │  ├─ layout.js
+        │  ├─ globals.css
+        │  ├─ page.js
+        │  ├─ loading.js
+        │  ├─ providers.js
+        │  ├─ adm/
+        │  ├─ login/
+        │  ├─ museum/ (cards/, map/, quiz/)
+        │  ├─ profile/ (friends/, pet/)
+        │  ├─ pvp/ (battle/, deck/, teste/)
+        │  ├─ ranking/ (top/, rewards/)
+        │  ├─ shop/
+        │  └─ api/ (auth/, cards/, decks/, boosters/, matchmaking/, friends/, players/, profile/, quizzes/, contos/, item-cards/, constants/)
+        ├─ components/             # Componentes React (UI, Card, PvP, Pet, Admin, etc.)
+        │  ├─ PvP/                 # componentes de batalha (BattleScreen.jsx, BenchSlots.jsx, TurnController.jsx, etc.)
+        │  ├─ Card/                # CardDetail, CardImage, CardList, CardModal, ItemCard
+        │  ├─ Deck/                # DeckBuilder.js
+        │  ├─ Museum/              # BrazilMap.js, MuseumModal.js
+        │  ├─ Pet/                 # PetWidget, PetAvatar, PetBubble, GlobalPetPortal
+        │  ├─ Player/              # PlayerProfile, PlayerCoins
+        │  ├─ Admin/               # AdminLayout, adminSections, CrudSection
+        │  └─ UI/                  # GlobalNav, Icon, LoadingSpinner, PageLayout, PatchNotesModal
+        ├─ data/                   # SQL e dados locais (supabase_v2.sql, correcaorlcs.sql, petPhrases.js, patchNotes.js)
+        ├─ hooks/                  # Hooks customizados (useAuth, useGameState, useCollection, usePlayerData, usePet, useFriends, useMMR)
+        ├─ lib/                    # utilitários de infra (supabase.js, design.md)
+        ├─ services/               # Serviços (cardService.js, cartasServico.js, etc.)
+        └─ utils/                  # Lógica de jogo e utilitários (battleSystem.js, cardUtils.js, deckValidation.js, boosterSystem.js, mmrUtils, valores, etc.)
+ ```
 
-### 👤 Sistema de Jogador
-- **Profile**: Perfil do jogador com estatísticas
-- **Friends**: Sistema de amizades
-- **Pet**: Mascote personalizado do jogador
-- **Collection**: Gerenciamento de coleção de cartas
+ ## Pontos relevantes / Módulos principais
 
-### 🛒 Economia do Jogo
-- **Shop**: Loja de boosters e itens
-- **Boosters**: Sistema de pacotes de cartas
-- **Coins**: Moeda do jogo
+ - Sistema de PvP e batalha
+     - Componentes de batalha estão em `src/components/PvP` e telas em `src/app/pvp` (ex.: `BattleScreen.jsx`, `TurnController.jsx`, `pvp/battle/page.js`).
+     - Lógica utilitária relacionada a combate está em `src/utils/battleSystem.js`.
 
-### 🔐 Infraestrutura
-- **Auth**: Sistema de autenticação com Supabase
-- **API Routes**: Backend serverless com Next.js
-- **Database**: PostgreSQL via Supabase
+ - Matchmaking
+     - Endpoints em `src/app/api/matchmaking/*` e componentes em `src/components/Matchmaking`.
 
-## 🚀 Tecnologias Utilizadas
+ - Deck / Coleção
+     - Validação e construção de decks em `src/utils/deckValidation.js` e `src/components/Deck/DeckBuilder.js`.
 
-- **Framework**: Next.js 15
-- **UI**: React + Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: Supabase (PostgreSQL)
-- **Autenticação**: Supabase Auth
-- **Deploy**: Vercel
+ - Museu (conteúdo cultural)
+     - Páginas em `src/app/museum/*` e componentes relacionados em `src/components/Museum`.
 
-## 📝 Notas
+ - Perfil, Amigos e Pet
+     - Páginas em `src/app/profile/*` e componentes em `src/components/Profile` e `src/components/Pet`.
 
-- O sistema de batalha foi removido e está em fase de reconstrução
-- A estrutura segue o padrão App Router do Next.js 13+
-- Todos os componentes são Client Components devido à natureza interativa do jogo
+ - API Routes
+     - Rotas serverless organizadas sob `src/app/api` (autenticação, cards, decks, players, quizzes, boosters, friends, etc.).
+
+ ## Tecnologias e dependências principais
+
+ - Next.js 15.4.5
+ - React 19.1.0
+ - Tailwind CSS v4
+ - Supabase (@supabase/supabase-js v2)
+ - Drizzle ORM (opcional para integrações)
+
+ ## Como rodar localmente (rápido)
+
+ Em PowerShell (Windows):
+
+ ```powershell
+ npm install
+ npm run dev
+ ```
+
+ ## Convenções e observações
+
+ - O projeto utiliza o App Router do Next.js (páginas dentro de `src/app`).
+ - Componentes interativos do jogo ficam em `src/components` (muitos são Client Components). Siga a convenção existente ao adicionar novos componentes.
+ - Dados e scripts SQL usados pelo Supabase estão em `src/data`.
+ - Prefira centralizar regras de jogo em `src/utils` para evitar duplicação.
+
+ ## Notas finais
+
+ - Este documento foi atualizado para refletir a estrutura atual do repositório e as dependências presentes em `package.json`.
+ - Se quiser, posso gerar uma versão mais detalhada (lista completa de arquivos) ou incluir diagramas simples das dependências entre módulos.
+

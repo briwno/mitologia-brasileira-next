@@ -16,7 +16,6 @@ CREATE TABLE public.cards (
   lore text,
   images jsonb NOT NULL DEFAULT '{}'::jsonb,
   tags ARRAY DEFAULT ARRAY[]::text[],
-  unlock_condition text,
   seasonal_bonus jsonb,
   is_starter boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
@@ -24,11 +23,9 @@ CREATE TABLE public.cards (
   novo boolean DEFAULT false,
   CONSTRAINT cards_pkey PRIMARY KEY (id)
 );
--- ATUALIZADO: Removida coluna item_cards (sistema de itens desativado)
 CREATE TABLE public.collections (
   player_id uuid NOT NULL,
   cards jsonb NOT NULL DEFAULT '[]'::jsonb,
-  -- item_cards jsonb NOT NULL DEFAULT '[]'::jsonb, -- REMOVIDO: Sistema de itens desativado
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT collections_pkey PRIMARY KEY (player_id),
   CONSTRAINT collections_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
@@ -93,7 +90,6 @@ CREATE TABLE public.item_cards (
   lore text,
   images jsonb NOT NULL DEFAULT '{}'::jsonb,
   unlock_condition text,
-  is_tradeable boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   novo boolean DEFAULT false,
@@ -126,10 +122,15 @@ CREATE TABLE public.matches (
   player_a_id uuid,
   player_b_id uuid,
   winner_id uuid,
+  updated_at timestamp with time zone DEFAULT now(),
+  player_a_deck_id bigint NOT NULL,
+  player_b_deck_id bigint NOT NULL,
   CONSTRAINT matches_pkey PRIMARY KEY (id),
   CONSTRAINT matches_player_a_id_fkey FOREIGN KEY (player_a_id) REFERENCES public.players(id),
   CONSTRAINT matches_player_b_id_fkey FOREIGN KEY (player_b_id) REFERENCES public.players(id),
-  CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id)
+  CONSTRAINT matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.players(id),
+  CONSTRAINT matches_player_a_deck_id_fkey FOREIGN KEY (player_a_deck_id) REFERENCES public.decks(id),
+  CONSTRAINT matches_player_b_deck_id_fkey FOREIGN KEY (player_b_deck_id) REFERENCES public.decks(id)
 );
 CREATE TABLE public.player_boosters (
   player_id uuid NOT NULL,

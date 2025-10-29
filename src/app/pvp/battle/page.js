@@ -13,7 +13,10 @@ function BattlePageContent() {
   const { user } = useAuth();
   
   const mode = searchParams.get('mode') || 'bot';
-  const roomCode = searchParams.get('roomCode') || '';
+  const roomCodeParam = searchParams.get('roomCode') || '';
+  // roomCodeParam can be either 'CUSTOM_XXXXX' or just 'XXXXX' depending on how it was passed.
+  // For API calls we need the raw id (without prefix). Keep roomCodeParam for display.
+  const roomIdForApi = roomCodeParam.includes('_') ? roomCodeParam.split('_')[1] : roomCodeParam;
   const deckId = searchParams.get('deckId') || '';
   const botDifficulty = searchParams.get('botDifficulty') || 'normal';
 
@@ -29,103 +32,126 @@ function BattlePageContent() {
         // Carregar cartas do banco
         const dados = await carregarDadosDeCartas();
 
-        // Carregar deck do jogador
-        let playerCards = [];
-        
-        // Se é deck "starter" fictício, usar cartas starter do banco
-        if (deckId === 'starter') {
-          // Pegar primeiras 5 lendas starter
-          const starterLegends = dados.cartas.filter(c => c.is_starter).slice(0, 5);
-          playerCards = starterLegends.length >= 5 
-            ? starterLegends 
-            : dados.cartas.slice(0, 5); // Fallback para as primeiras 5 cartas
-        } else {
-          // Carregar deck do banco de dados usando query param
-          const deckResponse = await fetch(`/api/decks?id=${deckId}`);
-          if (!deckResponse.ok) {
-            const errorText = await deckResponse.text();
-            throw new Error(`Deck não encontrado (ID: ${deckId})`);
-          }
-          const deckData = await deckResponse.json();
-
-          // O deck.cards é um array de strings com IDs: ["tupa001", "sac001", ...]
-          // Deck tem 25 cartas: 5 lendas + 20 itens
-          const allDeckCards = deckData.deck.cards || [];
-          
-          console.log('[Battle] Deck carregado:', {
-            deckId,
-            totalCards: allDeckCards.length,
-            cardIds: allDeckCards
-          });
-          
-          // Separar lendas dos itens baseado no padrão do ID
-          // Lendas: não começam com "item_" (ex: "tupa001", "sac001")
-          // Itens: começam com "item_" (ex: "item_001", "item_002")
-          const legendIds = allDeckCards.filter(cardId => 
-            !String(cardId).startsWith('item_')
-          );
-          
-          const itemIds = allDeckCards.filter(cardId => 
-            String(cardId).startsWith('item_')
-          );
-          
-          console.log('[Battle] Separação:', {
-            legendIds: legendIds.length,
-            itemIds: itemIds.length,
-            legends: legendIds,
-            items: itemIds
-          });
-          
-          // Usar apenas as primeiras 5 lendas
+        // Helpers
+        const extractFiveLegendsFromDeck = (deckJsonCards, allCards) => {
+          const allDeckCards = deckJsonCards || [];
+          const legendIds = allDeckCards.filter((cardId) => !String(cardId).startsWith('item_'));
           const selectedLegendIds = legendIds.slice(0, 5);
-          
-          // Mapear IDs para objetos de carta completos
-          playerCards = selectedLegendIds.map(cardId => {
-            const card = dados.cartas.find(c => 
-              String(c.id) === String(cardId) || c.id == cardId
-            );
-            if (!card) {
-              console.warn(`[Battle] Carta não encontrada no banco: ${cardId}`);
-            }
-            return card;
-          }).filter(Boolean);
-          
-          console.log('[Battle] Player cards:', {
-            count: playerCards.length,
-            cards: playerCards.map(c => ({ id: c.id, nome: c.nome || c.name }))
-          });
-          
-          // Verificar se temos 5 lendas
-          if (playerCards.length < 5) {
-            throw new Error(`Deck incompleto: apenas ${playerCards.length} lendas encontradas (necessário 5 lendas). IDs encontrados: ${selectedLegendIds.join(', ')}`);
-          }
-        }
+          const legends = selectedLegendIds
+            .map((cardId) => {
+              const card = allCards.find((c) => String(c.id) === String(cardId) || c.id == cardId);
+              if (!card) {
+                console.warn(`[Battle] Carta não encontrada no banco: ${cardId}`);
+              }
+              return card;
+            })
+            .filter(Boolean);
+          return legends;
+        };
 
-        // Carregar deck do oponente
-        let opponentCards = [];
+        // Fluxo 1: BOT
         if (mode === 'bot') {
-          // Bot usa lendas aleatórias ou starter baseado na dificuldade
+          // Deck do jogador (usa deckId param)
+          let playerCards = [];
+          if (deckId === 'starter') {
+            const starterLegends = dados.cartas.filter((c) => c.is_starter).slice(0, 5);
+            playerCards = starterLegends.length >= 5 ? starterLegends : dados.cartas.slice(0, 5);
+          } else {
+            const deckResponse = await fetch(`/api/decks?id=${deckId}`);
+            if (!deckResponse.ok) {
+              const errorText = await deckResponse.text();
+              throw new Error(`Deck não encontrado (ID: ${deckId})`);
+            }
+            const deckData = await deckResponse.json();
+            playerCards = extractFiveLegendsFromDeck(deckData.deck.cards, dados.cartas);
+            if (playerCards.length < 5) {
+              throw new Error(
+                `Deck incompleto: apenas ${playerCards.length} lendas encontradas (necessário 5 lendas).`
+              );
+            }
+          }
+
+          // Deck do oponente (bot)
+          let opponentCards = [];
           if (botDifficulty === 'easy') {
-            opponentCards = dados.cartas.filter(c => c.is_starter).slice(0, 5);
+            opponentCards = dados.cartas.filter((c) => c.is_starter).slice(0, 5);
           } else if (botDifficulty === 'normal') {
             opponentCards = dados.cartas.slice(5, 10);
           } else {
-            // Difícil: cartas mais fortes (maior ataque)
-            opponentCards = [...dados.cartas]
-              .sort((a, b) => (b.ataque || 0) - (a.ataque || 0))
-              .slice(0, 5);
+            opponentCards = [...dados.cartas].sort((a, b) => (b.ataque || 0) - (a.ataque || 0)).slice(0, 5);
           }
-          
-          // Fallback se não tiver cartas suficientes
           if (opponentCards.length < 5) {
             opponentCards = dados.cartas.slice(0, 5);
           }
-        } else {
-          // TODO: Para ranked/custom, carregar deck do oponente real
-          opponentCards = dados.cartas.slice(5, 10);
+
+          setBattleData({
+            mode,
+            roomCode: roomCodeParam,
+            playerDeck: playerCards,
+            opponentDeck: opponentCards,
+            botDifficulty,
+            allCards: dados.cartas,
+            allItems: dados.itens,
+          });
+          return;
         }
 
-        // Validar que temos dados suficientes
+        // Fluxo 2: CUSTOM/RANKED (PvP real)
+        if (!roomCodeParam) {
+          throw new Error('Código da sala ausente.');
+        }
+        if (!user?.id) {
+          throw new Error('Usuário não autenticado.');
+        }
+
+        // Buscar match pela roomId (normalizamos aceitando custom_ prefix)
+        const matchRes = await fetch(`/api/matchmaking/status?roomId=${encodeURIComponent(roomIdForApi)}`, {
+          method: 'GET',
+        });
+        if (!matchRes.ok) {
+          const txt = await matchRes.text();
+          throw new Error(txt || 'Não foi possível carregar a partida.');
+        }
+        const { match } = await matchRes.json();
+        if (!match) {
+          throw new Error('Partida ainda não está pronta. Aguarde o oponente entrar.');
+        }
+
+  const isPlayerA = String(match.player_a_id) === String(user.id);
+  const myDeckId = isPlayerA ? match.player_a_deck_id : match.player_b_deck_id;
+  const oppDeckId = isPlayerA ? match.player_b_deck_id : match.player_a_deck_id;
+  const oppPlayerId = isPlayerA ? match.player_b_id : match.player_a_id;
+
+        // Carregar os dois decks do banco
+        const [myDeckRes, oppDeckRes] = await Promise.all([
+          fetch(`/api/decks?id=${myDeckId}`),
+          fetch(`/api/decks?id=${oppDeckId}`),
+        ]);
+        if (!myDeckRes.ok) {
+          throw new Error(`Não foi possível carregar seu deck (ID: ${myDeckId}).`);
+        }
+        if (!oppDeckRes.ok) {
+          throw new Error(`Não foi possível carregar o deck do oponente (ID: ${oppDeckId}).`);
+        }
+        const [myDeckData, oppDeckData] = await Promise.all([myDeckRes.json(), oppDeckRes.json()]);
+
+        const playerCards = extractFiveLegendsFromDeck(myDeckData.deck.cards, dados.cartas);
+        const opponentCards = extractFiveLegendsFromDeck(oppDeckData.deck.cards, dados.cartas);
+
+        // Buscar dados do jogador oponente (perfil: nickname, avatar, mmr)
+        let opponentProfile = null;
+        try {
+          if (oppPlayerId) {
+            const pRes = await fetch(`/api/players?id=${oppPlayerId}`);
+            if (pRes.ok) {
+              const pj = await pRes.json();
+              opponentProfile = pj.player || null;
+            }
+          }
+        } catch (e) {
+          console.warn('Não foi possível carregar perfil do oponente:', e);
+        }
+
         if (playerCards.length < 5) {
           throw new Error('Deck do jogador incompleto');
         }
@@ -135,14 +161,14 @@ function BattlePageContent() {
 
         setBattleData({
           mode,
-          roomCode,
+          roomCode: roomCodeParam,
           playerDeck: playerCards,
           opponentDeck: opponentCards,
+          opponentProfile,
           botDifficulty,
           allCards: dados.cartas,
-          allItems: dados.itens
+          allItems: dados.itens,
         });
-
       } catch (err) {
         console.error('Erro ao iniciar batalha:', err);
         setError(err.message);
@@ -151,10 +177,11 @@ function BattlePageContent() {
       }
     }
 
-    if (deckId) {
+    // Para modo custom precisamos do user.id e roomCode; para bot, deckId é obrigatório
+    if ((mode === 'bot' && deckId) || (mode !== 'bot' && roomCodeParam && user?.id)) {
       initBattle();
     }
-  }, [deckId, mode, roomCode, botDifficulty]);
+  }, [deckId, mode, roomCodeParam, roomIdForApi, botDifficulty, user?.id]);
 
   if (loading) {
     return (
@@ -163,7 +190,7 @@ function BattlePageContent() {
           <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-yellow-400 mx-auto mb-4"></div>
           <p className="text-xl text-white mb-2">⚔️ Preparando Batalha...</p>
           <p className="text-sm text-gray-400">
-            Sala: {formatRoomCodeDisplay(roomCode)}
+            Sala: {formatRoomCodeDisplay(roomCodeParam)}
           </p>
         </div>
       </div>
@@ -195,9 +222,10 @@ function BattlePageContent() {
   return (
     <BattleScreen
       mode={mode}
-      roomCode={roomCode}
+      roomCode={roomCodeParam}
       playerDeck={battleData.playerDeck}
       opponentDeck={battleData.opponentDeck}
+      opponentProfile={battleData.opponentProfile}
       botDifficulty={botDifficulty}
       allCards={battleData.allCards}
       allItems={battleData.allItems}

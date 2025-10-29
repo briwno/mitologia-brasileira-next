@@ -10,11 +10,10 @@ function normalizeRoomCode(code) {
 
 function getSupabaseServerClient() {
   const url = process.env.SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Require service role key on server-side operations that modify DB
   if (!url || !key) {
-    throw new Error('Variáveis de ambiente do Supabase ausentes.');
+    throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configurados no ambiente (necessário para operações server-side).');
   }
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -29,13 +28,13 @@ export async function POST(request) {
     const playerId = body?.playerId;
 
     if (!roomCode) {
-      return new Response('roomCode é obrigatório', { status: 400 });
+      return new Response(JSON.stringify({ error: 'roomCode é obrigatório' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
-    if (!deckId) {
-      return new Response('deckId é obrigatório', { status: 400 });
+    if (!deckId && deckId !== 0) {
+      return new Response(JSON.stringify({ error: 'deckId é obrigatório' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
     if (!playerId) {
-      return new Response('playerId é obrigatório', { status: 400 });
+      return new Response(JSON.stringify({ error: 'playerId é obrigatório' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     const key = `matchmaking:room:${roomCode}`;
@@ -51,12 +50,7 @@ export async function POST(request) {
       };
       await kv.set(key, lobby);
       await kv.expire(key, 600);
-      return Response.json({
-        status: 'waiting',
-        roomCode,
-        host: lobby.playerA,
-        you: lobby.playerA,
-      });
+      return new Response(JSON.stringify({ status: 'waiting', roomCode, host: lobby.playerA, you: lobby.playerA }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Se já tem playerA igual ao atual, permaneça esperando (talvez atualizou deck)
@@ -64,17 +58,12 @@ export async function POST(request) {
       lobby.playerA.deckId = deckId;
       await kv.set(key, lobby);
       await kv.expire(key, 600);
-      return Response.json({
-        status: 'waiting',
-        roomCode,
-        host: lobby.playerA,
-        you: lobby.playerA,
-      });
+      return new Response(JSON.stringify({ status: 'waiting', roomCode, host: lobby.playerA, you: lobby.playerA }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Se já tem playerB, sala cheia
     if (lobby.playerB) {
-      return new Response('Sala já está cheia', { status: 409 });
+      return new Response(JSON.stringify({ error: 'Sala já está cheia' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Completar lobby e criar match
@@ -109,19 +98,15 @@ export async function POST(request) {
 
     if (error) {
       console.error('[matchmaking/join] supabase insert error', error);
-      return new Response('Falha ao criar match no banco', { status: 500 });
+      return new Response(JSON.stringify({ error: 'Falha ao criar match no banco', details: error.message || error }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Limpar lobby
     await kv.del(key);
 
-    return Response.json({
-      status: 'ready',
-      roomCode,
-      match: data,
-    });
+    return new Response(JSON.stringify({ status: 'ready', roomCode, match: data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
     console.error('[matchmaking/join] error', err);
-    return new Response('Erro interno', { status: 500 });
+    return new Response(JSON.stringify({ error: 'Erro interno', details: err.message || err }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
