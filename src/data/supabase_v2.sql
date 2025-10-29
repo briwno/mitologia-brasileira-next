@@ -112,7 +112,7 @@ CREATE TABLE public.item_cards_backup (
 CREATE TABLE public.matches (
   id bigint NOT NULL DEFAULT nextval('matches_id_seq'::regclass),
   room_id text NOT NULL UNIQUE,
-  status text NOT NULL DEFAULT 'active'::text,
+  status USER-DEFINED NOT NULL DEFAULT 'active'::match_status,
   version integer NOT NULL DEFAULT 0,
   state jsonb NOT NULL,
   snapshot jsonb,
@@ -125,6 +125,7 @@ CREATE TABLE public.matches (
   updated_at timestamp with time zone DEFAULT now(),
   player_a_deck_id bigint NOT NULL,
   player_b_deck_id bigint NOT NULL,
+  last_activity_at timestamp with time zone DEFAULT now(),
   CONSTRAINT matches_pkey PRIMARY KEY (id),
   CONSTRAINT matches_player_a_id_fkey FOREIGN KEY (player_a_id) REFERENCES public.players(id),
   CONSTRAINT matches_player_b_id_fkey FOREIGN KEY (player_b_id) REFERENCES public.players(id),
