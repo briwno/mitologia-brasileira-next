@@ -8,6 +8,7 @@ import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
 import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import Icon from '@/components/UI/Icon';
 import PatchNotesModal from '@/components/UI/PatchNotesModal';
+import { useFriends as usarAmigos } from '@/hooks/useFriends';
 import { PetWidget } from '@/components/Pet';
 import { SITUACOES_MASCOTE } from '@/data/petPhrases';
 import { FRASES_MASCOTE } from '@/data/petPhrases';
@@ -34,6 +35,15 @@ export default function LayoutDePagina({ children }) {
     stats: estatisticas,
     winRate: taxaVitoria,
   } = informacoesJogador || {};
+
+  // Amigos
+  const amigosContexto = usarAmigos && usarAmigos();
+  const {
+    friends = [],
+    friendsCount = 0,
+    loading: amigosCarregando = false,
+  } = amigosContexto || {};
+  const [mostrarModalAmigos, setMostrarModalAmigos] = useState(false);
 
   let estaAutenticado;
   if (typeof verificarAutenticacao === 'function') {
@@ -211,10 +221,83 @@ export default function LayoutDePagina({ children }) {
                   )}
                 </div>
               </div>
-              
-              {/* Moedas do jogador — exibidas apenas se autenticado */}
-  
             </div>
+             {/* Aba amigos do jogador — exibidas apenas se autenticado */}
+              {estaAutenticado && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarModalAmigos(true)}
+                    title="Amigos online"
+                    className="inline-flex items-center gap-2 px-3 h-10 rounded-lg bg-black/30 border border-white/5 hover:border-white/20 transition text-sm text-white/90"
+                  >
+                    <Icon name="friends" size={16} />
+                    <span className="hidden sm:inline">{friendsCount}</span>
+                    <span className="text-xs text-white/70"> online</span>
+                  </button>
+
+                  {mostrarModalAmigos && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarModalAmigos(false)}>
+                      <div className="bg-[#0f1724] rounded-xl shadow-lg p-4 min-w-[300px] max-w-[640px] relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
+                          onClick={() => setMostrarModalAmigos(false)}
+                          title="Fechar"
+                        >
+                          ×
+                        </button>
+                        <h3 className="text-lg font-bold mb-2">Amigos</h3>
+
+                        {amigosCarregando ? (
+                          <div className="text-sm text-white/70">Carregando...</div>
+                        ) : (
+                          <div className="max-h-[50vh] overflow-y-auto space-y-2">
+                            {friends && friends.length > 0 ? (
+                              friends.map((f, idx) => {
+                                const nome = f.nickname || f.name || f.player?.nickname || f.friend?.nickname || 'Jogador';
+                                const avatar = f.avatar_url || f.player?.avatar_url || f.friend?.avatar_url || '/images/avatars/default.png';
+                                const id = f.id || f.playerId || f.player_id || f.uid || f.friend_id || '';
+
+                                return (
+                                  <div key={idx} className="flex items-center justify-between bg-black/40 rounded-lg p-2">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                                        {avatar ? (
+                                          <Image src={avatar} alt={nome} width={32} height={32} className="object-cover w-full h-full" />
+                                        ) : (
+                                          <span>{nome?.charAt(0)?.toUpperCase() || 'J'}</span>
+                                        )}
+                                      </div>
+                                      <div className="text-sm">
+                                        <div className="font-semibold">{nome}</div>
+                                        <div className="text-xs text-white/60">{f.region || f.title || ''}</div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <Link href={`/profile/${id}`} className="text-xs px-3 py-1 rounded bg-black/30 border border-white/10 hover:border-white/20">Acessar perfil</Link>
+                                      <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Desafiar (em breve)</button>
+                                      <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Chat (em breve)</button>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-sm text-white/70">Nenhum amigo encontrado.</div>
+                            )}
+                            <Link href="/profile/friends" className="text-xs text-blue-400 hover:underline">Adicionar amigos</Link>
+                          </div>
+                        )}
+
+                        <div className="mt-4 flex justify-end">
+                          <button onClick={() => setMostrarModalAmigos(false)} className="px-4 py-2 rounded-lg bg-black/40 border border-white/20">Fechar</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
           </div>
           <div className="flex items-center gap-2">
             <button

@@ -17,6 +17,7 @@ const Icon = ({ name, size = 24, className = '' }) => {
     
     // Interface
     'notes': 'https://img.icons8.com/?size=100&id=12085&format=png&color=000000',
+    'friends': 'https://img.icons8.com/?size=100&id=yZX1GOetNQCq&format=png&color=FFFFFF',
     'settings': 'https://img.icons8.com/fluency/48/settings.png',
     'scroll': 'https://img.icons8.com/?size=100&id=LC4SM48lJHpZ&format=png&color=000000',
     'leaf': 'https://img.icons8.com/fluency/48/leaf.png',

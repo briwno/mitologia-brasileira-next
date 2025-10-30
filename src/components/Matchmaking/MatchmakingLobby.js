@@ -317,27 +317,42 @@ export default function MatchmakingLobby({
             {getModeDescription(mode)}
           </p>
         </div>
+          <div className="bg-black/40 rounded-lg p-4 mb-6 border border-yellow-600/30">
+            <div className="text-xs text-gray-400 mb-1 text-center">Código da Sala</div>
 
-        {/* Código da Sala */}
-        <div className="bg-black/40 rounded-lg p-4 mb-6 border border-yellow-600/30">
-          <div className="text-xs text-gray-400 mb-1 text-center">Código da Sala</div>
-          <div className="flex items-center justify-center gap-2">
-            <div className="text-2xl font-mono font-bold text-yellow-400 tracking-wider">
-              {formatRoomCodeDisplay(roomCode)}
-            </div>
-            {mode === 'custom' && (
-              <button
-                onClick={copyRoomCode}
-                className="p-2 bg-yellow-600/20 hover:bg-yellow-600/40 rounded transition-colors"
-                title="Copiar código"
-              >
-                <Icon name="copy" size={16} />
-              </button>
+            {mode === 'custom' && !persistedRoomId ? (
+              // Sala custom: oculto até criar/copiar
+              <div className="flex items-center justify-center gap-2">
+                <div className="text-2xl font-mono font-bold text-yellow-400 tracking-wider">
+            {/* exibe máscara até o host criar a sala */}
+            •••••
+                </div>
+                <button
+            onClick={copyRoomCode}
+            className="px-3 py-2 bg-yellow-600 text-black rounded font-semibold hover:bg-yellow-500 transition-colors"
+            title="Criar e copiar código da sala"
+                >
+            Copiar
+                </button>
+              </div>
+            ) : (
+              // Sala visível (ranked/bot ou custom já persistida)
+              <div className="flex items-center justify-center gap-2">
+                <div className="text-2xl font-mono font-bold text-yellow-400 tracking-wider">
+            {formatRoomCodeDisplay(roomCode)}
+                </div>
+                {mode === 'custom' && (
+            <button
+              onClick={copyRoomCode}
+              className="p-2 bg-yellow-600/20 hover:bg-yellow-600/40 rounded transition-colors"
+              title="Copiar código"
+            >
+              <Icon name="copy" size={16} />
+            </button>
+                )}
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Deck Info */}
         <div className="bg-black/20 rounded-lg p-3 mb-6">
           <div className="text-xs text-gray-400 mb-1">Deck Selecionado</div>
           <div className="font-semibold text-cyan-400">{deck.name}</div>
