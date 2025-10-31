@@ -5,6 +5,12 @@ export async function GET(req) {
   try {
   const supabase = requireSupabaseAdmin();
     const { searchParams } = new URL(req.url);
+    // log básico do request
+    try {
+      console.log('[matchmaking/status] GET', { url: req.url, query: Object.fromEntries(searchParams) });
+    } catch (lerr) {
+      console.log('[matchmaking/status] GET - log error', String(lerr));
+    }
     const roomId = searchParams.get('roomId');
 
     if (!roomId) return NextResponse.json({ error: 'roomId é obrigatório' }, { status: 400 });

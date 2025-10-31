@@ -5,6 +5,12 @@ export async function POST(req) {
   try {
     const supabase = requireSupabaseAdmin();
   const body = await req.json();
+  // log básico do request
+  try {
+    console.log('[matchmaking/create] POST', { url: req.url, body });
+  } catch (lerr) {
+    console.log('[matchmaking/create] POST - log error', String(lerr));
+  }
   const playerId = body?.playerId;
   const deckIdRaw = body?.deckId;
   const deckId = typeof deckIdRaw === 'string' && deckIdRaw.match(/^\d+$/) ? Number(deckIdRaw) : deckIdRaw;
