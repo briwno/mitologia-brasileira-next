@@ -59,7 +59,11 @@ export async function POST(req) {
         player_a_id: playerId,
         player_a_deck_id: deckId,
         // player_b_deck_id é NOT NULL no schema atual; usar o mesmo deck como placeholder
-        player_b_deck_id: deckId
+        player_b_deck_id: deckId,
+        // Inicializar campos de controle de turno
+        current_player_id: null, // Será definido quando ambos jogadores entrarem
+        current_turn: 1,
+        status: 'active' // Enum match_status: 'active', 'finished', 'cancelled'
       })
       .select()
       .single();

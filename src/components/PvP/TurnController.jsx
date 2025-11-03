@@ -10,7 +10,8 @@ export default function TurnController({
   currentTurn, 
   currentPhase,
   onEndTurn,
-  disabled = false
+  disabled = false,
+  hasPlayedThisTurn = false
 }) {
   const phaseNames = {
     'INICIO': 'Início',
@@ -47,16 +48,20 @@ export default function TurnController({
       {/* Status do turno */}
       <div className={`
         px-4 py-2 rounded-full font-semibold text-sm
-        ${isMyTurn 
+        ${isMyTurn && !hasPlayedThisTurn
           ? 'bg-green-600 text-white animate-pulse' 
+          : isMyTurn && hasPlayedThisTurn
+          ? 'bg-yellow-600 text-white'
           : 'bg-neutral-700 text-neutral-300'
         }
       `}>
-        {isMyTurn ? '✅ Seu Turno!' : '⏳ Aguardando oponente...'}
+        {isMyTurn && !hasPlayedThisTurn ? '✅ Seu Turno!' 
+          : isMyTurn && hasPlayedThisTurn ? '✅ Ação realizada! (Aguardando oponente)'
+          : '⏳ Aguardando oponente...'}
       </div>
 
       {/* Botão de encerrar turno */}
-      {isMyTurn && (
+      {isMyTurn && !hasPlayedThisTurn && (
         <button
           onClick={onEndTurn}
           disabled={disabled}
@@ -74,9 +79,15 @@ export default function TurnController({
       )}
 
       {/* Dica de ação */}
-      {isMyTurn && currentPhase === 'ACAO' && (
+      {isMyTurn && !hasPlayedThisTurn && currentPhase === 'ACAO' && (
         <div className="text-xs text-neutral-400 text-center max-w-xs">
           💡 Escolha uma ação: usar skill, item ou trocar lenda
+        </div>
+      )}
+      
+      {isMyTurn && hasPlayedThisTurn && (
+        <div className="text-xs text-green-400 text-center max-w-xs animate-pulse">
+          ⏳ Aguardando oponente completar sua ação...
         </div>
       )}
     </div>

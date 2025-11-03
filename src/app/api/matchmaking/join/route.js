@@ -48,8 +48,11 @@ export async function POST(req) {
         player_b_id: playerId,
         player_b_deck_id: deckId,
         state: newState,
-        status: 'active',
-        started_at: new Date().toISOString()
+        status: 'active', // Enum match_status: 'active', 'finished', 'cancelled'
+        started_at: new Date().toISOString(),
+        // Inicializar controle de turno quando player_b entrar
+        current_player_id: match.player_a_id, // Player A sempre começa
+        current_turn: 1
       })
       .eq('room_id', roomId)
       .select()
