@@ -23,7 +23,7 @@ export async function GET(req) {
     
     const { searchParams } = new URL(req.url);
     
-    const id = searchParams.get('id');
+    const id = searchParams.get('id') || searchParams.get('uid'); // Aceitar tanto 'id' quanto 'uid'
     const nickname = searchParams.get('nickname');
 
     // Buscar por ID (UUID)

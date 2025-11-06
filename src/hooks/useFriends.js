@@ -1,4 +1,4 @@
-// src/hooks/useFriends.js
+﻿// src/hooks/useFriends.js
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 
@@ -244,7 +244,7 @@ export function useFriends() {
       if (data.players) {
         return data.players;
       }
-      
+
       return [];
     } catch (err) {
       console.error('[useFriends] Erro ao buscar jogador:', err);

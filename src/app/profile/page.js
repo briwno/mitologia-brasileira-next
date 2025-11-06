@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
 import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
 import { useMMR } from '@/hooks/useMMR';
@@ -14,6 +15,13 @@ import { calcularRankingPorMMR, calcularProgressoRanking, obterIconeRanking, obt
 export default function PaginaPerfil() {
   const [abaAtiva, definirAbaAtiva] = useState('visaoGeral');
   const [modalEditarAberto, definirModalEditarAberto] = useState(false);
+  const [busca, definirBusca] = useState('');
+  const [buscando, definirBuscando] = useState(false);
+  const [erroBusca, definirErroBusca] = useState(null);
+  const [jogadoresBuscados, definirJogadoresBuscados] = useState([]);
+  const [mostrarResultadosBusca, definirMostrarResultadosBusca] = useState(false);
+  
+  const roteador = useRouter();
   const contextoAutenticacao = usarAutenticacao();
   const { user: usuario, isAuthenticated: verificarAutenticacao } = contextoAutenticacao || {};
   
@@ -43,6 +51,65 @@ export default function PaginaPerfil() {
     if (recarregarDados) {
       recarregarDados();
     }
+  };
+
+  // Função de busca de jogadores
+  const handleBuscarJogador = async () => {
+    if (!busca || busca.length < 3) {
+      definirErroBusca('Digite pelo menos 3 caracteres');
+      return;
+    }
+
+    definirBuscando(true);
+    definirErroBusca(null);
+    definirJogadoresBuscados([]);
+
+    try {
+      const resposta = await fetch(`/api/players?nickname=${encodeURIComponent(busca)}`);
+      
+      if (!resposta.ok) {
+        if (resposta.status === 404) {
+          throw new Error('Nenhum jogador encontrado');
+        }
+        throw new Error('Erro ao buscar jogador');
+      }
+
+      const dados = await resposta.json();
+      
+      let jogadores = [];
+      if (dados.isMultiple && dados.players) {
+        jogadores = dados.players;
+      } else if (dados.player) {
+        jogadores = [dados.player];
+      } else if (dados.players) {
+        jogadores = dados.players;
+      }
+
+      // Filtrar o próprio usuário
+      const jogadoresFiltrados = jogadores.filter(j => j.id !== usuario?.id);
+
+      if (jogadoresFiltrados.length === 0) {
+        definirErroBusca('Nenhum jogador encontrado');
+        definirMostrarResultadosBusca(false);
+        return;
+      }
+
+      definirJogadoresBuscados(jogadoresFiltrados);
+      definirMostrarResultadosBusca(true);
+    } catch (err) {
+      definirErroBusca(err.message);
+      definirMostrarResultadosBusca(false);
+    } finally {
+      definirBuscando(false);
+    }
+  };
+
+  // Limpar busca
+  const limparBusca = () => {
+    definirBusca('');
+    definirJogadoresBuscados([]);
+    definirErroBusca(null);
+    definirMostrarResultadosBusca(false);
   };
 
   let estaAutenticado;
@@ -148,6 +215,109 @@ export default function PaginaPerfil() {
     <LayoutDePagina>
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
+          {/* Barra de busca de jogadores */}
+          <div className="max-w-2xl mx-auto mb-6">
+            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-purple-500/30">
+              <h3 className="text-sm font-semibold mb-3 text-purple-300">🔍 Buscar Jogador</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={busca}
+                  onChange={(e) => {
+                    definirBusca(e.target.value);
+                    definirErroBusca(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleBuscarJogador();
+                    }
+                  }}
+                  placeholder="Digite o nickname ou UID..."
+                  className="flex-1 px-4 py-2 bg-black/50 border border-gray-600 rounded-lg focus:border-purple-400 focus:outline-none text-sm"
+                />
+                <button
+                  onClick={handleBuscarJogador}
+                  disabled={buscando || !busca || busca.length < 3}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors text-sm"
+                >
+                  {buscando ? '🔍' : '🔍 Buscar'}
+                </button>
+                {mostrarResultadosBusca && (
+                  <button
+                    onClick={limparBusca}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold transition-colors text-sm"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              
+              {erroBusca && (
+                <div className="mt-2 text-xs text-red-400">
+                  {erroBusca}
+                </div>
+              )}
+
+              {/* Resultados da busca */}
+              {mostrarResultadosBusca && jogadoresBuscados.length > 0 && (
+                <div className="mt-4 max-h-64 overflow-y-auto">
+                  <div className="space-y-2">
+                    {jogadoresBuscados.map((jogador) => {
+                      const ranking = calcularRankingPorMMR(jogador.mmr || 0);
+                      const icone = obterIconeRanking(ranking);
+                      const cor = obterCorRanking(ranking);
+
+                      return (
+                        <button
+                          key={jogador.id}
+                          onClick={() => {
+                            roteador.push(`/profile/${jogador.id}`);
+                          }}
+                          className="w-full bg-black/50 p-3 rounded-lg border border-gray-600/50 hover:border-purple-400/70 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Avatar pequeno */}
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full p-0.5 flex-shrink-0">
+                              <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
+                                {jogador.avatar_url ? (
+                                  <Image
+                                    src={jogador.avatar_url}
+                                    alt={jogador.nickname}
+                                    width={36}
+                                    height={36}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="text-sm">👤</div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Informações */}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-sm truncate">{jogador.nickname}</div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-gray-400">Nv. {jogador.level || 1}</span>
+                                <span className={cor}>
+                                  {icone} {ranking}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Ícone de navegação */}
+                            <div className="text-purple-400 text-xl">
+                              →
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Header com foto e nome do usuário */}
           <div className="flex flex-col items-center mb-6">
             <div className="relative mb-4">
