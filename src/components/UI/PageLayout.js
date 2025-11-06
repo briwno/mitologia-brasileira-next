@@ -255,9 +255,13 @@ export default function LayoutDePagina({ children }) {
                           <div className="max-h-[50vh] overflow-y-auto space-y-2">
                             {friends && friends.length > 0 ? (
                               friends.map((f, idx) => {
-                                const nome = f.nickname || f.name || f.player?.nickname || f.friend?.nickname || 'Jogador';
-                                const avatar = f.avatar_url || f.player?.avatar_url || f.friend?.avatar_url || '/images/avatars/default.png';
-                                const id = f.id || f.playerId || f.player_id || f.uid || f.friend_id || '';
+                                // A API retorna o amigo no campo 'friend'
+                                const amigo = f.friend || f;
+                                const nome = amigo.nickname || amigo.name || 'Jogador';
+                                const avatar = amigo.avatar_url || '/images/avatars/default.png';
+                                const idAmigo = amigo.id || '';
+                                const nivel = amigo.level || 1;
+                                const mmr = amigo.mmr || 0;
 
                                 return (
                                   <div key={idx} className="flex items-center justify-between bg-black/40 rounded-lg p-2">
@@ -271,12 +275,12 @@ export default function LayoutDePagina({ children }) {
                                       </div>
                                       <div className="text-sm">
                                         <div className="font-semibold">{nome}</div>
-                                        <div className="text-xs text-white/60">{f.region || f.title || ''}</div>
+                                        <div className="text-xs text-white/60">Nv. {nivel} • MMR {mmr}</div>
                                       </div>
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                      <Link href={`/profile/${id}`} className="text-xs px-3 py-1 rounded bg-black/30 border border-white/10 hover:border-white/20">Acessar perfil</Link>
+                                      <Link href={`/profile/${idAmigo}`} className="text-xs px-3 py-1 rounded bg-purple-600/40 border border-purple-400/30 hover:border-purple-400/60 hover:bg-purple-600/60 transition-colors">Ver Perfil</Link>
                                       <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Desafiar (em breve)</button>
                                       <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Chat (em breve)</button>
                                     </div>

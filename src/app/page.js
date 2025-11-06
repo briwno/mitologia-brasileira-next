@@ -41,11 +41,6 @@ const ModalPerfil = dynamic(() => import('@/components/Profile/ProfileModal'), {
   )
 });
 
-
-//verificar se é level1
-
-
-// Cartão clicável para cada modo da página inicial
 function CartaoModo({ destino, titulo,  disponivel = true, subtitulo, destaque = false, caminhoImagem }) {
   const [erroAoCarregarImagem, definirErroAoCarregarImagem] = useState(false);
 
