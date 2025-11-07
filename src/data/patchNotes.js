@@ -140,5 +140,5 @@ export const proximasAtualizacoes = [
 
 export const notaDesenvolvedor = {
   titulo: 'Nota do Desenvolvedor',
-  mensagem: 'A remoção temporária dos itens permite que eu foque em criar uma experiência mais equilibrada e divertida para todos os jogadores. Obrigado por jogar Ka\'aguy!'
+  mensagem: 'Obrigado por jogar Ka\'aguy!'
 };

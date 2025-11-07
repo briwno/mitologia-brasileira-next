@@ -1,26 +1,29 @@
 "use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { useAuth as usarAutenticacao } from '@/hooks/useAuth';
-import { usePlayerData as usarDadosJogador } from '@/hooks/usePlayerData';
-import Icon from '@/components/UI/Icon';
-import PatchNotesModal from '@/components/UI/PatchNotesModal';
-import { useFriends as usarAmigos } from '@/hooks/useFriends';
-import { PetWidget } from '@/components/Pet';
-import { SITUACOES_MASCOTE } from '@/data/petPhrases';
-import { FRASES_MASCOTE } from '@/data/petPhrases';
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth as usarAutenticacao } from "@/hooks/useAuth";
+import { usePlayerData as usarDadosJogador } from "@/hooks/usePlayerData";
+import Icon from "@/components/UI/Icon";
+import PatchNotesModal from "@/components/UI/PatchNotesModal";
+import { useFriends as usarAmigos } from "@/hooks/useFriends";
+import { PetWidget } from "@/components/Pet";
+import { SITUACOES_MASCOTE } from "@/data/petPhrases";
+import { FRASES_MASCOTE } from "@/data/petPhrases";
 
 // Layout de página compartilhado
 export default function LayoutDePagina({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [mostrarModalConfiguracoes, definirMostrarModalConfiguracoes] = useState(false);
-  const [mostrarModalInformacoes, definirMostrarModalInformacoes] = useState(false);
-  const [definirMostrarModalPatchNotes, setDefinirMostrarModalPatchNotes] = useState(false);
+  const [mostrarModalConfiguracoes, definirMostrarModalConfiguracoes] =
+    useState(false);
+  const [mostrarModalInformacoes, definirMostrarModalInformacoes] =
+    useState(false);
+  const [definirMostrarModalPatchNotes, setDefinirMostrarModalPatchNotes] =
+    useState(false);
   const [mostrarModalDuvidas, setMostrarModalDuvidas] = useState(false);
-  
+
   const contextoAutenticacao = usarAutenticacao();
   const {
     user: usuario,
@@ -46,86 +49,117 @@ export default function LayoutDePagina({ children }) {
   const [mostrarModalAmigos, setMostrarModalAmigos] = useState(false);
 
   let estaAutenticado;
-  if (typeof verificarAutenticacao === 'function') {
+  if (typeof verificarAutenticacao === "function") {
     estaAutenticado = verificarAutenticacao();
   } else {
     estaAutenticado = false;
   }
-  
+
   useEffect(() => setIsLoaded(true), []);
   const pathname = usePathname();
 
   function renderDuvidasParaTela(path) {
     // Conteúdo simples e orientador por rota
     switch (true) {
-      case path === '/' || path === '/home':
+      case path === "/" || path === "/home":
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Esta é a tela inicial. Use os cartões para navegar rápido:</p>
+            <p className="text-sm text-white/80 mb-3">
+              Esta é a tela inicial. Use os cartões para navegar rápido:
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
-              <li><strong>BATALHA</strong> — Inicia duelos e acessa matchmaking.</li>
-              <li><strong>MUSEU</strong> — Explore as lendas e o quiz cultural.</li>
-              <li><strong>LOJA</strong> — Abra pacotes e veja ofertas.</li>
-              <li><strong>PERFIL</strong> — Visualize seu progresso e conquistas.</li>
+              <li>
+                <strong>BATALHA</strong> — Inicia duelos e acessa matchmaking.
+              </li>
+              <li>
+                <strong>MUSEU</strong> — Explore as lendas e o quiz cultural.
+              </li>
+              <li>
+                <strong>LOJA</strong> — Abra pacotes e veja ofertas.
+              </li>
+              <li>
+                <strong>PERFIL</strong> — Visualize seu progresso e conquistas.
+              </li>
             </ul>
           </div>
         );
-      case path?.startsWith('/shop'):
+      case path?.startsWith("/shop"):
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Loja — aqui você compra e abre boosters.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Loja — aqui você compra e abre boosters.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
-              <li>Escolha um pacote e clique em &quot;Abrir&quot; para ver as cartas sorteadas.</li>
+              <li>
+                Escolha um pacote e clique em &quot;Abrir&quot; para ver as
+                cartas sorteadas.
+              </li>
               <li>As cartas são automaticamente adicionadas à sua coleção.</li>
             </ul>
           </div>
         );
-      case path?.startsWith('/pvp'):
+      case path?.startsWith("/pvp"):
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">PvP — informações rápidas sobre o fluxo de batalha.</p>
+            <p className="text-sm text-white/80 mb-3">
+              PvP — informações rápidas sobre o fluxo de batalha.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Pré-batalha: verifique seu deck e habilidades.</li>
-              <li>Durante a partida: use ações no painel lateral e acompanhe o log.</li>
+              <li>
+                Durante a partida: use ações no painel lateral e acompanhe o
+                log.
+              </li>
             </ul>
           </div>
         );
-      case path?.startsWith('/museum'):
+      case path?.startsWith("/museum"):
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Museu — explore cartas e quizzes.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Museu — explore cartas e quizzes.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Use filtros para encontrar cartas por região ou raridade.</li>
               <li>O quiz testa seu conhecimento sobre as lendas mostradas.</li>
             </ul>
           </div>
         );
-      case path?.startsWith('/card_inventory'):
+      case path?.startsWith("/card_inventory"):
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Seu inventário de cartas — gerencie sua coleção.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Seu inventário de cartas — gerencie sua coleção.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Ordene por raridade, nome ou data de aquisição.</li>
               <li>Use o botão de detalhes para ver habilidades e histórico.</li>
             </ul>
           </div>
         );
-      case path?.startsWith('/ranking'):
-        return(
+      case path?.startsWith("/ranking"):
+        return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Ranking — veja a classificação dos jogadores.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Ranking — veja a classificação dos jogadores.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Os jogadores são classificados por MMR.</li>
-              <li>MMR: Significa seus pontos de classificação. Quanto maior, melhor.</li>
+              <li>
+                MMR: Significa seus pontos de classificação. Quanto maior,
+                melhor.
+              </li>
               <li>Ganhe MMR vencendo partidas contra outros jogadores.</li>
               <li>Suba no ranking participando de batalhas PvP.</li>
             </ul>
           </div>
         );
-      case path?.startsWith('/profile'):
+      case path?.startsWith("/profile"):
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Perfil — veja seu progresso e amigos.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Perfil — veja seu progresso e amigos.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Edite avatar, nome e informações públicas aqui.</li>
               <li>Verifique conquistas e estatísticas.</li>
@@ -135,10 +169,15 @@ export default function LayoutDePagina({ children }) {
       default:
         return (
           <div>
-            <p className="text-sm text-white/80 mb-3">Ajuda rápida — orientações gerais.</p>
+            <p className="text-sm text-white/80 mb-3">
+              Ajuda rápida — orientações gerais.
+            </p>
             <ul className="list-disc list-inside text-sm text-white/80 space-y-1">
               <li>Procure ações principais no topo ou na lateral.</li>
-              <li>Se algo não funcionar, abra um issue no repositório ou peça suporte.</li>
+              <li>
+                Se algo não funcionar, abra um issue no repositório ou peça
+                suporte.
+              </li>
             </ul>
           </div>
         );
@@ -157,18 +196,24 @@ export default function LayoutDePagina({ children }) {
         </div>
       </div>
 
-      <div className={`relative z-10 min-h-screen transition-opacity duration-700 ${(() => {
-        if (isLoaded) {
-          return 'opacity-100';
-        } else {
-          return 'opacity-0';
-        }
-      })()}`}>
+      <div
+        className={`relative z-10 min-h-screen transition-opacity duration-700 ${(() => {
+          if (isLoaded) {
+            return "opacity-100";
+          } else {
+            return "opacity-0";
+          }
+        })()}`}
+      >
         {/* Barra superior (compartilhada) */}
         <div className="flex items-center justify-between px-6 pt-4">
           <div className="flex items-center gap-3">
             {/* Selo de marca com logotipo */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm cursor-pointer" title="Adentre a Ka&#39;aguy. Se for capaz." onClick={() => window.location.href = '/'}>
+            <div
+              className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg border border-white/10 bg-black/40 backdrop-blur-sm cursor-pointer"
+              title="Adentre a Ka&#39;aguy. Se for capaz."
+              onClick={() => (window.location.href = "/")}
+            >
               <Icon name="leaf" size={18} />
               <Image
                 src="/images/logo.svg"
@@ -180,30 +225,38 @@ export default function LayoutDePagina({ children }) {
               />
             </div>
             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/10">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg overflow-hidden cursor-pointer" title="Ver perfil">
                 {usuario?.avatar_url ? (
                   <Image
                     src={usuario.avatar_url}
-                    alt={`Avatar de ${usuario?.nickname || usuario?.name || 'Jogador'}`}
+                    alt={`Avatar de ${
+                      usuario?.nickname || usuario?.name || "Jogador"
+                    }`}
                     width={40}
                     height={40}
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = usuario?.name?.charAt(0)?.toUpperCase() || 'BR';
+                      e.target.style.display = "none";
+                      e.target.parentElement.innerHTML =
+                        usuario?.name?.charAt(0)?.toUpperCase() || "BR";
                     }}
+                    onClick={() => (window.location.href = "/profile")}
                   />
                 ) : (
-                  <span>{usuario?.name?.charAt(0)?.toUpperCase() || usuario?.nickname?.charAt(0)?.toUpperCase() || 'BR'}</span>
+                  <span>
+                    {usuario?.name?.charAt(0)?.toUpperCase() ||
+                      usuario?.nickname?.charAt(0)?.toUpperCase() ||
+                      "BR"}
+                  </span>
                 )}
               </div>
               <div className="hidden sm:block">
                 <div className="text-white font-bold text-sm flex items-center gap-2">
-                  {usuario?.nickname || usuario?.name || 'Convidado'}
+                  {usuario?.nickname || usuario?.name || "Convidado"}
                   {usuario?.titulo_info && (
-                    <span 
+                    <span
                       className="text-xs px-2 py-0.5 rounded font-bold bg-black/30 border border-white/10 ml-2 flex items-center gap-1"
-                      style={{ color: usuario.titulo_info.cor || '#3B82F6' }}
+                      style={{ color: usuario.titulo_info.cor || "#3B82F6" }}
                     >
                       {usuario.titulo_info.icone} {usuario.titulo_info.nome}
                     </span>
@@ -211,97 +264,137 @@ export default function LayoutDePagina({ children }) {
                 </div>
                 <div className="text-cyan-300 text-xs flex items-center gap-1">
                   <span>Nível {usuario?.level || 1}</span>
-                  {estaAutenticado && estatisticas && (
-                    <>
-                      <span>•</span>
-                      <span>{estatisticas.wins}V/{estatisticas.losses}D</span>
-                      <span>•</span>
-                      <span>{taxaVitoria}%</span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
-             {/* Aba amigos do jogador — exibidas apenas se autenticado */}
-              {estaAutenticado && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setMostrarModalAmigos(true)}
-                    title="Amigos online"
-                    className="inline-flex items-center gap-2 px-3 h-10 rounded-lg bg-black/30 border border-white/5 hover:border-white/20 transition text-sm text-white/90"
+            {/* Aba amigos do jogador — exibidas apenas se autenticado */}
+            {estaAutenticado && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalAmigos(true)}
+                  title="Amigos online"
+                  className="inline-flex items-center gap-2 px-3 h-10 rounded-lg bg-black/30 border border-white/5 hover:border-white/20 transition text-sm text-white/90 cursor-pointer"
+                >
+                  <Icon name="friends" size={16} />
+                  <span className="hidden sm:inline">{friendsCount}</span>
+                  <span className="text-xs text-white/70"> online</span>
+                </button>
+
+                {mostrarModalAmigos && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                    onClick={() => setMostrarModalAmigos(false)}
                   >
-                    <Icon name="friends" size={16} />
-                    <span className="hidden sm:inline">{friendsCount}</span>
-                    <span className="text-xs text-white/70"> online</span>
-                  </button>
+                    <div
+                      className="bg-[#0f1724] rounded-xl shadow-lg p-4 min-w-[300px] max-w-[640px] relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
+                        onClick={() => setMostrarModalAmigos(false)}
+                        title="Fechar"
+                      >
+                        ×
+                      </button>
+                      <h3 className="text-lg font-bold mb-2">Amigos</h3>
 
-                  {mostrarModalAmigos && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarModalAmigos(false)}>
-                      <div className="bg-[#0f1724] rounded-xl shadow-lg p-4 min-w-[300px] max-w-[640px] relative" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
-                          onClick={() => setMostrarModalAmigos(false)}
-                          title="Fechar"
-                        >
-                          ×
-                        </button>
-                        <h3 className="text-lg font-bold mb-2">Amigos</h3>
+                      {amigosCarregando ? (
+                        <div className="text-sm text-white/70">
+                          Carregando...
+                        </div>
+                      ) : (
+                        <div className="max-h-[50vh] overflow-y-auto space-y-2">
+                          {friends && friends.length > 0 ? (
+                            friends.map((f, idx) => {
+                              // A API retorna o amigo no campo 'friend'
+                              const amigo = f.friend || f;
+                              const nome =
+                                amigo.nickname || amigo.name || "Jogador";
+                              const avatar =
+                                amigo.avatar_url ||
+                                "/images/avatars/default.png";
+                              const idAmigo = amigo.id || "";
+                              const nivel = amigo.level || 1;
+                              const mmr = amigo.mmr || 0;
 
-                        {amigosCarregando ? (
-                          <div className="text-sm text-white/70">Carregando...</div>
-                        ) : (
-                          <div className="max-h-[50vh] overflow-y-auto space-y-2">
-                            {friends && friends.length > 0 ? (
-                              friends.map((f, idx) => {
-                                // A API retorna o amigo no campo 'friend'
-                                const amigo = f.friend || f;
-                                const nome = amigo.nickname || amigo.name || 'Jogador';
-                                const avatar = amigo.avatar_url || '/images/avatars/default.png';
-                                const idAmigo = amigo.id || '';
-                                const nivel = amigo.level || 1;
-                                const mmr = amigo.mmr || 0;
-
-                                return (
-                                  <div key={idx} className="flex items-center justify-between bg-black/40 rounded-lg p-2">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
-                                        {avatar ? (
-                                          <Image src={avatar} alt={nome} width={32} height={32} className="object-cover w-full h-full" />
-                                        ) : (
-                                          <span>{nome?.charAt(0)?.toUpperCase() || 'J'}</span>
-                                        )}
-                                      </div>
-                                      <div className="text-sm">
-                                        <div className="font-semibold">{nome}</div>
-                                        <div className="text-xs text-white/60">Nv. {nivel} • MMR {mmr}</div>
-                                      </div>
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between bg-black/40 rounded-lg p-2"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                                      {avatar ? (
+                                        <Image
+                                          src={avatar}
+                                          alt={nome}
+                                          width={32}
+                                          height={32}
+                                          className="object-cover w-full h-full"
+                                        />
+                                      ) : (
+                                        <span>
+                                          {nome?.charAt(0)?.toUpperCase() ||
+                                            "J"}
+                                        </span>
+                                      )}
                                     </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <Link href={`/profile/${idAmigo}`} className="text-xs px-3 py-1 rounded bg-purple-600/40 border border-purple-400/30 hover:border-purple-400/60 hover:bg-purple-600/60 transition-colors">Ver Perfil</Link>
-                                      <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Desafiar (em breve)</button>
-                                      <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">Chat (em breve)</button>
+                                    <div className="text-sm">
+                                      <div className="font-semibold">
+                                        {nome}
+                                      </div>
+                                      <div className="text-xs text-white/60">
+                                        Nv. {nivel} • MMR {mmr}
+                                      </div>
                                     </div>
                                   </div>
-                                );
-                              })
-                            ) : (
-                              <div className="text-sm text-white/70">Nenhum amigo encontrado.</div>
-                            )}
-                            <Link href="/profile/friends" className="text-xs text-blue-400 hover:underline">Adicionar amigos</Link>
-                          </div>
-                        )}
 
-                        <div className="mt-4 flex justify-end">
-                          <button onClick={() => setMostrarModalAmigos(false)} className="px-4 py-2 rounded-lg bg-black/40 border border-white/20">Fechar</button>
+                                  <div className="flex items-center gap-2">
+                                    <Link
+                                      href={`/profile/${idAmigo}`}
+                                      className="text-xs px-3 py-1 rounded bg-purple-600/40 border border-purple-400/30 hover:border-purple-400/60 hover:bg-purple-600/60 transition-colors"
+                                    >
+                                      Ver Perfil
+                                    </Link>
+                                    <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">
+                                      Desafiar (em breve)
+                                    </button>
+                                    <button className="text-xs px-3 py-1 rounded bg-black/20 border border-white/5 text-white/60 cursor-not-allowed">
+                                      Chat (em breve)
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="text-sm text-white/70">
+                              Nenhum amigo encontrado.
+                            </div>
+                          )}
+                          <Link
+                            href="/profile/friends"
+                            className="text-xs text-blue-400 hover:underline"
+                          >
+                            Adicionar amigos
+                          </Link>
                         </div>
+                      )}
+
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => setMostrarModalAmigos(false)}
+                          className="px-4 py-2 rounded-lg bg-black/40 border border-white/20"
+                        >
+                          Fechar
+                        </button>
                       </div>
                     </div>
-                  )}
-                </>
-              )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -353,15 +446,21 @@ export default function LayoutDePagina({ children }) {
               </Link>
             )}
           </div>
-                </div>
+        </div>
 
-    {/* Conteúdo da página */}
+        {/* Conteúdo da página */}
         {children}
         {/* Mascote global agora é renderizado no root (GlobalPetPortal) para evitar problemas de stacking context/mobile nav */}
-  {/* Modal de Configurações (renderizado fora do topo para evitar problemas de sobreposição/overflow) */}
+        {/* Modal de Configurações (renderizado fora do topo para evitar problemas de sobreposição/overflow) */}
         {mostrarModalConfiguracoes && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => definirMostrarModalConfiguracoes(false)}>
-            <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => definirMostrarModalConfiguracoes(false)}
+          >
+            <div
+              className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[320px] relative"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
@@ -371,14 +470,22 @@ export default function LayoutDePagina({ children }) {
                 ×
               </button>
               <h2 className="text-lg font-bold mb-4">Configurações</h2>
-      <div className="text-sm text-white/80">Aqui vão as opções de configuração…</div>
+              <div className="text-sm text-white/80">
+                Aqui vão as opções de configuração…
+              </div>
             </div>
           </div>
         )}
-    {/* Modal de Termos & Informações */}
+        {/* Modal de Termos & Informações */}
         {mostrarModalInformacoes && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => definirMostrarModalInformacoes(false)}>
-            <div className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[340px] max-w-[720px] max-h-[80vh] w-[90vw] relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => definirMostrarModalInformacoes(false)}
+          >
+            <div
+              className="bg-[#101c2a] rounded-xl shadow-lg p-8 min-w-[340px] max-w-[720px] max-h-[80vh] w-[90vw] relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
@@ -387,26 +494,37 @@ export default function LayoutDePagina({ children }) {
               >
                 ×
               </button>
-              <h2 className="text-lg font-bold mb-4">Termos de Uso & Informações</h2>
-              <div className="text-sm text-white/80 space-y-4 overflow-y-auto pr-2" style={{ maxHeight: '60vh' }}>
+              <h2 className="text-lg font-bold mb-4">
+                Termos de Uso & Informações
+              </h2>
+              <div
+                className="text-sm text-white/80 space-y-4 overflow-y-auto pr-2"
+                style={{ maxHeight: "60vh" }}
+              >
                 <section>
-                  <h3 className="font-semibold text-white mb-1">Resumo dos termos</h3>
+                  <h3 className="font-semibold text-white mb-1">
+                    Resumo dos termos
+                  </h3>
                   <p>
-                    Este é um protótipo educacional de jogo de cartas. Ao usar, você concorda em não abusar do serviço,
-                    respeitar outros jogadores e não usar dados reais sensíveis. Dados coletados são mínimos e usados apenas para funcionamento.
+                    Este é um protótipo educacional de jogo de cartas. Ao usar,
+                    você concorda em não abusar do serviço, respeitar outros
+                    jogadores e não usar dados reais sensíveis. Dados coletados
+                    são mínimos e usados apenas para funcionamento.
                   </p>
                 </section>
                 <section>
                   <h3 className="font-semibold text-white mb-1">Privacidade</h3>
                   <p>
-                    Mantemos dados mínimos de perfil e coleção de cartas para funcionamento do jogo. Não vendemos dados.
-                    Em produção, políticas de RLS e autenticação forte serão aplicadas.
+                    Mantemos dados mínimos de perfil e coleção de cartas para
+                    funcionamento do jogo. Não vendemos dados. Em produção,
+                    políticas de RLS e autenticação forte serão aplicadas.
                   </p>
                 </section>
                 <section>
                   <h3 className="font-semibold text-white mb-1">Contato</h3>
                   <p>
-                    Encontrou um problema ou tem sugestão? Abra um issue ou envie feedback pelo canal do projeto.
+                    Encontrou um problema ou tem sugestão? Abra um issue ou
+                    envie feedback pelo canal do projeto.
                   </p>
                 </section>
                 <section className="text-xs text-gray-400 pt-2 border-t border-white/10">
@@ -425,15 +543,21 @@ export default function LayoutDePagina({ children }) {
             </div>
           </div>
         )}
-    {/* Modal de Patch Notes */}
-        <PatchNotesModal 
-          isOpen={definirMostrarModalPatchNotes} 
-          onClose={() => setDefinirMostrarModalPatchNotes(false)} 
+        {/* Modal de Patch Notes */}
+        <PatchNotesModal
+          isOpen={definirMostrarModalPatchNotes}
+          onClose={() => setDefinirMostrarModalPatchNotes(false)}
         />
         {/* Modal de Dúvidas contextuais */}
         {mostrarModalDuvidas && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setMostrarModalDuvidas(false)}>
-            <div className="bg-[#0f1724] rounded-xl shadow-lg p-6 min-w-[320px] max-w-[720px] relative" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            onClick={() => setMostrarModalDuvidas(false)}
+          >
+            <div
+              className="bg-[#0f1724] rounded-xl shadow-lg p-6 min-w-[320px] max-w-[720px] relative"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 className="absolute top-2 right-2 text-white text-xl hover:text-cyan-300"
@@ -458,7 +582,6 @@ export default function LayoutDePagina({ children }) {
             </div>
           </div>
         )}
-        
       </div>
     </main>
   );
