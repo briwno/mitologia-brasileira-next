@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -7,11 +7,12 @@ import { supabase } from '@/lib/supabase';
  * @param {string} roomId - ID da sala de batalha
  * @param {string} playerId - ID do jogador atual
  * @param {Function} onAction - Callback para ações recebidas do oponente
- * @returns {Object} { sendAction, isConnected, error }
+ * @returns {Object} { sendAction, isConnected, opponentConnected, error }
  */
 export function useBattleChannel(roomId, playerId, onAction) {
   const channelRef = useRef(null);
-  const isConnectedRef = useRef(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [opponentConnected, setOpponentConnected] = useState(false);
 
   /**
    * Enviar ação para o oponente
@@ -19,7 +20,7 @@ export function useBattleChannel(roomId, playerId, onAction) {
    * @param {Object} payload - Dados da ação
    */
   const sendAction = useCallback((type, payload) => {
-    if (!channelRef.current || !isConnectedRef.current) {
+    if (!channelRef.current || !isConnected) {
       console.warn('[BattleChannel] Canal não conectado, ação não enviada:', type);
       return false;
     }
@@ -40,7 +41,7 @@ export function useBattleChannel(roomId, playerId, onAction) {
     });
 
     return true;
-  }, [playerId]);
+  }, [playerId, isConnected]);
 
   useEffect(() => {
     if (!roomId || !playerId) {
@@ -58,6 +59,38 @@ export function useBattleChannel(roomId, playerId, onAction) {
         presence: { key: playerId }
       }
     });
+
+    // Listener para presença (detecção de conexão/desconexão)
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const presenceKeys = Object.keys(state);
+        console.log('[BattleChannel] Presença sincronizada:', presenceKeys);
+        
+        // Verificar se há oponente conectado (outro playerId além do nosso)
+        const opponentPresent = presenceKeys.some(key => key !== playerId);
+        setOpponentConnected(opponentPresent);
+        
+        if (opponentPresent) {
+          console.log('[BattleChannel] ✅ Oponente está conectado!');
+        } else {
+          console.log('[BattleChannel] ⏳ Aguardando oponente conectar...');
+        }
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('[BattleChannel] Jogador entrou:', key, newPresences);
+        if (key !== playerId) {
+          setOpponentConnected(true);
+          console.log('[BattleChannel] ✅ Oponente conectou!');
+        }
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('[BattleChannel] Jogador saiu:', key, leftPresences);
+        if (key !== playerId) {
+          setOpponentConnected(false);
+          console.log('[BattleChannel] ⚠️ Oponente desconectou!');
+        }
+      });
 
     // Listener para ações de batalha
     channel
@@ -78,13 +111,20 @@ export function useBattleChannel(roomId, playerId, onAction) {
         console.log('[BattleChannel] Status da subscrição:', status);
         
         if (status === 'SUBSCRIBED') {
-          isConnectedRef.current = true;
-          console.log('[BattleChannel] Conectado com sucesso!');
+          setIsConnected(true);
+          console.log('[BattleChannel] ✅ Conectado ao canal de batalha!');
+          
+          // Rastrear presença após conexão bem-sucedida
+          channel.track({ 
+            online_at: new Date().toISOString(),
+            playerId 
+          });
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          isConnectedRef.current = false;
-          console.error('[BattleChannel] Erro na conexão:', status);
+          setIsConnected(false);
+          console.error('[BattleChannel] ❌ Erro na conexão:', status);
         } else if (status === 'CLOSED') {
-          isConnectedRef.current = false;
+          setIsConnected(false);
+          setOpponentConnected(false);
           console.log('[BattleChannel] Canal fechado');
         }
       });
@@ -94,14 +134,20 @@ export function useBattleChannel(roomId, playerId, onAction) {
     // Cleanup
     return () => {
       console.log('[BattleChannel] Desconectando do canal');
-      isConnectedRef.current = false;
-      supabase.removeChannel(channel);
+      setIsConnected(false);
+      setOpponentConnected(false);
+      
+      if (channel) {
+        channel.untrack();
+        supabase.removeChannel(channel);
+      }
     };
   }, [roomId, playerId, onAction]);
 
   return {
     sendAction,
-    isConnected: isConnectedRef.current,
+    isConnected,
+    opponentConnected,
     error: null
   };
 }

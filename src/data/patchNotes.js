@@ -117,18 +117,6 @@ export const proximasAtualizacoes = [
     descricao: 'Reimplementação com novo design de gameplay'
   },
   {
-    titulo: 'Integração de Amizades',
-    descricao: 'Melhorias no sistema de amizade: convites, sala de amigos e interações sociais'
-  },
-  {
-    titulo: 'Pets Interativos',
-    descricao: 'Integração dos pets no combate e em interações sociais dentro do jogo'
-  },
-  {
-    titulo: 'Pets Companheiros:',
-    descricao: 'Sistema de pets que auxiliam nas batalhas'
-  },
-  {
     titulo: 'Torneios Sazonais:',
     descricao: 'Eventos competitivos com recompensas exclusivas'
   },

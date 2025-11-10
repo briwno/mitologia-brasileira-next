@@ -243,10 +243,7 @@ export default function PaginaPerfilPublico() {
               </p>
             )}
 
-            {/* UID */}
-            <p className="text-sm text-gray-400 mb-2">
-              UID: {perfilJogador?.id || 'Desconhecido'}
-            </p>
+
             
             {/* Ranking MMR */}
             <div className="flex flex-col items-center gap-2 mb-4">

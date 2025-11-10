@@ -190,15 +190,19 @@ export default function MatchmakingLobby({
       const channel = supabase
         .channel(`match_${pollingRoomId}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `room_id=eq.${pollingRoomId}` }, (payload) => {
+          console.log('[MatchmakingLobby] Match atualizado:', payload.new);
           const match = payload.new;
-          if (match && match.player_b_id) {
+          if (match && match.player_b_id && match.status === 'active') {
+            console.log('[MatchmakingLobby] ✅ Oponente entrou! Iniciando countdown...');
             setStatus('ready');
             setShowCountdown(true);
             channel.unsubscribe().catch(() => {});
             pollingRef.current = null;
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          console.log('[MatchmakingLobby] Status da subscrição:', status);
+        });
 
       pollingRef.current = channel;
     } catch (err) {
