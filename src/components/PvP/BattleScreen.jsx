@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBattleChannel } from '@/hooks/useBattleChannel';
 import { useMatchRealtime } from '@/hooks/useMatchRealtime';
@@ -56,6 +56,29 @@ export default function BattleScreen({
   const [logs, setLogs] = useState([
     { type: 'inicio', text: 'Batalha iniciada!', timestamp: new Date().toISOString(), formatted: 'A batalha começou!' }
   ]);
+  const [showTurnAlert, setShowTurnAlert] = useState(false);
+  const turnAlertTimeoutRef = useRef(null);
+  const lastLoggedTurnRef = useRef(null);
+
+  const handleAddLog = useCallback((type, message) => {
+    setLogs(prev => [...prev, {
+      type,
+      text: message,
+      formatted: message,
+      timestamp: new Date().toLocaleTimeString('pt-BR')
+    }]);
+  }, []);
+
+  const handleGameOver = useCallback((finalMatch) => {
+    const winnerId = finalMatch.winner_id;
+    const isWinner = winnerId === user?.id;
+
+    handleAddLog('fim_jogo', isWinner ? '🎉 VITÓRIA!' : '💀 DERROTA');
+
+    setTimeout(() => {
+      router.push(`/pvp?result=${isWinner ? 'win' : 'lose'}`);
+    }, 3000);
+  }, [handleAddLog, router, user?.id]);
 
   // Extrair roomId para uso nos hooks (sem prefixo custom_)
   const roomIdForApi = roomCode?.includes('_') ? roomCode.split('_')[1] : roomCode;
@@ -115,8 +138,21 @@ export default function BattleScreen({
       setCurrentTurn(prev => {
         if (updatedMatch.current_turn !== prev) {
           console.log('[BattleScreen] 🔄 TURNO MUDOU:', prev, '→', updatedMatch.current_turn);
-          setHasPlayedThisTurn(false); // Reset ao mudar de turno
-          // Não adicionar log aqui para evitar duplicação
+          if (updatedMatch.current_turn != null) {
+            const ultimoTurnoRegistrado = lastLoggedTurnRef.current;
+            const precisaLogar = (
+              ultimoTurnoRegistrado == null && prev != null && updatedMatch.current_turn !== prev
+            ) || (
+              ultimoTurnoRegistrado != null && ultimoTurnoRegistrado !== updatedMatch.current_turn
+            );
+
+            if (precisaLogar) {
+              handleAddLog('novo_turno', `🔄 Turno ${updatedMatch.current_turn} iniciado`);
+            }
+
+            lastLoggedTurnRef.current = updatedMatch.current_turn;
+          }
+          setHasPlayedThisTurn(false);
           return updatedMatch.current_turn;
         }
         return prev;
@@ -127,13 +163,13 @@ export default function BattleScreen({
         const isMyTurnNow = String(updatedMatch.current_player_id) === String(user?.id);
         if (isMyTurnNow !== prev) {
           console.log('[BattleScreen] 🎮 VEZ MUDOU:', prev ? 'ERA MINHA' : 'ERA DO OPONENTE', '→', isMyTurnNow ? 'AGORA É MINHA' : 'AGORA É DO OPONENTE');
-          
-          // ✅ CORREÇÃO: Resetar hasPlayedThisTurn quando RECEBER a vez de volta
           if (isMyTurnNow) {
-            console.log('[BattleScreen] ✅ Recebi a vez! Resetando hasPlayedThisTurn');
+            const souPlayerA = String(user?.id) === String(updatedMatch.player_a_id);
+            const jaAgiu = souPlayerA ? Boolean(updatedMatch.player_a_has_acted) : Boolean(updatedMatch.player_b_has_acted);
+            setHasPlayedThisTurn(jaAgiu);
+          } else {
             setHasPlayedThisTurn(false);
           }
-          
           return isMyTurnNow;
         }
         return prev;
@@ -143,7 +179,7 @@ export default function BattleScreen({
       if (updatedMatch.status === 'finished') {
         handleGameOver(updatedMatch);
       }
-    }, [user?.id])
+    }, [handleAddLog, handleGameOver, user?.id])
   );
 
   // Sincronizar estado local com o match
@@ -174,6 +210,9 @@ export default function BattleScreen({
       // Atualizar turno atual
       if (match.current_turn) {
         setCurrentTurn(match.current_turn);
+        if (lastLoggedTurnRef.current == null) {
+          lastLoggedTurnRef.current = match.current_turn;
+        }
       }
       
       // Atualizar vez do jogador
@@ -181,13 +220,56 @@ export default function BattleScreen({
         const myTurn = String(match.current_player_id) === String(user.id);
         setIsMyTurn(myTurn);
         console.log(`[BattleScreen] ${myTurn ? '✅ É minha vez!' : '⏳ Aguardando oponente'}`);
+        if (myTurn) {
+          const souPlayerA = String(user.id) === String(match.player_a_id);
+          const jaAgiu = souPlayerA ? Boolean(match.player_a_has_acted) : Boolean(match.player_b_has_acted);
+          setHasPlayedThisTurn(jaAgiu);
+        } else {
+          setHasPlayedThisTurn(false);
+        }
       } else {
         // Se ainda não tem current_player_id, aguardar
         console.log('[BattleScreen] ⏳ Aguardando inicialização do turno...');
         setIsMyTurn(false);
+        setHasPlayedThisTurn(false);
       }
     }
-  }, [match?.player_a_id, match?.player_b_id, match?.current_player_id, match?.current_turn, match?.status, user?.id, isPvP]);
+  }, [match?.player_a_id, match?.player_b_id, match?.current_player_id, match?.current_turn, match?.status, match?.player_a_has_acted, match?.player_b_has_acted, user?.id, isPvP]);
+
+  useEffect(() => {
+    if (!isPvP) {
+      setShowTurnAlert(false);
+      if (turnAlertTimeoutRef.current) {
+        clearTimeout(turnAlertTimeoutRef.current);
+        turnAlertTimeoutRef.current = null;
+      }
+      return undefined;
+    }
+
+    if (isMyTurn) {
+      setShowTurnAlert(true);
+      if (turnAlertTimeoutRef.current) {
+        clearTimeout(turnAlertTimeoutRef.current);
+      }
+      turnAlertTimeoutRef.current = setTimeout(() => {
+        setShowTurnAlert(false);
+        turnAlertTimeoutRef.current = null;
+      }, 2000);
+    } else {
+      if (turnAlertTimeoutRef.current) {
+        clearTimeout(turnAlertTimeoutRef.current);
+        turnAlertTimeoutRef.current = null;
+      }
+      setShowTurnAlert(false);
+    }
+
+    return () => {
+      if (turnAlertTimeoutRef.current) {
+        clearTimeout(turnAlertTimeoutRef.current);
+        turnAlertTimeoutRef.current = null;
+      }
+    };
+  }, [isMyTurn, isPvP]);
 
   // ===== FIM HOOKS DE TEMPO REAL =====
 
@@ -319,15 +401,6 @@ export default function BattleScreen({
     });
   }, [isMyTurn]);
 
-  const handleAddLog = (type, message) => {
-    setLogs(prev => [...prev, {
-      type,
-      text: message,
-      formatted: message,
-      timestamp: new Date().toLocaleTimeString('pt-BR')
-    }]);
-  };
-
   // ===== HANDLERS PARA AÇÕES DO OPONENTE =====
   
   const handleOpponentUseSkill = useCallback((payload) => {
@@ -365,7 +438,7 @@ export default function BattleScreen({
       next.myPlayer = me;
       return next;
     });
-  }, []);
+  }, [handleAddLog]);
 
   const handleOpponentSwitchLegend = useCallback((payload) => {
     const { legendId } = payload;
@@ -385,67 +458,28 @@ export default function BattleScreen({
       handleAddLog('trocar_lenda', `${opp.name} trocou para ${newActive.name}`);
       return next;
     });
-  }, []);
+  }, [handleAddLog]);
 
-  // Avançar para o próximo turno (após ambos jogadores terem jogado)
-  const advanceTurn = useCallback(async () => {
-    if (!isPvP || !match) {
-      console.warn('[advanceTurn] Impossível avançar turno:', { isPvP, hasMatch: !!match });
+  const handleOpponentEndTurn = useCallback((payload) => {
+    console.log('[handleOpponentEndTurn] Oponente finalizou turno', {
+      payload,
+      current_turn: match?.current_turn,
+      current_player_id: match?.current_player_id
+    });
+
+    handleAddLog('fim_turno', `${battleData.opponent?.name || 'Oponente'} encerrou o turno`);
+
+    if (!isPvP) {
       return;
     }
 
-    const nextTurn = currentTurn + 1;
-    
-    // Player A sempre começa cada turno
-    const nextPlayerId = match.player_a_id;
-    
-    console.log('[advanceTurn] 🔄 Avançando turno:', { 
-      de: currentTurn, 
-      para: nextTurn,
-      proximoJogador: String(nextPlayerId) === String(user?.id) ? 'EU (Player A)' : 'OPONENTE (Player A)',
-      player_a_id: match.player_a_id,
-      player_b_id: match.player_b_id
-    });
-
-    // ✅ Resetar hasPlayedThisTurn ANTES de atualizar (para evitar race condition)
     setHasPlayedThisTurn(false);
+    setIsMyTurn(true);
 
-    await updateMatch({
-      current_turn: nextTurn,
-      current_player_id: nextPlayerId
-    });
-    
-    // Log adicionado APENAS aqui para evitar duplicação
-    handleAddLog('novo_turno', `🔄 Turno ${nextTurn} iniciado`);
-  }, [isPvP, match, currentTurn, updateMatch, user?.id]);
-
-  const handleOpponentEndTurn = useCallback((payload) => {
-    console.log('[handleOpponentEndTurn] Oponente finalizou turno', { 
-      payload, 
-      hasPlayedThisTurn,
-      sou_player_a: user?.id === match?.player_a_id,
-      current_player_antes: match?.current_player_id,
-      current_turn_antes: match?.current_turn
-    });
-    
-    handleAddLog('fim_turno', `${battleData.opponent?.name || 'Oponente'} encerrou o turno`);
-    
-    // ✅ NOVA LÓGICA SIMPLIFICADA:
-    // Quando oponente passa, verificar se AMBOS já passaram neste turno
-    // Se sim, avançar para próximo turno
-    
-    // Verificar se é o Player B que acabou de passar (último a jogar no turno)
-    const isPlayerA = String(user?.id) === String(match?.player_a_id);
-    const opponentIsPlayerB = !isPlayerA;
-    
-    // Se o oponente é Player B E acabou de passar, significa que o ciclo completou
-    if (opponentIsPlayerB && hasPlayedThisTurn) {
-      console.log('[handleOpponentEndTurn] ✅ Player B passou! Ambos jogaram, avançando turno...');
-      advanceTurn();
-    } else {
-      console.log('[handleOpponentEndTurn] ⏳ Aguardando próxima rodada. hasPlayed:', hasPlayedThisTurn, 'opponentIsB:', opponentIsPlayerB);
+    if (payload?.turn) {
+      setCurrentTurn(payload.turn);
     }
-  }, [battleData.opponent, hasPlayedThisTurn, isPvP, match, advanceTurn, user?.id]);
+  }, [battleData.opponent, handleAddLog, isPvP, match?.current_player_id, match?.current_turn]);
 
   const handleOpponentUseRelic = useCallback((payload) => {
     const { relicEffect } = payload;
@@ -463,24 +497,12 @@ export default function BattleScreen({
         return next;
       });
     }
-  }, [battleData.opponent]);
+  }, [battleData.opponent, handleAddLog]);
 
   const handleOpponentUseItem = useCallback((payload) => {
     const { itemName, effect } = payload;
     handleAddLog('item', `${battleData.opponent?.name || 'Oponente'} usou ${itemName}`);
-  }, [battleData.opponent]);
-
-  const handleGameOver = useCallback((finalMatch) => {
-    const winnerId = finalMatch.winner_id;
-    const isWinner = winnerId === user?.id;
-    
-    handleAddLog('fim_jogo', isWinner ? '🎉 VITÓRIA!' : '💀 DERROTA');
-    
-    // TODO: Redirecionar para tela de resultado
-    setTimeout(() => {
-      router.push(`/pvp?result=${isWinner ? 'win' : 'lose'}`);
-    }, 3000);
-  }, [user?.id, router]);
+  }, [battleData.opponent, handleAddLog]);
 
   // ===== FIM HANDLERS =====
 
@@ -623,26 +645,20 @@ export default function BattleScreen({
       handleAddLog('erro', 'Aguarde sua vez!');
       return;
     }
-    
-    // ✅ REMOVIDO: Bloqueio de hasPlayedThisTurn
-    // O jogador pode passar o turno mesmo sem ter jogado (passar vez sem ação)
-    
+
     console.log('[handleEndTurn] ✅ Finalizando turno...', {
       isPvP,
-      hasMatch: !!match,
+      temMatch: Boolean(match),
       currentPlayerId: match?.current_player_id,
       playerAId: match?.player_a_id,
       playerBId: match?.player_b_id,
       currentTurn,
-      hasPlayedThisTurn,
-      sou_player_a: user?.id === match?.player_a_id
+      hasPlayedThisTurn
     });
-    
-    // Marcar que jogou ANTES de fazer qualquer outra coisa
+
     setHasPlayedThisTurn(true);
-    
     handleAddLog('fim_turno', `${battleData.myPlayer.name} encerrou o turno`);
-    
+
     setBattleData(prev => ({
       ...prev,
       myPlayer: {
@@ -651,39 +667,6 @@ export default function BattleScreen({
       }
     }));
 
-    // Enviar ação via realtime (se PvP)
-    if (isPvP && sendAction) {
-      console.log('[handleEndTurn] 📡 Enviando broadcast END_TURN');
-      sendAction('END_TURN', {
-        turn: currentTurn,
-        playerId: user?.id
-      });
-    }
-
-    // Em PvP, trocar vez para o oponente
-    if (isPvP && match && match.player_a_id && match.player_b_id) {
-      const sou_player_a = String(user?.id) === String(match.player_a_id);
-      const nextPlayerId = sou_player_a ? match.player_b_id : match.player_a_id;
-      
-      console.log('[handleEndTurn] 🔄 Passando turno para outro jogador:', {
-        eu_sou: sou_player_a ? 'Player A' : 'Player B',
-        proximo: sou_player_a ? 'Player B' : 'Player A',
-        current_player_id: nextPlayerId,
-        current_turn: currentTurn,
-        hasPlayedThisTurn: true
-      });
-      
-      updateMatch({
-        current_player_id: nextPlayerId
-        // NÃO incrementar current_turn aqui - apenas trocar jogador
-      }).then((result) => {
-        console.log('[handleEndTurn] ✅ Match atualizado:', result);
-      }).catch((err) => {
-        console.error('[handleEndTurn] ❌ Erro ao passar turno:', err);
-      });
-    }
-    
-    // Se for bot, executar turno do bot
     if (mode === 'bot') {
       setIsMyTurn(false);
       setTimeout(() => {
@@ -691,7 +674,64 @@ export default function BattleScreen({
         setIsMyTurn(true);
         setCurrentTurn(prev => prev + 1);
       }, 2000);
+      return;
     }
+
+    if (!isPvP || !match || !match.player_a_id || !match.player_b_id) {
+      console.warn('[handleEndTurn] ⚠️ Match PvP incompleto, abortando update remoto');
+      return;
+    }
+
+    // Broadcast para o oponente (somente feedback visual)
+    if (sendAction) {
+      console.log('[handleEndTurn] 📡 Enviando broadcast END_TURN');
+      sendAction('END_TURN', {
+        turn: currentTurn,
+        playerId: user?.id
+      });
+    }
+
+    const souPlayerA = String(user?.id) === String(match.player_a_id);
+    const opponentId = souPlayerA ? match.player_b_id : match.player_a_id;
+    const opponentJaAgiu = souPlayerA ? Boolean(match.player_b_has_acted) : Boolean(match.player_a_has_acted);
+    const agora = new Date().toISOString();
+
+    const updates = {
+      current_player_id: opponentId,
+      current_turn: match.current_turn || currentTurn,
+      last_action: {
+        type: 'END_TURN',
+        player_id: user?.id,
+        turn: match.current_turn || currentTurn,
+        created_at: agora
+      },
+      last_action_timestamp: agora,
+      last_activity_at: agora
+    };
+
+    if (souPlayerA) {
+      updates.player_a_has_acted = true;
+    } else {
+      updates.player_b_has_acted = true;
+    }
+
+    if (opponentJaAgiu) {
+      const proxTurno = (match.current_turn || 1) + 1;
+      updates.current_turn = proxTurno;
+      updates.current_player_id = match.player_a_id;
+      updates.player_a_has_acted = false;
+      updates.player_b_has_acted = false;
+    }
+
+    setIsMyTurn(false);
+
+    updateMatch(updates)
+      .then((result) => {
+        console.log('[handleEndTurn] ✅ Match atualizado com flags de turno:', result);
+      })
+      .catch((err) => {
+        console.error('[handleEndTurn] ❌ Erro ao atualizar turno:', err);
+      });
   };
 
   // Executar turno do bot (lógica simplificada)
@@ -1127,6 +1167,22 @@ export default function BattleScreen({
       {isMyTurn && !selectedCard && (
         <div className="fixed bottom-40 left-4 z-50 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-neutral-300">
           💡Use sua relíquia!
+        </div>
+      )}
+
+      {isPvP && showTurnAlert && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 border-2 border-emerald-300 rounded-2xl px-8 py-6 text-center shadow-2xl">
+            <div className="text-5xl mb-3">🎮</div>
+            <h3 className="text-2xl font-bold text-white mb-1">Sua vez!</h3>
+            <p className="text-sm text-emerald-100 mb-5">Turno {currentTurn}. Faça sua jogada para manter o fluxo da partida.</p>
+            <button
+              onClick={() => setShowTurnAlert(false)}
+              className="px-5 py-2 bg-black/40 hover:bg-black/60 rounded-lg text-sm font-semibold text-white transition-colors"
+            >
+              Beleza
+            </button>
+          </div>
         </div>
       )}
 

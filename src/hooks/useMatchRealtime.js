@@ -24,12 +24,23 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
       return null;
     }
 
-    console.log('[MatchRealtime] Atualizando match:', { roomId, updates });
+    const nowIso = new Date().toISOString();
+    const payload = { ...updates };
+
+    if (!Object.prototype.hasOwnProperty.call(payload, 'last_activity_at')) {
+      payload.last_activity_at = nowIso;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(payload, 'updated_at')) {
+      payload.updated_at = nowIso;
+    }
+
+    console.log('[MatchRealtime] Atualizando match:', { roomId, payload });
 
     try {
       const { data, error: updateError } = await supabase
         .from('matches')
-        .update(updates)
+        .update(payload)
         .eq('room_id', roomId)
         .select()
         .single();
@@ -53,6 +64,9 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
 
       console.log('[MatchRealtime] Partida atualizada com sucesso:', data);
       setMatch(data);
+      if (onMatchUpdate) {
+        onMatchUpdate(data);
+      }
       return data;
     } catch (err) {
       const errorMessage = err?.message || err?.hint || 'Erro desconhecido ao atualizar partida';
@@ -65,7 +79,7 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
       setError(errorMessage);
       return null;
     }
-  }, [roomId]);
+  }, [roomId, onMatchUpdate]);
 
   useEffect(() => {
     if (!roomId) {
@@ -101,6 +115,9 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
 
         console.log('[MatchRealtime] Partida carregada com sucesso:', data);
         setMatch(data);
+        if (onMatchUpdate) {
+          onMatchUpdate(data);
+        }
         setLoading(false);
       } catch (err) {
         const errorMessage = err?.message || err?.hint || 'Erro ao carregar partida';
