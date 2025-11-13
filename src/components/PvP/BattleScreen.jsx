@@ -522,6 +522,8 @@ export default function BattleScreen({
 
     console.log('[handleUseSkill] ✅ Executando skill:', skill.name);
 
+    let skillExecutada = false;
+
     setBattleData(prev => {
       const next = { ...prev };
       const me = { ...next.myPlayer };
@@ -588,6 +590,8 @@ export default function BattleScreen({
       next.myPlayer = me;
       next.opponent = opp;
 
+      skillExecutada = true;
+
       // Enviar ação via realtime (se PvP)
       if (isPvP && sendAction) {
         sendAction('USE_SKILL', {
@@ -601,11 +605,13 @@ export default function BattleScreen({
       return next;
     });
 
-    // Marcar que jogou neste turno
-    setHasPlayedThisTurn(true);
-    
+    if (!skillExecutada) {
+      return;
+    }
+
     console.log('[handleUseSkill] ✅ Skill usada com sucesso, ação concluída');
-    // NÃO passar o turno automaticamente - jogador deve clicar em "Passar Turno"
+
+    finalizeTurn('skill', `${battleData.myPlayer?.name || 'Jogador'} usou ${skill.name} e passou o turno automaticamente`);
   };
 
   const handleSwitchLegend = (legend) => {
@@ -633,42 +639,69 @@ export default function BattleScreen({
       });
     }
 
-    // Marcar que jogou e passar turno
-    setHasPlayedThisTurn(true);
     console.log('[handleSwitchLegend] ✅ Lenda trocada, ação concluída');
-    // NÃO passar o turno automaticamente - jogador deve clicar em "Passar Turno"
+
+    finalizeTurn('switch', `${battleData.myPlayer?.name || 'Jogador'} trocou de lenda e passou o turno automaticamente`);
   };
 
-  const handleEndTurn = () => {
-    if (!isMyTurn) {
-      console.warn('[handleEndTurn] ❌ Não é seu turno, abortando');
-      handleAddLog('erro', 'Aguarde sua vez!');
-      return;
-    }
+  const executeBotTurn = useCallback(() => {
+    // TODO: Implementar IA do bot
+    setBattleData(prev => {
+      const next = { ...prev };
+      const opp = { ...next.opponent };
+      const me = { ...next.myPlayer };
 
-    console.log('[handleEndTurn] ✅ Finalizando turno...', {
-      isPvP,
-      temMatch: Boolean(match),
-      currentPlayerId: match?.current_player_id,
-      playerAId: match?.player_a_id,
-      playerBId: match?.player_b_id,
-      currentTurn,
-      hasPlayedThisTurn
+      const availableSkills = opp.activeLegend?.skills?.filter(s => (s.pp || s.ppMax) > 0);
+      if (availableSkills && availableSkills.length > 0) {
+        const randomSkill = availableSkills[Math.floor(Math.random() * availableSkills.length)];
+
+        if (randomSkill.power && me.activeLegend) {
+          const dmgCalc = calculateDamage(opp.activeLegend, me.activeLegend, randomSkill.power, {});
+          const target = { ...me.activeLegend };
+          const dmgResult = applyDamage(target, dmgCalc.damage);
+          me.activeLegend = target;
+
+          handleAddLog('bot_skill', `${opp.name} usou ${randomSkill.name} causando ${dmgResult.totalDamage} de dano`);
+
+          if (dmgResult.isDefeated) {
+            handleAddLog('derrota', `${target.name} foi derrotado!`);
+          }
+        }
+
+        const updatedSkills = opp.activeLegend.skills.map(s =>
+          s.id === randomSkill.id ? { ...s, pp: Math.max(0, (s.pp || s.ppMax) - 1) } : s
+        );
+        opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
+      }
+
+      next.opponent = opp;
+      next.myPlayer = me;
+      return next;
     });
+  }, [handleAddLog]);
 
-    setHasPlayedThisTurn(true);
-    handleAddLog('fim_turno', `${battleData.myPlayer.name} encerrou o turno`);
+  const finalizeTurn = useCallback((reason = 'manual', logMessage) => {
+    const actorName = battleData.myPlayer?.name || 'Jogador';
+    const turnNumber = match?.current_turn || currentTurn || 1;
+
+    const mensagem = logMessage || (reason === 'manual'
+      ? `${actorName} encerrou o turno`
+      : `${actorName} concluiu a ação e passou o turno`);
+
+    handleAddLog('fim_turno', mensagem);
 
     setBattleData(prev => ({
       ...prev,
       myPlayer: {
         ...prev.myPlayer,
-        turnsPlayed: prev.myPlayer.turnsPlayed + 1
+        turnsPlayed: (prev.myPlayer?.turnsPlayed || 0) + 1
       }
     }));
 
+    setHasPlayedThisTurn(true);
+    setIsMyTurn(false);
+
     if (mode === 'bot') {
-      setIsMyTurn(false);
       setTimeout(() => {
         executeBotTurn();
         setIsMyTurn(true);
@@ -678,16 +711,15 @@ export default function BattleScreen({
     }
 
     if (!isPvP || !match || !match.player_a_id || !match.player_b_id) {
-      console.warn('[handleEndTurn] ⚠️ Match PvP incompleto, abortando update remoto');
+      console.warn('[finalizeTurn] Impossível atualizar turno PvP', { isPvP, hasMatch: !!match });
       return;
     }
 
-    // Broadcast para o oponente (somente feedback visual)
     if (sendAction) {
-      console.log('[handleEndTurn] 📡 Enviando broadcast END_TURN');
       sendAction('END_TURN', {
-        turn: currentTurn,
-        playerId: user?.id
+        turn: turnNumber,
+        playerId: user?.id,
+        reason
       });
     }
 
@@ -698,11 +730,12 @@ export default function BattleScreen({
 
     const updates = {
       current_player_id: opponentId,
-      current_turn: match.current_turn || currentTurn,
+      current_turn: turnNumber,
       last_action: {
         type: 'END_TURN',
+        reason,
         player_id: user?.id,
-        turn: match.current_turn || currentTurn,
+        turn: turnNumber,
         created_at: agora
       },
       last_action_timestamp: agora,
@@ -716,62 +749,38 @@ export default function BattleScreen({
     }
 
     if (opponentJaAgiu) {
-      const proxTurno = (match.current_turn || 1) + 1;
-      updates.current_turn = proxTurno;
+      updates.current_turn = turnNumber + 1;
       updates.current_player_id = match.player_a_id;
       updates.player_a_has_acted = false;
       updates.player_b_has_acted = false;
-    }
 
-    setIsMyTurn(false);
+      const previousHistory = Array.isArray(match.turn_history) ? match.turn_history : [];
+      updates.turn_history = [...previousHistory, {
+        turn: turnNumber,
+        ended_by: user?.id,
+        reason,
+        finished_at: agora
+      }];
+    }
 
     updateMatch(updates)
       .then((result) => {
-        console.log('[handleEndTurn] ✅ Match atualizado com flags de turno:', result);
+        console.log('[finalizeTurn] ✅ Match atualizado com flags de turno:', result);
       })
       .catch((err) => {
-        console.error('[handleEndTurn] ❌ Erro ao atualizar turno:', err);
+        console.error('[finalizeTurn] ❌ Erro ao atualizar turno:', err);
       });
-  };
+  }, [battleData.myPlayer?.name, currentTurn, executeBotTurn, handleAddLog, isPvP, match, mode, sendAction, setBattleData, updateMatch, user?.id]);
 
-  // Executar turno do bot (lógica simplificada)
-  const executeBotTurn = () => {
-    // TODO: Implementar IA do bot
-    setBattleData(prev => {
-      const next = { ...prev };
-      const opp = { ...next.opponent };
-      const me = { ...next.myPlayer };
+  const handleEndTurn = () => {
+    if (!isMyTurn) {
+      console.warn('[handleEndTurn] ❌ Não é seu turno, abortando');
+      handleAddLog('erro', 'Aguarde sua vez!');
+      return;
+    }
 
-      // Bot usa skill aleatória disponível
-      const availableSkills = opp.activeLegend?.skills?.filter(s => (s.pp || s.ppMax) > 0);
-      if (availableSkills && availableSkills.length > 0) {
-        const randomSkill = availableSkills[Math.floor(Math.random() * availableSkills.length)];
-        
-        // Aplicar dano ao jogador
-        if (randomSkill.power && me.activeLegend) {
-          const dmgCalc = calculateDamage(opp.activeLegend, me.activeLegend, randomSkill.power, {});
-          const target = { ...me.activeLegend };
-          const dmgResult = applyDamage(target, dmgCalc.damage);
-          me.activeLegend = target;
-
-          handleAddLog('bot_skill', `${opp.name} usou ${randomSkill.name} causando ${dmgResult.totalDamage} de dano`);
-          
-          if (dmgResult.isDefeated) {
-            handleAddLog('derrota', `${target.name} foi derrotado!`);
-          }
-        }
-
-        // Decrementar PP
-        const updatedSkills = opp.activeLegend.skills.map(s =>
-          s.id === randomSkill.id ? { ...s, pp: Math.max(0, (s.pp || s.ppMax) - 1) } : s
-        );
-        opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
-      }
-
-      next.opponent = opp;
-      next.myPlayer = me;
-      return next;
-    });
+    console.log('[handleEndTurn] ✅ Finalizando turno manualmente');
+    finalizeTurn('manual');
   };
 
   // Usar relíquia guardada (aplicação simples de efeitos: heal, damage, shield, skip_turn)
