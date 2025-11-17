@@ -13,14 +13,18 @@ import BattleDecorations from './BattleDecorations';
 import PlayerHUD from './PlayerHUD';
 import { PetWidget } from '@/components/Pet';
 import BenchRow from './BenchRow';
+import SkillPanelSide from './SkillPanelSide';
 import { generateRelicPool, drawRelic, applyRelicEffect } from '@/utils/relicSystem';
 import { formatRoomCodeDisplay } from '@/utils/roomCodes';
 import { 
   calculateDamage, 
   applyDamage, 
   checkVictoryConditions,
-  createActionLog 
+  createActionLog,
+  isLegendStunned,
+  isLegendRooted
 } from '@/utils/battleSystem';
+import { processSkillEffects } from '@/utils/skillEffects';
 
 /**
  * Componente principal da tela de batalha PvP
@@ -59,6 +63,7 @@ export default function BattleScreen({
   const [showTurnAlert, setShowTurnAlert] = useState(false);
   const turnAlertTimeoutRef = useRef(null);
   const lastLoggedTurnRef = useRef(null);
+  const actionLockRef = useRef(false);
 
   const handleAddLog = useCallback((type, message) => {
     setLogs(prev => [...prev, {
@@ -166,8 +171,14 @@ export default function BattleScreen({
           if (isMyTurnNow) {
             const souPlayerA = String(user?.id) === String(updatedMatch.player_a_id);
             const jaAgiu = souPlayerA ? Boolean(updatedMatch.player_a_has_acted) : Boolean(updatedMatch.player_b_has_acted);
+            if (jaAgiu) {
+              actionLockRef.current = true;
+            } else {
+              actionLockRef.current = false;
+            }
             setHasPlayedThisTurn(jaAgiu);
           } else {
+            actionLockRef.current = true;
             setHasPlayedThisTurn(false);
           }
           return isMyTurnNow;
@@ -223,13 +234,20 @@ export default function BattleScreen({
         if (myTurn) {
           const souPlayerA = String(user.id) === String(match.player_a_id);
           const jaAgiu = souPlayerA ? Boolean(match.player_a_has_acted) : Boolean(match.player_b_has_acted);
+          if (jaAgiu) {
+            actionLockRef.current = true;
+          } else {
+            actionLockRef.current = false;
+          }
           setHasPlayedThisTurn(jaAgiu);
         } else {
+          actionLockRef.current = true;
           setHasPlayedThisTurn(false);
         }
       } else {
         // Se ainda não tem current_player_id, aguardar
         console.log('[BattleScreen] ⏳ Aguardando inicialização do turno...');
+        actionLockRef.current = true;
         setIsMyTurn(false);
         setHasPlayedThisTurn(false);
       }
@@ -273,65 +291,279 @@ export default function BattleScreen({
 
   // ===== FIM HOOKS DE TEMPO REAL =====
 
+  const obterHabilidadesDaCarta = (card) => {
+    if (!card) {
+      return {};
+    }
+
+    if (card.habilidades) {
+      return card.habilidades;
+    }
+
+    if (card.abilities) {
+      if (typeof card.abilities === 'string') {
+        try {
+          const parsed = JSON.parse(card.abilities);
+          if (parsed) {
+            return parsed;
+          }
+        } catch (error) {
+          console.error('[BattleScreen] Erro ao ler habilidades da carta', { cardId: card.id, error });
+        }
+      } else if (typeof card.abilities === 'object') {
+        return card.abilities;
+      }
+    }
+
+    return {};
+  };
+
+  const gerarDecisoesParaEfeitos = (skillObj) => {
+    const resultados = [];
+
+    if (!skillObj) {
+      return resultados;
+    }
+
+    if (!Array.isArray(skillObj.effects)) {
+      return resultados;
+    }
+
+    skillObj.effects.forEach(effect => {
+      let aplicar = true;
+      if (effect && typeof effect.chance === 'number') {
+        const rolagem = Math.random();
+        if (rolagem > effect.chance) {
+          aplicar = false;
+        }
+      }
+      resultados.push(aplicar);
+    });
+
+    return resultados;
+  };
+
   // Transformar dados das cartas do deck para formato de batalha
   const transformCardData = (card, hp, maxHp) => {
-    if (!card) return null;
-    
-    const nome = card.nome || card.name || 'Carta Desconhecida';
-    const imagem = card.imagens?.retrato || card.images?.portrait || card.imagem || `/images/cards/portraits/${card.id}.jpg`;
-    
-    // ✅ Acessar habilidades como no CardDetail
-    const habilidades = card.habilidades || {};
-    
-    // ✅ Extrair skills 1-5
-    const blocos = [
-      habilidades.skill1,
-      habilidades.skill2,
-      habilidades.skill3,
-      habilidades.skill4,
-      habilidades.skill5,
-    ].filter(Boolean);
-    
-    const skills = blocos.map((habilidade, indice) => {
-      // Seguir a mesma convenção usada em CardDetail.js: pp e ppMax
-  const ppMax = (typeof habilidade.ppMax === 'number') ? habilidade.ppMax : (typeof habilidade.maxPP === 'number' ? habilidade.maxPP : (indice + 2));
-  // Usar pp atual se definido, senão iniciar com ppMax (PP cheio). Não usar índice como fallback.
-  const pp = (typeof habilidade.pp === 'number') ? habilidade.pp : ppMax;
+    if (!card) {
+      return null;
+    }
 
-      return {
+    let nome = 'Carta Desconhecida';
+    if (typeof card.nome === 'string' && card.nome.length > 0) {
+      nome = card.nome;
+    } else if (typeof card.name === 'string' && card.name.length > 0) {
+      nome = card.name;
+    }
+
+    let imagem = `/images/cards/portraits/${card.id}.jpg`;
+    if (card.imagens && typeof card.imagens.retrato === 'string' && card.imagens.retrato.length > 0) {
+      imagem = card.imagens.retrato;
+    } else if (card.images && typeof card.images.portrait === 'string' && card.images.portrait.length > 0) {
+      imagem = card.images.portrait;
+    } else if (typeof card.imagem === 'string' && card.imagem.length > 0) {
+      imagem = card.imagem;
+    }
+
+    const habilidadesOrigem = obterHabilidadesDaCarta(card);
+
+    const chavesSkills = ['skill1', 'skill2', 'skill3', 'skill4', 'skill5'];
+    const skills = [];
+
+    for (let indice = 0; indice < chavesSkills.length; indice += 1) {
+      const chave = chavesSkills[indice];
+      const dadosHabilidade = habilidadesOrigem ? habilidadesOrigem[chave] : null;
+      if (!dadosHabilidade) {
+        continue;
+      }
+
+      const efeitosNormalizados = [];
+      if (Array.isArray(dadosHabilidade.effects)) {
+        dadosHabilidade.effects.forEach(efeito => {
+          if (efeito) {
+            efeitosNormalizados.push({ ...efeito });
+          }
+        });
+      }
+
+      let capacidadePP = indice + 2;
+      if (typeof dadosHabilidade.pp_max === 'number') {
+        capacidadePP = dadosHabilidade.pp_max;
+      } else if (typeof dadosHabilidade.ppMax === 'number') {
+        capacidadePP = dadosHabilidade.ppMax;
+      } else if (typeof dadosHabilidade.maxPP === 'number') {
+        capacidadePP = dadosHabilidade.maxPP;
+      }
+
+      let ppAtual = capacidadePP;
+      if (typeof dadosHabilidade.pp === 'number') {
+        ppAtual = dadosHabilidade.pp;
+      } else if (typeof dadosHabilidade.pp_atual === 'number') {
+        ppAtual = dadosHabilidade.pp_atual;
+      }
+
+      let poderBase = 0;
+      if (typeof dadosHabilidade.power === 'number') {
+        poderBase = dadosHabilidade.power;
+      } else if (typeof dadosHabilidade.damage === 'number') {
+        poderBase = dadosHabilidade.damage;
+      }
+
+      let descricaoSkill = '';
+      if (typeof dadosHabilidade.description === 'string') {
+        descricaoSkill = dadosHabilidade.description;
+      }
+
+      let nomeSkill = `Habilidade ${indice + 1}`;
+      if (typeof dadosHabilidade.name === 'string' && dadosHabilidade.name.length > 0) {
+        nomeSkill = dadosHabilidade.name;
+      }
+
+      let tipoSkill = 'damage';
+      if (typeof dadosHabilidade.type === 'string' && dadosHabilidade.type.length > 0) {
+        tipoSkill = dadosHabilidade.type;
+      }
+
+      let alvoSkill = 'enemy';
+      if (typeof dadosHabilidade.target === 'string' && dadosHabilidade.target.length > 0) {
+        alvoSkill = dadosHabilidade.target;
+      }
+
+      let cooldownSkill = indice;
+      if (typeof dadosHabilidade.cooldown === 'number') {
+        cooldownSkill = dadosHabilidade.cooldown;
+      }
+
+      let requisitosUltimate = null;
+      if (dadosHabilidade.ultimate_requirements) {
+        requisitosUltimate = { ...dadosHabilidade.ultimate_requirements };
+      }
+
+      const novaSkill = {
         id: `skill${indice + 1}`,
-        name: habilidade.name,
-        description: habilidade.description || '',
-        power: habilidade.power || habilidade.damage || 0,
-        pp,
-        ppMax,
-        // manter compatibilidade com outros componentes que usam maxPP
-        maxPP: ppMax,
-        cooldown: habilidade.cooldown || indice,
-        image: habilidade.image,
-        isUltimate: indice === 4
+        name: nomeSkill,
+        description: descricaoSkill,
+        power: poderBase,
+        pp: ppAtual,
+        ppMax: capacidadePP,
+        maxPP: capacidadePP,
+        cooldown: cooldownSkill,
+        image: dadosHabilidade.image,
+        isUltimate: indice === 4,
+        type: tipoSkill,
+        target: alvoSkill,
+        effects: efeitosNormalizados,
+        ultimateRequirements: requisitosUltimate
       };
-    });
-    
-    // ✅ Habilidade Passiva
-    const passive = habilidades.passive ? {
-      name: habilidades.passive.name,
-      description: habilidades.passive.description || '',
-      effect: habilidades.passive.effect || 'buff',
-      value: habilidades.passive.value || 0.1,
-      trigger: habilidades.passive.trigger || 'turn_start',
-      image: habilidades.passive.image
-    } : null;
-    
+
+      if (typeof dadosHabilidade.chance === 'number') {
+        novaSkill.chance = dadosHabilidade.chance;
+      }
+
+      skills.push(novaSkill);
+    }
+
+    const passiveBruta = habilidadesOrigem ? habilidadesOrigem.passive : null;
+    let passive = null;
+    if (passiveBruta) {
+      let nomePassiva = '';
+      if (typeof passiveBruta.name === 'string') {
+        nomePassiva = passiveBruta.name;
+      }
+
+      let descricaoPassiva = '';
+      if (typeof passiveBruta.description === 'string') {
+        descricaoPassiva = passiveBruta.description;
+      }
+
+      let tipoPassivo = 'buff';
+      if (typeof passiveBruta.effect === 'string') {
+        tipoPassivo = passiveBruta.effect;
+      }
+
+      let valorPassivo = 0;
+      if (typeof passiveBruta.value === 'number') {
+        valorPassivo = passiveBruta.value;
+      }
+
+      let gatilhoPassivo = 'turn_start';
+      if (typeof passiveBruta.trigger === 'string' && passiveBruta.trigger.length > 0) {
+        gatilhoPassivo = passiveBruta.trigger;
+      }
+
+      const efeitosPassivos = Array.isArray(passiveBruta.effects) ? passiveBruta.effects.map(efeito => ({ ...efeito })) : undefined;
+      const sinergiasPassivas = Array.isArray(passiveBruta.synergy) ? passiveBruta.synergy.map(entrada => ({ ...entrada })) : undefined;
+
+      passive = {
+        name: nomePassiva,
+        description: descricaoPassiva,
+        effect: tipoPassivo,
+        value: valorPassivo,
+        trigger: gatilhoPassivo,
+        image: passiveBruta.image,
+        effects: efeitosPassivos,
+        synergy: sinergiasPassivas
+      };
+    }
+
+    let baseHp = 100;
+    if (typeof card.vida === 'number') {
+      baseHp = card.vida;
+    } else if (typeof card.life === 'number') {
+      baseHp = card.life;
+    } else if (typeof card.hp === 'number') {
+      baseHp = card.hp;
+    } else if (typeof card.max_hp === 'number') {
+      baseHp = card.max_hp;
+    }
+
+    let baseAtk = 7;
+    if (typeof card.ataque === 'number') {
+      baseAtk = card.ataque;
+    } else if (typeof card.attack === 'number') {
+      baseAtk = card.attack;
+    } else if (typeof card.atk === 'number') {
+      baseAtk = card.atk;
+    }
+
+    let baseDef = 5;
+    if (typeof card.defesa === 'number') {
+      baseDef = card.defesa;
+    } else if (typeof card.defense === 'number') {
+      baseDef = card.defense;
+    } else if (typeof card.def === 'number') {
+      baseDef = card.def;
+    }
+
+    let valorHp = baseHp;
+    if (typeof hp === 'number') {
+      valorHp = hp;
+    }
+
+    let valorMaxHp = baseHp;
+    if (typeof maxHp === 'number') {
+      valorMaxHp = maxHp;
+    }
+
+    let elemento = 'Neutro';
+    if (typeof card.elemento === 'string' && card.elemento.length > 0) {
+      elemento = card.elemento;
+    } else if (typeof card.element === 'string' && card.element.length > 0) {
+      elemento = card.element;
+    }
+
     return {
       id: card.id,
       name: nome,
       image: imagem,
-      hp: hp !== undefined ? hp : (card.vida || card.life || card.hp || 100),
-      maxHp: maxHp !== undefined ? maxHp : (card.vida || card.life || card.max_hp || card.hp || 100),
-      atk: card.ataque || card.attack || card.atk || 7,
-      def: card.defesa || card.defense || card.def || 5,
-      element: card.elemento || card.element || 'Neutro',
+      hp: valorHp,
+      maxHp: valorMaxHp,
+      baseMaxHp: baseHp,
+      atk: baseAtk,
+      baseAtk: baseAtk,
+      def: baseDef,
+      baseDef: baseDef,
+      element: elemento,
       shields: 0,
       statusEffects: [],
       skills: skills,
@@ -404,60 +636,208 @@ export default function BattleScreen({
   // ===== HANDLERS PARA AÇÕES DO OPONENTE =====
   
   const handleOpponentUseSkill = useCallback((payload) => {
-    const { skillId, targetId, damage } = payload;
-    
+    const {
+      skillId,
+      targetId,
+      damage,
+      effectsMask,
+      skillName,
+      logsShared,
+      effectLogsShared,
+      sync,
+      attackerName
+    } = payload;
+
+    const resultado = {
+      sucesso: false,
+      logs: [],
+      efeitoLogs: []
+    };
+
     setBattleData(prev => {
       const next = { ...prev };
       const opp = { ...next.opponent };
       const me = { ...next.myPlayer };
 
-      // Encontrar skill usada pelo oponente
-      const skill = opp.activeLegend?.skills?.find(s => s.id === skillId);
-      if (!skill) return prev;
+      if (!opp.activeLegend) {
+        return prev;
+      }
 
-      // Aplicar dano à lenda alvo (se for o jogador)
-      if (targetId === me.activeLegend?.id) {
+      let skill = null;
+      if (opp.activeLegend && Array.isArray(opp.activeLegend.skills)) {
+        const listaSkills = opp.activeLegend.skills;
+        for (let indice = 0; indice < listaSkills.length; indice += 1) {
+          const habilidade = listaSkills[indice];
+          if (habilidade && habilidade.id === skillId) {
+            skill = habilidade;
+            break;
+          }
+        }
+      }
+      if (!skill) {
+        return prev;
+      }
+
+      if (targetId && me.activeLegend && targetId === me.activeLegend.id) {
         const target = { ...me.activeLegend };
         const dmgResult = applyDamage(target, damage);
         me.activeLegend = target;
-        
-        handleAddLog('dano', `${opp.name} causou ${dmgResult.totalDamage} de dano com ${skill.name}${dmgResult.isCritical ? ' CRÍTICO!' : ''}`);
-        
+
+        const mensagemDano = `${opp.name} causou ${dmgResult.totalDamage} de dano com ${skill.name}${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
+        resultado.logs.push({ type: 'dano', message: mensagemDano });
+
         if (dmgResult.isDefeated) {
-          handleAddLog('derrota', `${target.name} foi derrotado!`);
+          resultado.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
         }
       }
 
-      // Atualizar PP da skill do oponente
-      const updatedSkills = opp.activeLegend.skills.map(s => 
-        s.id === skillId ? { ...s, pp: Math.max(0, (s.pp || s.ppMax) - 1) } : s
-      );
-      opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
+      const mascaraEfeitos = Array.isArray(effectsMask) ? effectsMask : [];
+      const logsEfeitos = processSkillEffects({
+        skill,
+        attackerLegend: opp.activeLegend,
+        defenderLegend: me.activeLegend,
+        attackerPlayer: opp,
+        defenderPlayer: me,
+        forcedResults: mascaraEfeitos
+      }) || [];
+
+      logsEfeitos.forEach(item => {
+        if (!item) {
+          return;
+        }
+        const tipoLog = item.type ? item.type : 'info';
+        const mensagemLog = item.text ? item.text : '';
+        if (mensagemLog.length > 0) {
+          resultado.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
+        }
+      });
+
+      if (opp.activeLegend.skills) {
+        const updatedSkills = opp.activeLegend.skills.map(s => {
+          if (s && s.id === skillId) {
+            let valorAtual = 0;
+            if (typeof s.pp === 'number') {
+              valorAtual = s.pp;
+            } else if (typeof s.ppMax === 'number') {
+              valorAtual = s.ppMax;
+            }
+            const novoValor = valorAtual - 1;
+            return { ...s, pp: novoValor >= 0 ? novoValor : 0 };
+          }
+          return s;
+        });
+        opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
+      }
+
+      if (sync && sync.attacker && opp.activeLegend) {
+        if (sync.attacker.id && opp.activeLegend.id === sync.attacker.id) {
+          if (typeof sync.attacker.hp === 'number') {
+            opp.activeLegend.hp = sync.attacker.hp;
+          }
+          if (typeof sync.attacker.shields === 'number') {
+            opp.activeLegend.shields = sync.attacker.shields;
+          }
+          if (Array.isArray(opp.activeLegend.skills) && sync.attacker.skillId) {
+            opp.activeLegend.skills = opp.activeLegend.skills.map(s => {
+              if (s && s.id === sync.attacker.skillId && typeof sync.attacker.skillPP === 'number') {
+                return { ...s, pp: sync.attacker.skillPP };
+              }
+              return s;
+            });
+          }
+        }
+      }
+
+      if (sync && sync.defender && me.activeLegend) {
+        if (sync.defender.id && me.activeLegend.id === sync.defender.id) {
+          if (typeof sync.defender.hp === 'number') {
+            me.activeLegend.hp = sync.defender.hp;
+          }
+          if (typeof sync.defender.shields === 'number') {
+            me.activeLegend.shields = sync.defender.shields;
+          }
+          if (Array.isArray(sync.defender.statusEffects)) {
+            me.activeLegend.statusEffects = sync.defender.statusEffects.map(efeito => ({ ...efeito }));
+          }
+        }
+      }
 
       next.opponent = opp;
       next.myPlayer = me;
+      resultado.sucesso = true;
       return next;
     });
-  }, [handleAddLog]);
+
+    if (!resultado.sucesso) {
+      return;
+    }
+
+    const registrosBase = [];
+    if (Array.isArray(logsShared) && logsShared.length > 0) {
+      logsShared.forEach(item => registrosBase.push(item));
+    } else {
+      resultado.logs.forEach(item => registrosBase.push(item));
+    }
+
+    const registrosEfeitos = [];
+    if (Array.isArray(effectLogsShared) && effectLogsShared.length > 0) {
+      effectLogsShared.forEach(item => registrosEfeitos.push(item));
+    } else {
+      resultado.efeitoLogs.forEach(item => registrosEfeitos.push(item));
+    }
+
+    if (registrosBase.length === 0 && registrosEfeitos.length === 0) {
+      let nomeAtacante = 'Oponente';
+      if (typeof attackerName === 'string' && attackerName.length > 0) {
+        nomeAtacante = attackerName;
+      }
+      let nomeSkill = 'habilidade';
+      if (typeof skillName === 'string' && skillName.length > 0) {
+        nomeSkill = skillName;
+      }
+      registrosBase.push({ type: 'usar_skill', message: `${nomeAtacante} usou ${nomeSkill}.` });
+    }
+
+    registrosBase.forEach(entry => {
+      if (entry && entry.message) {
+        const tipo = entry.type ? entry.type : 'info';
+        handleAddLog(tipo, entry.message);
+      }
+    });
+
+    registrosEfeitos.forEach(entry => {
+      if (entry && entry.message) {
+        const tipo = entry.type ? entry.type : 'info';
+        handleAddLog(tipo, entry.message);
+      }
+    });
+  }, [handleAddLog, processSkillEffects]);
 
   const handleOpponentSwitchLegend = useCallback((payload) => {
     const { legendId } = payload;
-    
+
+    let mensagemTroca = null;
+
     setBattleData(prev => {
       const next = { ...prev };
       const opp = { ...next.opponent };
-      
+
       const newActive = opp.bench.find(l => l.id === legendId);
-      if (!newActive) return prev;
+      if (!newActive) {
+        return prev;
+      }
 
       opp.bench = [opp.activeLegend, ...opp.bench.filter(l => l.id !== legendId)];
       opp.activeLegend = newActive;
-      
+
       next.opponent = opp;
-      
-      handleAddLog('trocar_lenda', `${opp.name} trocou para ${newActive.name}`);
+      mensagemTroca = `${opp.name} trocou para ${newActive.name}`;
       return next;
     });
+
+    if (mensagemTroca) {
+      handleAddLog('trocar_lenda', mensagemTroca);
+    }
   }, [handleAddLog]);
 
   const handleOpponentEndTurn = useCallback((payload) => {
@@ -475,6 +855,7 @@ export default function BattleScreen({
 
     setHasPlayedThisTurn(false);
     setIsMyTurn(true);
+    actionLockRef.current = false;
 
     if (payload?.turn) {
       setCurrentTurn(payload.turn);
@@ -507,12 +888,34 @@ export default function BattleScreen({
   // ===== FIM HANDLERS =====
 
   const handleUseSkill = (skill) => {
+    if (actionLockRef.current === true) {
+      handleAddLog('erro', 'Ação anterior ainda está sendo processada. Aguarde um instante.');
+      return;
+    }
+
     console.log('[handleUseSkill] Tentando usar skill:', {
       skillName: skill.name,
       isMyTurn,
       hasPlayedThisTurn,
       currentTurn
     });
+
+    const minhaLendaAtiva = battleData.myPlayer ? battleData.myPlayer.activeLegend : null;
+    if (isLegendStunned(minhaLendaAtiva)) {
+      let nomeLenda = 'Sua lenda';
+      if (minhaLendaAtiva && typeof minhaLendaAtiva.name === 'string' && minhaLendaAtiva.name.length > 0) {
+        nomeLenda = minhaLendaAtiva.name;
+      }
+
+      let nomeJogador = 'Jogador';
+      if (battleData.myPlayer && typeof battleData.myPlayer.name === 'string' && battleData.myPlayer.name.length > 0) {
+        nomeJogador = battleData.myPlayer.name;
+      }
+
+      handleAddLog('controle', `${nomeLenda} está atordoada e não pode agir neste turno.`);
+      finalizeTurn('stun_skip', `${nomeJogador} perdeu a ação por atordoamento.`);
+      return;
+    }
     
     if (!isMyTurn || hasPlayedThisTurn) {
       console.warn('[handleUseSkill] ❌ Bloqueado:', { isMyTurn, hasPlayedThisTurn });
@@ -520,50 +923,74 @@ export default function BattleScreen({
       return;
     }
 
+    actionLockRef.current = true;
+
     console.log('[handleUseSkill] ✅ Executando skill:', skill.name);
 
-    let skillExecutada = false;
+    const resultadoAcao = {
+      sucesso: false,
+      erro: null,
+      logs: [],
+      efeitoLogs: [],
+      payload: null
+    };
 
     setBattleData(prev => {
       const next = { ...prev };
       const me = { ...next.myPlayer };
       const opp = { ...next.opponent };
 
-      // localizar a skill dentro da lenda ativa (referência por id)
-      const active = { ...me.activeLegend };
-      const skills = (active.skills || []).map(s => ({ ...s }));
-      const idx = skills.findIndex(s => s.id === skill.id);
-      const skillObj = idx >= 0 ? skills[idx] : skill;
+      if (!me.activeLegend) {
+        resultadoAcao.erro = 'Nenhuma lenda ativa para usar habilidades';
+        return prev;
+      }
 
-      // Verificar ultimate
+      const active = { ...me.activeLegend };
+      const skills = Array.isArray(active.skills) ? active.skills.map(s => ({ ...s })) : [];
+      const idx = skills.findIndex(s => s.id === skill.id);
+      const skillObj = idx >= 0 ? { ...skills[idx] } : { ...skill };
+
       if (skillObj.isUltimate) {
         const requiredTurns = skillObj.requiredTurns || skillObj.required_turns || 3;
         if ((me.turnsPlayed || 0) < requiredTurns) {
-          handleAddLog('erro', `Ultimate ${skillObj.name} não disponível ainda`);
+          resultadoAcao.erro = `Ultimate ${skillObj.name} não disponível ainda`;
           return prev;
         }
         if (active.ultimateUsed) {
-          handleAddLog('erro', `Ultimate ${skillObj.name} já foi usada`);
+          resultadoAcao.erro = `Ultimate ${skillObj.name} já foi usada`;
+          return prev;
+        }
+        active.ultimateUsed = true;
+      } else {
+        const currentPP = (() => {
+          if (typeof skillObj.pp === 'number') {
+            return skillObj.pp;
+          }
+          if (typeof skillObj.ppCurrent === 'number') {
+            return skillObj.ppCurrent;
+          }
+          if (typeof skillObj.ppMax === 'number') {
+            return skillObj.ppMax;
+          }
+          if (typeof skillObj.maxPP === 'number') {
+            return skillObj.maxPP;
+          }
+          return 0;
+        })();
+
+        if (currentPP <= 0) {
+          resultadoAcao.erro = `Sem PP para usar ${skillObj.name}`;
           return prev;
         }
 
-        // Marcar ultimate usada
-        active.ultimateUsed = true;
-      } else {
-        // Consumir PP normal
-        const currentPP = typeof skillObj.pp === 'number' ? skillObj.pp : (typeof skillObj.ppCurrent === 'number' ? skillObj.ppCurrent : skillObj.ppMax || skillObj.maxPP || 0);
-        if (currentPP <= 0) {
-          handleAddLog('erro', `Sem PP para usar ${skillObj.name}`);
-          return prev;
-        }
-        // decrementar PP
         if (idx >= 0) {
           skills[idx] = { ...skills[idx], pp: currentPP - 1 };
         }
       }
 
-      // Calcular dano usando battleSystem
+      const alvoOriginal = opp.activeLegend ? { ...opp.activeLegend } : null;
       let damage = 0;
+
       if (skillObj.power && opp.activeLegend) {
         const dmgCalc = calculateDamage(
           active,
@@ -573,53 +1000,233 @@ export default function BattleScreen({
         );
         damage = dmgCalc.damage;
 
-        const target = { ...opp.activeLegend };
-        const dmgResult = applyDamage(target, damage);
-        opp.activeLegend = target;
+        if (alvoOriginal) {
+          const target = { ...alvoOriginal };
+          const dmgResult = applyDamage(target, damage);
+          opp.activeLegend = target;
 
-        handleAddLog('usar_skill', `${me.name} usou ${skillObj.name} causando ${dmgResult.totalDamage} de dano${dmgResult.isCritical ? ' CRÍTICO!' : ''}`);
-        
-        if (dmgResult.isDefeated) {
-          handleAddLog('derrota', `${target.name} foi derrotado!`);
+          const mensagemBase = `${me.name} usou ${skillObj.name} causando ${dmgResult.totalDamage} de dano${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
+          resultadoAcao.logs.push({ type: 'usar_skill', message: mensagemBase });
+
+          if (dmgResult.isDefeated) {
+            resultadoAcao.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+          }
         }
       }
 
-      // Atualizar estado
+      const efeitoDecisoes = gerarDecisoesParaEfeitos(skillObj);
+
+      const logsEfeitos = processSkillEffects({
+        skill: skillObj,
+        attackerLegend: active,
+        defenderLegend: opp.activeLegend,
+        attackerPlayer: me,
+        defenderPlayer: opp,
+        forcedResults: efeitoDecisoes
+      }) || [];
+
+      logsEfeitos.forEach(item => {
+        if (!item) {
+          return;
+        }
+        const tipoLog = item.type ? item.type : 'info';
+        const mensagemLog = item.text ? item.text : '';
+        if (mensagemLog.length > 0) {
+          resultadoAcao.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
+        }
+      });
+
       active.skills = skills;
       me.activeLegend = active;
       next.myPlayer = me;
       next.opponent = opp;
 
-      skillExecutada = true;
-
-      // Enviar ação via realtime (se PvP)
-      if (isPvP && sendAction) {
-        sendAction('USE_SKILL', {
+      resultadoAcao.sucesso = true;
+      const syncData = {
+        attacker: {
+          id: null,
+          hp: null,
+          shields: null,
           skillId: skillObj.id,
-          skillName: skillObj.name,
-          targetId: opp.activeLegend.id,
-          damage: damage
-        });
+          skillPP: null
+        },
+        defender: {
+          id: null,
+          hp: null,
+          shields: null,
+          statusEffects: []
+        }
+      };
+
+      if (active) {
+        if (typeof active.id === 'undefined') {
+          // mantém nulo
+        } else {
+          syncData.attacker.id = active.id;
+        }
+        if (typeof active.hp === 'number') {
+          syncData.attacker.hp = active.hp;
+        }
+        if (typeof active.shields === 'number') {
+          syncData.attacker.shields = active.shields;
+        }
       }
+
+      if (idx >= 0) {
+        const skillAtualizada = skills[idx];
+        if (skillAtualizada && typeof skillAtualizada.pp === 'number') {
+          syncData.attacker.skillPP = skillAtualizada.pp;
+        }
+      }
+
+      if (opp.activeLegend) {
+        const defensorAtivo = opp.activeLegend;
+        if (typeof defensorAtivo.id === 'undefined') {
+          // mantém padrão
+        } else {
+          syncData.defender.id = defensorAtivo.id;
+        }
+        if (typeof defensorAtivo.hp === 'number') {
+          syncData.defender.hp = defensorAtivo.hp;
+        }
+        if (typeof defensorAtivo.shields === 'number') {
+          syncData.defender.shields = defensorAtivo.shields;
+        }
+        if (Array.isArray(defensorAtivo.statusEffects)) {
+          syncData.defender.statusEffects = defensorAtivo.statusEffects.map(efeito => ({ ...efeito }));
+        }
+      }
+
+      let alvoId = null;
+      if (alvoOriginal) {
+        if (typeof alvoOriginal.id === 'undefined') {
+          // permanece nulo
+        } else {
+          alvoId = alvoOriginal.id;
+        }
+      }
+
+      resultadoAcao.payload = {
+        skillId: skillObj.id,
+        skillName: skillObj.name,
+        targetId: alvoId,
+        damage,
+        effectsMask: efeitoDecisoes,
+        attackerName: me.name,
+        sync: syncData
+      };
 
       return next;
     });
 
-    if (!skillExecutada) {
+    if (resultadoAcao.erro) {
+      handleAddLog('erro', resultadoAcao.erro);
+      actionLockRef.current = false;
       return;
     }
 
-    console.log('[handleUseSkill] ✅ Skill usada com sucesso, ação concluída');
+    if (resultadoAcao.sucesso) {
+      if (resultadoAcao.logs.length === 0) {
+        const fallbackMensagem = `${battleData.myPlayer?.name || 'Jogador'} usou ${skill.name}.`;
+        resultadoAcao.logs.push({ type: 'usar_skill', message: fallbackMensagem });
+      }
 
-    finalizeTurn('skill', `${battleData.myPlayer?.name || 'Jogador'} usou ${skill.name} e passou o turno automaticamente`);
+      resultadoAcao.logs.forEach(entry => {
+        if (entry && entry.message) {
+          handleAddLog(entry.type || 'info', entry.message);
+        }
+      });
+
+      if (resultadoAcao.efeitoLogs.length === 0 && resultadoAcao.logs.length === 0) {
+        let nomeJogador = 'Jogador';
+        if (battleData.myPlayer) {
+          const nomeEncontrado = battleData.myPlayer.name;
+          if (nomeEncontrado) {
+            nomeJogador = nomeEncontrado;
+          }
+        }
+        const fallbackMensagem = `${nomeJogador} usou ${skill.name}.`;
+        handleAddLog('usar_skill', fallbackMensagem);
+        resultadoAcao.logs.push({ type: 'usar_skill', message: fallbackMensagem });
+      }
+
+      if (resultadoAcao.payload) {
+        const logsCompartilhados = [];
+        resultadoAcao.logs.forEach(entrada => {
+          if (entrada && entrada.message) {
+            let tipoEntrada = 'info';
+            if (entrada.type) {
+              tipoEntrada = entrada.type;
+            }
+            logsCompartilhados.push({ type: tipoEntrada, message: entrada.message });
+          }
+        });
+        resultadoAcao.payload.logsShared = logsCompartilhados;
+
+        const efeitosCompartilhados = [];
+        resultadoAcao.efeitoLogs.forEach(entrada => {
+          if (entrada && entrada.message) {
+            let tipoEntrada = 'info';
+            if (entrada.type) {
+              tipoEntrada = entrada.type;
+            }
+            efeitosCompartilhados.push({ type: tipoEntrada, message: entrada.message });
+          }
+        });
+        resultadoAcao.payload.effectLogsShared = efeitosCompartilhados;
+      }
+
+      resultadoAcao.efeitoLogs.forEach(entry => {
+        if (entry && entry.message) {
+          handleAddLog(entry.type || 'info', entry.message);
+        }
+      });
+
+      if (isPvP && sendAction && resultadoAcao.payload) {
+        sendAction('USE_SKILL', resultadoAcao.payload);
+      }
+
+      console.log('[handleUseSkill] ✅ Skill usada com sucesso, ação concluída');
+
+      finalizeTurn('skill', `${battleData.myPlayer?.name || 'Jogador'} usou ${skill.name} e passou o turno automaticamente`);
+      return;
+    }
+
+    actionLockRef.current = false;
   };
 
   const handleSwitchLegend = (legend) => {
+    if (actionLockRef.current === true) {
+      handleAddLog('erro', 'Ação anterior ainda está sendo processada. Aguarde um instante.');
+      return;
+    }
+
+    const ativaAtual = battleData.myPlayer ? battleData.myPlayer.activeLegend : null;
+    if (isLegendRooted(ativaAtual)) {
+      let nomeLenda = 'Sua lenda';
+      if (ativaAtual && typeof ativaAtual.name === 'string' && ativaAtual.name.length > 0) {
+        nomeLenda = ativaAtual.name;
+      }
+      handleAddLog('controle', `${nomeLenda} está presa e não pode deixar o campo.`);
+      return;
+    }
+
+    if (isLegendStunned(ativaAtual)) {
+      let nomeLenda = 'Sua lenda';
+      if (ativaAtual && typeof ativaAtual.name === 'string' && ativaAtual.name.length > 0) {
+        nomeLenda = ativaAtual.name;
+      }
+      handleAddLog('controle', `${nomeLenda} está atordoada e não pode trocar de posição.`);
+      return;
+    }
+
     if (!isMyTurn || hasPlayedThisTurn) {
       handleAddLog('erro', 'Aguarde sua vez ou você já jogou neste turno!');
       return;
     }
     
+    actionLockRef.current = true;
+
     handleAddLog('trocar_lenda', `${battleData.myPlayer.name} trocou para ${legend.name}`);
     
     setBattleData(prev => ({
@@ -646,6 +1253,7 @@ export default function BattleScreen({
 
   const executeBotTurn = useCallback(() => {
     // TODO: Implementar IA do bot
+    const efeitoLogs = [];
     setBattleData(prev => {
       const next = { ...prev };
       const opp = { ...next.opponent };
@@ -668,6 +1276,23 @@ export default function BattleScreen({
           }
         }
 
+        const mascaraEfeitos = gerarDecisoesParaEfeitos(randomSkill);
+
+        const logsEfeitos = processSkillEffects({
+          skill: randomSkill,
+          attackerLegend: opp.activeLegend,
+          defenderLegend: me.activeLegend,
+          attackerPlayer: opp,
+          defenderPlayer: me,
+          forcedResults: mascaraEfeitos
+        });
+
+        if (logsEfeitos && logsEfeitos.length > 0) {
+          logsEfeitos.forEach(item => {
+            efeitoLogs.push(item);
+          });
+        }
+
         const updatedSkills = opp.activeLegend.skills.map(s =>
           s.id === randomSkill.id ? { ...s, pp: Math.max(0, (s.pp || s.ppMax) - 1) } : s
         );
@@ -678,6 +1303,28 @@ export default function BattleScreen({
       next.myPlayer = me;
       return next;
     });
+
+    if (efeitoLogs.length > 0) {
+      efeitoLogs.forEach(entry => {
+        if (!entry) {
+          return;
+        }
+
+        let tipoLog = 'info';
+        if (entry.type) {
+          tipoLog = entry.type;
+        }
+
+        let mensagemLog = '';
+        if (entry.text) {
+          mensagemLog = entry.text;
+        }
+
+        if (mensagemLog.length > 0) {
+          handleAddLog(tipoLog, mensagemLog);
+        }
+      });
+    }
   }, [handleAddLog]);
 
   const finalizeTurn = useCallback((reason = 'manual', logMessage) => {
@@ -700,6 +1347,7 @@ export default function BattleScreen({
 
     setHasPlayedThisTurn(true);
     setIsMyTurn(false);
+    actionLockRef.current = true;
 
     if (mode === 'bot') {
       setTimeout(() => {
@@ -840,6 +1488,15 @@ export default function BattleScreen({
     }
   };
 
+  const obterTurnosJogador = (participante) => {
+    if (participante) {
+      if (typeof participante.turnsPlayed === 'number') {
+        return participante.turnsPlayed;
+      }
+    }
+    return 0;
+  };
+
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-[#1a2332] via-[#0f1821] to-[#0a1118] text-white overflow-hidden">
       {/* Background mais claro */}
@@ -957,40 +1614,18 @@ export default function BattleScreen({
           )}
 
           {/* Painel de Skills do Oponente - Ao lado da carta */}
-          {selectedCard && battleData.opponent && selectedCard.id === battleData.opponent.activeLegend?.id && (
-            <div 
-              className="absolute z-30 bg-black/95 border-2 border-red-500/70 rounded-xl p-4 shadow-2xl"
+          {selectedCard && battleData.opponent && battleData.opponent.activeLegend && selectedCard.id === battleData.opponent.activeLegend.id && (
+            <div
+              className="absolute z-30"
               style={{ top: '10%', left: 'calc(50% + 180px)' }}
             >
-              <div className="text-red-400 font-bold text-sm mb-3 flex items-center gap-2">
-                <span>⚔️</span>
-                <span>Skills de {selectedCard.name}</span>
-                <button 
-                  onClick={() => setSelectedCard(null)}
-                  className="ml-2 text-neutral-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="space-y-2 max-w-[280px]">
-                {selectedCard.skills?.map((skill, i) => (
-                  <div key={i} className="bg-red-900/30 border border-red-500/40 rounded-lg p-2">
-                    <div className="font-bold text-xs text-red-300">{skill.name}</div>
-                    <div className="text-[10px] text-neutral-300 mt-1">{skill.description}</div>
-                    <div className="flex gap-2 mt-2 text-[9px]">
-                      <span className="text-orange-400">⚡ {skill.power}</span>
-                      <span className="text-cyan-400">🔄 CD: {skill.cooldown}</span>
-                    </div>
-                  </div>
-                ))}
-                {selectedCard.ultimate && (
-                  <div className="bg-purple-900/40 border border-purple-500/50 rounded-lg p-2">
-                    <div className="font-bold text-xs text-purple-300">💫 {selectedCard.ultimate.name}</div>
-                    <div className="text-[10px] text-neutral-300 mt-1">{selectedCard.ultimate.description}</div>
-                    <div className="text-[9px] text-orange-400 mt-2">⚡ {selectedCard.ultimate.power}</div>
-                  </div>
-                )}
-              </div>
+              <SkillPanelSide
+                card={battleData.opponent.activeLegend}
+                onClose={() => setSelectedCard(null)}
+                isMyTurn={false}
+                isEnemy={true}
+                turnsPlayed={obterTurnosJogador(battleData.opponent)}
+              />
             </div>
           )}
 
@@ -1024,71 +1659,23 @@ export default function BattleScreen({
           )}
 
           {/* Painel de Skills do Jogador - Ao lado da carta */}
-          {selectedCard && battleData.myPlayer && selectedCard.id === battleData.myPlayer.activeLegend?.id && (
-            <div 
-              className="absolute z-30 bg-black/95 border-2 border-cyan-500/70 rounded-xl p-4 shadow-2xl"
+          {selectedCard && battleData.myPlayer && battleData.myPlayer.activeLegend && selectedCard.id === battleData.myPlayer.activeLegend.id && (
+            <div
+              className="absolute z-30"
               style={{ bottom: '10%', left: 'calc(50% + 180px)' }}
             >
-              <div className="text-cyan-400 font-bold text-sm mb-3 flex items-center gap-2">
-                <span>⚔️</span>
-                <span>Skills de {selectedCard.name}</span>
-                <button 
-                  onClick={() => setSelectedCard(null)}
-                  className="ml-2 text-neutral-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="space-y-2 max-w-[280px]">
-                {selectedCard.skills?.map((skill, i) => (
-                  <div 
-                    key={i} 
-                    className={`bg-cyan-900/30 border border-cyan-500/40 rounded-lg p-2 transition-all ${
-                      isMyTurn ? 'hover:bg-cyan-800/40 cursor-pointer' : 'opacity-60 cursor-not-allowed'
-                    }`}
-                    onClick={() => {
-                      if (isMyTurn && selectedTarget) {
-                        handleUseSkill(skill);
-                        setSelectedCard(null);
-                        setSelectedTarget(null);
-                      }
-                    }}
-                  >
-                    <div className="font-bold text-xs text-cyan-300">{skill.name}</div>
-                    <div className="text-[10px] text-neutral-300 mt-1">{skill.description}</div>
-                    <div className="flex gap-2 mt-2 text-[9px]">
-                      <span className="text-orange-400">⚡ {skill.power || 0}</span>
-                      <span className="text-blue-400">💧 PP: {skill.pp !== undefined ? skill.pp : skill.ppMax}/{skill.ppMax}</span>
-                    </div>
-                    {(!skill.pp || skill.pp <= 0) && (
-                      <div className="text-[9px] text-red-400 mt-1">Sem PP!</div>
-                    )}
-                  </div>
-                ))}
-                {selectedCard.ultimate && (
-                  <div 
-                    className={`bg-purple-900/40 border border-purple-500/50 rounded-lg p-2 transition-all ${
-                      isMyTurn && (battleData.myPlayer.turnsPlayed || 0) >= 3 
-                        ? 'hover:bg-purple-800/50 cursor-pointer' 
-                        : 'opacity-60 cursor-not-allowed'
-                    }`}
-                    onClick={() => {
-                      if (isMyTurn && (battleData.myPlayer.turnsPlayed || 0) >= 3 && selectedTarget) {
-                        actions.useUltimate(selectedTarget.id);
-                        setSelectedCard(null);
-                        setSelectedTarget(null);
-                      }
-                    }}
-                  >
-                    <div className="font-bold text-xs text-purple-300">💫 {selectedCard.ultimate.name}</div>
-                    <div className="text-[10px] text-neutral-300 mt-1">{selectedCard.ultimate.description}</div>
-                    <div className="text-[9px] text-orange-400 mt-2">⚡ {selectedCard.ultimate.power}</div>
-                    {(battleData.myPlayer.turnsPlayed || 0) < 3 && (
-                      <div className="text-[9px] text-red-400 mt-1">Requer 3 turnos</div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <SkillPanelSide
+                card={battleData.myPlayer.activeLegend}
+                onClose={() => setSelectedCard(null)}
+                onUseSkill={(skillSelecionada) => {
+                  handleUseSkill(skillSelecionada);
+                  setSelectedCard(null);
+                  setSelectedTarget(null);
+                }}
+                isMyTurn={isMyTurn}
+                isEnemy={false}
+                turnsPlayed={obterTurnosJogador(battleData.myPlayer)}
+              />
             </div>
           )}
 

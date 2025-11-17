@@ -126,35 +126,54 @@ function validateUltimateUse(player) {
  * Calcula dano de uma skill/ataque
  */
 export function calculateDamage(attacker, defender, skillPower, modifiers = {}) {
-  // Fórmula base: (Poder da Skill × ATK do Atacante) ÷ DEF do Defensor
-  let baseDamage = (skillPower * attacker.atk) / Math.max(1, defender.def);
-
-  // Aplicar modificadores de elemento
-  if (modifiers.elementAdvantage) {
-    baseDamage *= 1.5; // 50% de bônus por vantagem de elemento
-  } else if (modifiers.elementDisadvantage) {
-    baseDamage *= 0.75; // 25% de redução por desvantagem
+  let ataque = 0;
+  if (attacker && typeof attacker.atk === 'number') {
+    ataque = attacker.atk;
   }
 
-  // Aplicar buffs e debuffs
-  if (attacker.buffs?.attack) {
-    baseDamage *= (1 + attacker.buffs.attack);
+  let defesa = 0;
+  if (defender && typeof defender.def === 'number') {
+    defesa = defender.def;
   }
 
-  if (defender.buffs?.defense) {
-    baseDamage *= (1 - defender.buffs.defense);
+  let poder = 0;
+  if (typeof skillPower === 'number') {
+    poder = skillPower;
   }
 
-  // Crítico (10% de chance)
+  let baseDamage = poder * (1 + ataque / 10) - defesa / 5;
+  if (baseDamage < 0) {
+    baseDamage = 0;
+  }
+
+  if (modifiers && modifiers.elementAdvantage) {
+    baseDamage = baseDamage * 1.5;
+  } else if (modifiers && modifiers.elementDisadvantage) {
+    baseDamage = baseDamage * 0.75;
+  }
+
+  if (attacker && attacker.buffs && typeof attacker.buffs.attack === 'number') {
+    baseDamage = baseDamage * (1 + attacker.buffs.attack);
+  }
+
+  if (defender && defender.buffs && typeof defender.buffs.defense === 'number') {
+    baseDamage = baseDamage * (1 - defender.buffs.defense);
+  }
+
+  let critico = false;
   if (Math.random() < 0.1) {
-    baseDamage *= 2;
-    modifiers.critical = true;
+    baseDamage = baseDamage * 2;
+    critico = true;
   }
 
-  // Arredondar e garantir dano mínimo
+  let danoFinal = Math.ceil(baseDamage);
+  if (danoFinal < 1) {
+    danoFinal = 1;
+  }
+
   return {
-    damage: Math.max(1, Math.floor(baseDamage)),
-    isCritical: modifiers.critical || false
+    damage: danoFinal,
+    isCritical: critico
   };
 }
 
@@ -347,29 +366,172 @@ function reduceCooldowns(legend) {
 function applyStatusEffects(player) {
   const legend = player.activeLegend;
   
-  if (!legend.statusEffects) return;
+  if (!legend) {
+    return;
+  }
+
+  if (!Array.isArray(legend.statusEffects)) {
+    return;
+  }
+
+  const efeitosRestantes = [];
 
   legend.statusEffects.forEach(effect => {
-    switch (effect.type) {
-      case 'burn': // Dano ao longo do tempo
-        applyDamage(legend, effect.value);
-        break;
-      
-      case 'regen': // Cura ao longo do tempo
-        applyHealing(legend, effect.value);
-        break;
-      
-      case 'poison':
-        applyDamage(legend, effect.value);
-        break;
+    if (!effect) {
+      return;
     }
 
-    // Reduzir duração
-    effect.duration -= 1;
+    let duracao = 0;
+    if (typeof effect.duration === 'number') {
+      duracao = effect.duration;
+    } else {
+      duracao = 1;
+    }
+
+    if (effect.type === 'burn' || effect.type === 'bleed' || effect.type === 'poison') {
+      const valorDano = typeof effect.value === 'number' ? effect.value : 0;
+      applyDamage(legend, valorDano);
+    } else if (effect.type === 'regen' || effect.type === 'heal_over_time') {
+      const valorCura = typeof effect.value === 'number' ? effect.value : 0;
+      applyHealing(legend, valorCura);
+    }
+
+    if (effect.type === 'attack_down' || effect.type === 'defense_down' || effect.type === 'attack_up' || effect.type === 'defense_up') {
+      // Apenas sinaliza para recálculo após o loop
+    }
+
+    if (effect.type === 'shield_temporary' && duracao <= 1) {
+      if (typeof effect.value === 'number' && typeof legend.shields === 'number') {
+        const restante = legend.shields - effect.value;
+        legend.shields = restante > 0 ? restante : 0;
+      }
+    }
+
+    duracao = duracao - 1;
+
+    if (duracao > 0) {
+      effect.duration = duracao;
+      efeitosRestantes.push(effect);
+    }
   });
 
-  // Remover efeitos expirados
-  legend.statusEffects = legend.statusEffects.filter(e => e.duration > 0);
+  legend.statusEffects = efeitosRestantes;
+  recalculateLegendStats(legend);
+}
+
+export function recalculateLegendStats(legend) {
+  if (!legend) {
+    return;
+  }
+
+  let baseAtk = 0;
+  if (typeof legend.baseAtk === 'number') {
+    baseAtk = legend.baseAtk;
+  } else if (typeof legend.atk === 'number') {
+    baseAtk = legend.atk;
+  }
+
+  let baseDef = 0;
+  if (typeof legend.baseDef === 'number') {
+    baseDef = legend.baseDef;
+  } else if (typeof legend.def === 'number') {
+    baseDef = legend.def;
+  }
+
+  let totalAtk = baseAtk;
+  let totalDef = baseDef;
+
+  if (legend.buffs && typeof legend.buffs.attack === 'number') {
+    totalAtk += legend.buffs.attack;
+  }
+
+  if (legend.buffs && typeof legend.buffs.defense === 'number') {
+    totalDef += legend.buffs.defense;
+  }
+
+  if (Array.isArray(legend.statusEffects)) {
+    legend.statusEffects.forEach(effect => {
+      if (!effect) {
+        return;
+      }
+      if (typeof effect.duration !== 'number' || effect.duration <= 0) {
+        return;
+      }
+
+      const valor = typeof effect.value === 'number' ? effect.value : 0;
+
+      if (effect.type === 'attack_up') {
+        totalAtk += valor;
+      } else if (effect.type === 'attack_down') {
+        totalAtk -= valor;
+      } else if (effect.type === 'defense_up') {
+        totalDef += valor;
+      } else if (effect.type === 'defense_down') {
+        totalDef -= valor;
+      }
+    });
+  }
+
+  if (totalAtk < 0) {
+    totalAtk = 0;
+  }
+
+  if (totalDef < 0) {
+    totalDef = 0;
+  }
+
+  legend.atk = totalAtk;
+  legend.def = totalDef;
+}
+
+export function isLegendStunned(legend) {
+  if (!legend) {
+    return false;
+  }
+
+  if (!Array.isArray(legend.statusEffects)) {
+    return false;
+  }
+
+  for (let i = 0; i < legend.statusEffects.length; i += 1) {
+    const effect = legend.statusEffects[i];
+    if (!effect) {
+      continue;
+    }
+    if (typeof effect.duration === 'number' && effect.duration <= 0) {
+      continue;
+    }
+    if (effect.type === 'stun' || effect.type === 'charm' || effect.type === 'fear') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function isLegendRooted(legend) {
+  if (!legend) {
+    return false;
+  }
+
+  if (!Array.isArray(legend.statusEffects)) {
+    return false;
+  }
+
+  for (let i = 0; i < legend.statusEffects.length; i += 1) {
+    const effect = legend.statusEffects[i];
+    if (!effect) {
+      continue;
+    }
+    if (typeof effect.duration === 'number' && effect.duration <= 0) {
+      continue;
+    }
+    if (effect.type === 'root') {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

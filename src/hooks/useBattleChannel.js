@@ -13,6 +13,48 @@ export function useBattleChannel(roomId, playerId, onAction) {
   const channelRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [opponentConnected, setOpponentConnected] = useState(false);
+  const pendingActionsRef = useRef([]);
+
+  const queueAction = useCallback((type, payload) => {
+    const atual = Array.isArray(pendingActionsRef.current) ? pendingActionsRef.current : [];
+    pendingActionsRef.current = [...atual, { type, payload }];
+  }, []);
+
+  const flushPendingActions = useCallback(() => {
+    const canalAtual = channelRef.current;
+    if (canalAtual === null) {
+      return;
+    }
+
+    const fila = Array.isArray(pendingActionsRef.current) ? pendingActionsRef.current : [];
+    if (fila.length === 0) {
+      return;
+    }
+
+    pendingActionsRef.current = [];
+
+    fila.forEach(item => {
+      const actionPayload = {
+        type: item.type,
+        payload: item.payload,
+        playerId,
+        timestamp: new Date().toISOString()
+      };
+
+      const envio = canalAtual.send({
+        type: 'broadcast',
+        event: 'battle_action',
+        payload: actionPayload
+      });
+
+      if (envio && typeof envio.then === 'function') {
+        envio.catch((erro) => {
+          console.error('[BattleChannel] Erro ao reenviar ação pendente:', erro);
+          queueAction(item.type, item.payload);
+        });
+      }
+    });
+  }, [playerId, queueAction]);
 
   /**
    * Enviar ação para o oponente
@@ -20,8 +62,15 @@ export function useBattleChannel(roomId, playerId, onAction) {
    * @param {Object} payload - Dados da ação
    */
   const sendAction = useCallback((type, payload) => {
-    if (!channelRef.current || !isConnected) {
-      console.warn('[BattleChannel] Canal não conectado, ação não enviada:', type);
+    if (channelRef.current === null) {
+      console.warn('[BattleChannel] Canal indisponível, ação enfileirada:', type);
+      queueAction(type, payload);
+      return false;
+    }
+
+    if (isConnected === false) {
+      console.warn('[BattleChannel] Canal ainda conectando, ação enfileirada:', type);
+      queueAction(type, payload);
       return false;
     }
 
@@ -34,14 +83,21 @@ export function useBattleChannel(roomId, playerId, onAction) {
 
     console.log('[BattleChannel] Enviando ação:', action);
 
-    channelRef.current.send({
+    const envio = channelRef.current.send({
       type: 'broadcast',
       event: 'battle_action',
       payload: action
     });
 
+    if (envio && typeof envio.then === 'function') {
+      envio.catch((erro) => {
+        console.error('[BattleChannel] Falha ao enviar ação, colocando na fila:', erro);
+        queueAction(type, payload);
+      });
+    }
+
     return true;
-  }, [playerId, isConnected]);
+  }, [playerId, isConnected, queueAction]);
 
   useEffect(() => {
     if (!roomId || !playerId) {
@@ -119,6 +175,8 @@ export function useBattleChannel(roomId, playerId, onAction) {
             online_at: new Date().toISOString(),
             playerId 
           });
+
+          flushPendingActions();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setIsConnected(false);
           console.error('[BattleChannel] ❌ Erro na conexão:', status);
@@ -136,13 +194,14 @@ export function useBattleChannel(roomId, playerId, onAction) {
       console.log('[BattleChannel] Desconectando do canal');
       setIsConnected(false);
       setOpponentConnected(false);
+      pendingActionsRef.current = [];
       
       if (channel) {
         channel.untrack();
         supabase.removeChannel(channel);
       }
     };
-  }, [roomId, playerId, onAction]);
+  }, [roomId, playerId, onAction, flushPendingActions, queueAction]);
 
   return {
     sendAction,
