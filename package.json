@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack & npm run party",
+    "party": "partykit dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -16,6 +17,8 @@
     "drizzle-orm": "^0.44.4",
     "nanoid": "^5.1.5",
     "next": "15.4.5",
+    "partykit": "^0.0.115",
+    "partysocket": "^1.1.6",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0",
     "react": "19.1.0",

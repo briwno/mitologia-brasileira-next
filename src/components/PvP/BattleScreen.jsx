@@ -121,7 +121,7 @@ export default function BattleScreen({
       default:
         console.warn('[BattleScreen] Tipo de ação desconhecido:', type);
     }
-  }, []);
+  }, [handleOpponentUseSkill, handleOpponentSwitchLegend, handleOpponentEndTurn, handleOpponentUseRelic, handleOpponentUseItem]);
 
   // Hook para canal de batalha (broadcast de ações)
   const { sendAction, isConnected, opponentConnected } = useBattleChannel(
@@ -654,124 +654,122 @@ export default function BattleScreen({
       efeitoLogs: []
     };
 
-    setBattleData(prev => {
-      const next = { ...prev };
-      const opp = { ...next.opponent };
-      const me = { ...next.myPlayer };
+    // Calcular novo estado baseado no battleData atual
+    const next = { ...battleData };
+    const opp = { ...next.opponent };
+    const me = { ...next.myPlayer };
 
-      if (!opp.activeLegend) {
-        return prev;
-      }
-
-      let skill = null;
-      if (opp.activeLegend && Array.isArray(opp.activeLegend.skills)) {
-        const listaSkills = opp.activeLegend.skills;
-        for (let indice = 0; indice < listaSkills.length; indice += 1) {
-          const habilidade = listaSkills[indice];
-          if (habilidade && habilidade.id === skillId) {
-            skill = habilidade;
-            break;
-          }
-        }
-      }
-      if (!skill) {
-        return prev;
-      }
-
-      if (targetId && me.activeLegend && targetId === me.activeLegend.id) {
-        const target = { ...me.activeLegend };
-        const dmgResult = applyDamage(target, damage);
-        me.activeLegend = target;
-
-        const mensagemDano = `${opp.name} causou ${dmgResult.totalDamage} de dano com ${skill.name}${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
-        resultado.logs.push({ type: 'dano', message: mensagemDano });
-
-        if (dmgResult.isDefeated) {
-          resultado.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
-        }
-      }
-
-      const mascaraEfeitos = Array.isArray(effectsMask) ? effectsMask : [];
-      const logsEfeitos = processSkillEffects({
-        skill,
-        attackerLegend: opp.activeLegend,
-        defenderLegend: me.activeLegend,
-        attackerPlayer: opp,
-        defenderPlayer: me,
-        forcedResults: mascaraEfeitos
-      }) || [];
-
-      logsEfeitos.forEach(item => {
-        if (!item) {
-          return;
-        }
-        const tipoLog = item.type ? item.type : 'info';
-        const mensagemLog = item.text ? item.text : '';
-        if (mensagemLog.length > 0) {
-          resultado.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
-        }
-      });
-
-      if (opp.activeLegend.skills) {
-        const updatedSkills = opp.activeLegend.skills.map(s => {
-          if (s && s.id === skillId) {
-            let valorAtual = 0;
-            if (typeof s.pp === 'number') {
-              valorAtual = s.pp;
-            } else if (typeof s.ppMax === 'number') {
-              valorAtual = s.ppMax;
-            }
-            const novoValor = valorAtual - 1;
-            return { ...s, pp: novoValor >= 0 ? novoValor : 0 };
-          }
-          return s;
-        });
-        opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
-      }
-
-      if (sync && sync.attacker && opp.activeLegend) {
-        if (sync.attacker.id && opp.activeLegend.id === sync.attacker.id) {
-          if (typeof sync.attacker.hp === 'number') {
-            opp.activeLegend.hp = sync.attacker.hp;
-          }
-          if (typeof sync.attacker.shields === 'number') {
-            opp.activeLegend.shields = sync.attacker.shields;
-          }
-          if (Array.isArray(opp.activeLegend.skills) && sync.attacker.skillId) {
-            opp.activeLegend.skills = opp.activeLegend.skills.map(s => {
-              if (s && s.id === sync.attacker.skillId && typeof sync.attacker.skillPP === 'number') {
-                return { ...s, pp: sync.attacker.skillPP };
-              }
-              return s;
-            });
-          }
-        }
-      }
-
-      if (sync && sync.defender && me.activeLegend) {
-        if (sync.defender.id && me.activeLegend.id === sync.defender.id) {
-          if (typeof sync.defender.hp === 'number') {
-            me.activeLegend.hp = sync.defender.hp;
-          }
-          if (typeof sync.defender.shields === 'number') {
-            me.activeLegend.shields = sync.defender.shields;
-          }
-          if (Array.isArray(sync.defender.statusEffects)) {
-            me.activeLegend.statusEffects = sync.defender.statusEffects.map(efeito => ({ ...efeito }));
-          }
-        }
-      }
-
-      next.opponent = opp;
-      next.myPlayer = me;
-      resultado.sucesso = true;
-      return next;
-    });
-
-    if (!resultado.sucesso) {
+    if (!opp.activeLegend) {
       return;
     }
 
+    let skill = null;
+    if (opp.activeLegend && Array.isArray(opp.activeLegend.skills)) {
+      const listaSkills = opp.activeLegend.skills;
+      for (let indice = 0; indice < listaSkills.length; indice += 1) {
+        const habilidade = listaSkills[indice];
+        if (habilidade && habilidade.id === skillId) {
+          skill = habilidade;
+          break;
+        }
+      }
+    }
+    if (!skill) {
+      return;
+    }
+
+    if (targetId && me.activeLegend && targetId === me.activeLegend.id) {
+      const target = { ...me.activeLegend };
+      const dmgResult = applyDamage(target, damage);
+      me.activeLegend = target;
+
+      const mensagemDano = `${opp.name} causou ${dmgResult.totalDamage} de dano com ${skill.name}${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
+      resultado.logs.push({ type: 'dano', message: mensagemDano });
+
+      if (dmgResult.isDefeated) {
+        resultado.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+      }
+    }
+
+    const mascaraEfeitos = Array.isArray(effectsMask) ? effectsMask : [];
+    const logsEfeitos = processSkillEffects({
+      skill,
+      attackerLegend: opp.activeLegend,
+      defenderLegend: me.activeLegend,
+      attackerPlayer: opp,
+      defenderPlayer: me,
+      forcedResults: mascaraEfeitos
+    }) || [];
+
+    logsEfeitos.forEach(item => {
+      if (!item) {
+        return;
+      }
+      const tipoLog = item.type ? item.type : 'info';
+      const mensagemLog = item.text ? item.text : '';
+      if (mensagemLog.length > 0) {
+        resultado.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
+      }
+    });
+
+    if (opp.activeLegend.skills) {
+      const updatedSkills = opp.activeLegend.skills.map(s => {
+        if (s && s.id === skillId) {
+          let valorAtual = 0;
+          if (typeof s.pp === 'number') {
+            valorAtual = s.pp;
+          } else if (typeof s.ppMax === 'number') {
+            valorAtual = s.ppMax;
+          }
+          const novoValor = valorAtual - 1;
+          return { ...s, pp: novoValor >= 0 ? novoValor : 0 };
+        }
+        return s;
+      });
+      opp.activeLegend = { ...opp.activeLegend, skills: updatedSkills };
+    }
+
+    if (sync && sync.attacker && opp.activeLegend) {
+      if (sync.attacker.id && opp.activeLegend.id === sync.attacker.id) {
+        if (typeof sync.attacker.hp === 'number') {
+          opp.activeLegend.hp = sync.attacker.hp;
+        }
+        if (typeof sync.attacker.shields === 'number') {
+          opp.activeLegend.shields = sync.attacker.shields;
+        }
+        if (Array.isArray(opp.activeLegend.skills) && sync.attacker.skillId) {
+          opp.activeLegend.skills = opp.activeLegend.skills.map(s => {
+            if (s && s.id === sync.attacker.skillId && typeof sync.attacker.skillPP === 'number') {
+              return { ...s, pp: sync.attacker.skillPP };
+            }
+            return s;
+          });
+        }
+      }
+    }
+
+    if (sync && sync.defender && me.activeLegend) {
+      if (sync.defender.id && me.activeLegend.id === sync.defender.id) {
+        if (typeof sync.defender.hp === 'number') {
+          me.activeLegend.hp = sync.defender.hp;
+        }
+        if (typeof sync.defender.shields === 'number') {
+          me.activeLegend.shields = sync.defender.shields;
+        }
+        if (Array.isArray(sync.defender.statusEffects)) {
+          me.activeLegend.statusEffects = sync.defender.statusEffects.map(efeito => ({ ...efeito }));
+        }
+      }
+    }
+
+    next.opponent = opp;
+    next.myPlayer = me;
+    resultado.sucesso = true;
+
+    // Atualizar estado
+    setBattleData(next);
+
+    // Processar logs
     const registrosBase = [];
     if (Array.isArray(logsShared) && logsShared.length > 0) {
       logsShared.forEach(item => registrosBase.push(item));
@@ -811,34 +809,33 @@ export default function BattleScreen({
         handleAddLog(tipo, entry.message);
       }
     });
-  }, [handleAddLog, processSkillEffects]);
+  }, [battleData, handleAddLog, processSkillEffects]);
 
   const handleOpponentSwitchLegend = useCallback((payload) => {
     const { legendId } = payload;
 
     let mensagemTroca = null;
 
-    setBattleData(prev => {
-      const next = { ...prev };
-      const opp = { ...next.opponent };
+    const next = { ...battleData };
+    const opp = { ...next.opponent };
 
-      const newActive = opp.bench.find(l => l.id === legendId);
-      if (!newActive) {
-        return prev;
-      }
+    const newActive = opp.bench.find(l => l.id === legendId);
+    if (!newActive) {
+      return;
+    }
 
-      opp.bench = [opp.activeLegend, ...opp.bench.filter(l => l.id !== legendId)];
-      opp.activeLegend = newActive;
+    opp.bench = [opp.activeLegend, ...opp.bench.filter(l => l.id !== legendId)];
+    opp.activeLegend = newActive;
 
-      next.opponent = opp;
-      mensagemTroca = `${opp.name} trocou para ${newActive.name}`;
-      return next;
-    });
+    next.opponent = opp;
+    mensagemTroca = `${opp.name} trocou para ${newActive.name}`;
+    
+    setBattleData(next);
 
     if (mensagemTroca) {
       handleAddLog('trocar_lenda', mensagemTroca);
     }
-  }, [handleAddLog]);
+  }, [battleData, handleAddLog]);
 
   const handleOpponentEndTurn = useCallback((payload) => {
     console.log('[handleOpponentEndTurn] Oponente finalizou turno', {
@@ -868,24 +865,59 @@ export default function BattleScreen({
     
     // Aplicar efeitos da relíquia do oponente (se afetar o jogador)
     if (relicEffect?.damage) {
-      setBattleData(prev => {
-        const next = { ...prev };
-        const me = { ...next.myPlayer };
-        const target = { ...me.activeLegend };
-        applyDamage(target, relicEffect.damage);
-        me.activeLegend = target;
-        next.myPlayer = me;
-        return next;
-      });
+      const next = { ...battleData };
+      const me = { ...next.myPlayer };
+      const target = { ...me.activeLegend };
+      applyDamage(target, relicEffect.damage);
+      me.activeLegend = target;
+      next.myPlayer = me;
+      setBattleData(next);
     }
-  }, [battleData.opponent, handleAddLog]);
+  }, [battleData, handleAddLog]);
 
   const handleOpponentUseItem = useCallback((payload) => {
     const { itemName, effect } = payload;
     handleAddLog('item', `${battleData.opponent?.name || 'Oponente'} usou ${itemName}`);
   }, [battleData.opponent, handleAddLog]);
 
-  // ===== FIM HANDLERS =====
+  // Handler para ações recebidas do oponente
+  const handleOpponentAction = useCallback((action) => {
+    console.log('[BattleScreen] Ação do oponente recebida:', action);
+    
+    const { type, payload } = action;
+    
+    switch (type) {
+      case 'USE_SKILL':
+        handleOpponentUseSkill(payload);
+        break;
+      
+      case 'SWITCH_LEGEND':
+        handleOpponentSwitchLegend(payload);
+        break;
+      
+      case 'END_TURN':
+        handleOpponentEndTurn(payload);
+        break;
+      
+      case 'USE_RELIC':
+        handleOpponentUseRelic(payload);
+        break;
+      
+      case 'USE_ITEM':
+        handleOpponentUseItem(payload);
+        break;
+      
+      default:
+        console.warn('[BattleScreen] Tipo de ação desconhecido:', type);
+    }
+  }, [handleOpponentUseSkill, handleOpponentSwitchLegend, handleOpponentEndTurn, handleOpponentUseRelic, handleOpponentUseItem]);
+
+  // Hook para canal de batalha (broadcast de ações)
+  const { sendAction, isConnected, opponentConnected } = useBattleChannel(
+    isPvP ? roomIdForApi : null,
+    user?.id,
+    handleOpponentAction
+  );
 
   const handleUseSkill = (skill) => {
     if (actionLockRef.current === true) {
@@ -935,32 +967,32 @@ export default function BattleScreen({
       payload: null
     };
 
-    setBattleData(prev => {
-      const next = { ...prev };
-      const me = { ...next.myPlayer };
-      const opp = { ...next.opponent };
+    // Calcular novo estado (síncrono)
+    const next = { ...battleData };
+    const me = { ...next.myPlayer };
+    const opp = { ...next.opponent };
 
-      if (!me.activeLegend) {
-        resultadoAcao.erro = 'Nenhuma lenda ativa para usar habilidades';
-        return prev;
-      }
-
+    if (!me.activeLegend) {
+      resultadoAcao.erro = 'Nenhuma lenda ativa para usar habilidades';
+    } else {
       const active = { ...me.activeLegend };
       const skills = Array.isArray(active.skills) ? active.skills.map(s => ({ ...s })) : [];
       const idx = skills.findIndex(s => s.id === skill.id);
       const skillObj = idx >= 0 ? { ...skills[idx] } : { ...skill };
 
+      let podeUsar = true;
+
       if (skillObj.isUltimate) {
         const requiredTurns = skillObj.requiredTurns || skillObj.required_turns || 3;
         if ((me.turnsPlayed || 0) < requiredTurns) {
           resultadoAcao.erro = `Ultimate ${skillObj.name} não disponível ainda`;
-          return prev;
-        }
-        if (active.ultimateUsed) {
+          podeUsar = false;
+        } else if (active.ultimateUsed) {
           resultadoAcao.erro = `Ultimate ${skillObj.name} já foi usada`;
-          return prev;
+          podeUsar = false;
+        } else {
+          active.ultimateUsed = true;
         }
-        active.ultimateUsed = true;
       } else {
         const currentPP = (() => {
           if (typeof skillObj.pp === 'number') {
@@ -980,144 +1012,142 @@ export default function BattleScreen({
 
         if (currentPP <= 0) {
           resultadoAcao.erro = `Sem PP para usar ${skillObj.name}`;
-          return prev;
-        }
-
-        if (idx >= 0) {
+          podeUsar = false;
+        } else if (idx >= 0) {
           skills[idx] = { ...skills[idx], pp: currentPP - 1 };
         }
       }
 
-      const alvoOriginal = opp.activeLegend ? { ...opp.activeLegend } : null;
-      let damage = 0;
+      if (podeUsar) {
+        const alvoOriginal = opp.activeLegend ? { ...opp.activeLegend } : null;
+        let damage = 0;
 
-      if (skillObj.power && opp.activeLegend) {
-        const dmgCalc = calculateDamage(
-          active,
-          opp.activeLegend,
-          skillObj.power,
-          {}
-        );
-        damage = dmgCalc.damage;
+        if (skillObj.power && opp.activeLegend) {
+          const dmgCalc = calculateDamage(
+            active,
+            opp.activeLegend,
+            skillObj.power,
+            {}
+          );
+          damage = dmgCalc.damage;
 
-        if (alvoOriginal) {
-          const target = { ...alvoOriginal };
-          const dmgResult = applyDamage(target, damage);
-          opp.activeLegend = target;
+          if (alvoOriginal) {
+            const target = { ...alvoOriginal };
+            const dmgResult = applyDamage(target, damage);
+            opp.activeLegend = target;
 
-          const mensagemBase = `${me.name} usou ${skillObj.name} causando ${dmgResult.totalDamage} de dano${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
-          resultadoAcao.logs.push({ type: 'usar_skill', message: mensagemBase });
+            const mensagemBase = `${me.name} usou ${skillObj.name} causando ${dmgResult.totalDamage} de dano${dmgResult.isCritical ? ' CRÍTICO!' : ''}`;
+            resultadoAcao.logs.push({ type: 'usar_skill', message: mensagemBase });
 
-          if (dmgResult.isDefeated) {
-            resultadoAcao.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+            if (dmgResult.isDefeated) {
+              resultadoAcao.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+            }
           }
         }
-      }
 
-      const efeitoDecisoes = gerarDecisoesParaEfeitos(skillObj);
+        const efeitoDecisoes = gerarDecisoesParaEfeitos(skillObj);
 
-      const logsEfeitos = processSkillEffects({
-        skill: skillObj,
-        attackerLegend: active,
-        defenderLegend: opp.activeLegend,
-        attackerPlayer: me,
-        defenderPlayer: opp,
-        forcedResults: efeitoDecisoes
-      }) || [];
+        const logsEfeitos = processSkillEffects({
+          skill: skillObj,
+          attackerLegend: active,
+          defenderLegend: opp.activeLegend,
+          attackerPlayer: me,
+          defenderPlayer: opp,
+          forcedResults: efeitoDecisoes
+        }) || [];
 
-      logsEfeitos.forEach(item => {
-        if (!item) {
-          return;
+        logsEfeitos.forEach(item => {
+          if (!item) {
+            return;
+          }
+          const tipoLog = item.type ? item.type : 'info';
+          const mensagemLog = item.text ? item.text : '';
+          if (mensagemLog.length > 0) {
+            resultadoAcao.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
+          }
+        });
+
+        active.skills = skills;
+        me.activeLegend = active;
+        next.myPlayer = me;
+        next.opponent = opp;
+
+        resultadoAcao.sucesso = true;
+        const syncData = {
+          attacker: {
+            id: null,
+            hp: null,
+            shields: null,
+            skillId: skillObj.id,
+            skillPP: null
+          },
+          defender: {
+            id: null,
+            hp: null,
+            shields: null,
+            statusEffects: []
+          }
+        };
+
+        if (active) {
+          if (typeof active.id === 'undefined') {
+            // mantém nulo
+          } else {
+            syncData.attacker.id = active.id;
+          }
+          if (typeof active.hp === 'number') {
+            syncData.attacker.hp = active.hp;
+          }
+          if (typeof active.shields === 'number') {
+            syncData.attacker.shields = active.shields;
+          }
         }
-        const tipoLog = item.type ? item.type : 'info';
-        const mensagemLog = item.text ? item.text : '';
-        if (mensagemLog.length > 0) {
-          resultadoAcao.efeitoLogs.push({ type: tipoLog, message: mensagemLog });
+
+        if (idx >= 0) {
+          const skillAtualizada = skills[idx];
+          if (skillAtualizada && typeof skillAtualizada.pp === 'number') {
+            syncData.attacker.skillPP = skillAtualizada.pp;
+          }
         }
-      });
 
-      active.skills = skills;
-      me.activeLegend = active;
-      next.myPlayer = me;
-      next.opponent = opp;
+        if (opp.activeLegend) {
+          const defensorAtivo = opp.activeLegend;
+          if (typeof defensorAtivo.id === 'undefined') {
+            // mantém padrão
+          } else {
+            syncData.defender.id = defensorAtivo.id;
+          }
+          if (typeof defensorAtivo.hp === 'number') {
+            syncData.defender.hp = defensorAtivo.hp;
+          }
+          if (typeof defensorAtivo.shields === 'number') {
+            syncData.defender.shields = defensorAtivo.shields;
+          }
+          if (Array.isArray(defensorAtivo.statusEffects)) {
+            syncData.defender.statusEffects = defensorAtivo.statusEffects.map(efeito => ({ ...efeito }));
+          }
+        }
 
-      resultadoAcao.sucesso = true;
-      const syncData = {
-        attacker: {
-          id: null,
-          hp: null,
-          shields: null,
+        let alvoId = null;
+        if (alvoOriginal) {
+          if (typeof alvoOriginal.id === 'undefined') {
+            // permanece nulo
+          } else {
+            alvoId = alvoOriginal.id;
+          }
+        }
+
+        resultadoAcao.payload = {
           skillId: skillObj.id,
-          skillPP: null
-        },
-        defender: {
-          id: null,
-          hp: null,
-          shields: null,
-          statusEffects: []
-        }
-      };
-
-      if (active) {
-        if (typeof active.id === 'undefined') {
-          // mantém nulo
-        } else {
-          syncData.attacker.id = active.id;
-        }
-        if (typeof active.hp === 'number') {
-          syncData.attacker.hp = active.hp;
-        }
-        if (typeof active.shields === 'number') {
-          syncData.attacker.shields = active.shields;
-        }
+          skillName: skillObj.name,
+          targetId: alvoId,
+          damage,
+          effectsMask: efeitoDecisoes,
+          attackerName: me.name,
+          sync: syncData
+        };
       }
-
-      if (idx >= 0) {
-        const skillAtualizada = skills[idx];
-        if (skillAtualizada && typeof skillAtualizada.pp === 'number') {
-          syncData.attacker.skillPP = skillAtualizada.pp;
-        }
-      }
-
-      if (opp.activeLegend) {
-        const defensorAtivo = opp.activeLegend;
-        if (typeof defensorAtivo.id === 'undefined') {
-          // mantém padrão
-        } else {
-          syncData.defender.id = defensorAtivo.id;
-        }
-        if (typeof defensorAtivo.hp === 'number') {
-          syncData.defender.hp = defensorAtivo.hp;
-        }
-        if (typeof defensorAtivo.shields === 'number') {
-          syncData.defender.shields = defensorAtivo.shields;
-        }
-        if (Array.isArray(defensorAtivo.statusEffects)) {
-          syncData.defender.statusEffects = defensorAtivo.statusEffects.map(efeito => ({ ...efeito }));
-        }
-      }
-
-      let alvoId = null;
-      if (alvoOriginal) {
-        if (typeof alvoOriginal.id === 'undefined') {
-          // permanece nulo
-        } else {
-          alvoId = alvoOriginal.id;
-        }
-      }
-
-      resultadoAcao.payload = {
-        skillId: skillObj.id,
-        skillName: skillObj.name,
-        targetId: alvoId,
-        damage,
-        effectsMask: efeitoDecisoes,
-        attackerName: me.name,
-        sync: syncData
-      };
-
-      return next;
-    });
+    }
 
     if (resultadoAcao.erro) {
       handleAddLog('erro', resultadoAcao.erro);
@@ -1126,6 +1156,9 @@ export default function BattleScreen({
     }
 
     if (resultadoAcao.sucesso) {
+      // Atualizar estado
+      setBattleData(next);
+
       if (resultadoAcao.logs.length === 0) {
         const fallbackMensagem = `${battleData.myPlayer?.name || 'Jogador'} usou ${skill.name}.`;
         resultadoAcao.logs.push({ type: 'usar_skill', message: fallbackMensagem });
@@ -1183,7 +1216,14 @@ export default function BattleScreen({
       });
 
       if (isPvP && sendAction && resultadoAcao.payload) {
-        sendAction('USE_SKILL', resultadoAcao.payload);
+        try {
+          // Garantir que o payload seja serializável para evitar erros no envio
+          const safePayload = JSON.parse(JSON.stringify(resultadoAcao.payload));
+          sendAction('USE_SKILL', safePayload);
+        } catch (err) {
+          console.error('[handleUseSkill] Erro ao enviar ação de skill:', err);
+          handleAddLog('erro', 'Erro de conexão ao enviar jogada. O turno será finalizado localmente.');
+        }
       }
 
       console.log('[handleUseSkill] ✅ Skill usada com sucesso, ação concluída');

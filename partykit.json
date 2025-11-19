@@ -1,0 +1,5 @@
+{
+  "name": "mitologia-brasileira-party",
+  "main": "src/party/server.js",
+  "compatibilityDate": "2025-02-19"
+}

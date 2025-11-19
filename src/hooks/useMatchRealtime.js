@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import usePartySocket from 'partysocket/react';
+
+const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
 
 /**
- * Hook para sincronizar estado da partida em tempo real via tabela matches
+ * Hook para sincronizar estado da partida em tempo real via PartyKit (com persistência no Supabase)
  * Monitora mudanças na partida (status, turnos, etc)
  * 
  * @param {string} roomId - ID da sala/match
@@ -14,8 +17,28 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const socket = usePartySocket({
+    host: PARTYKIT_HOST,
+    room: roomId || "lobby",
+    onMessage(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'SYNC_STATE' && data.payload.match) {
+          console.log('[MatchRealtime] Recebido SYNC_STATE via PartyKit:', data.payload.match);
+          setMatch(data.payload.match);
+          if (onMatchUpdate) {
+            onMatchUpdate(data.payload.match);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('[MatchRealtime] Erro ao processar mensagem do PartyKit:', err);
+      }
+    }
+  });
+
   /**
-   * Atualizar dados da partida no banco
+   * Atualizar dados da partida no banco e notificar via PartyKit
    * @param {Object} updates - Campos a atualizar
    */
   const updateMatch = useCallback(async (updates) => {
@@ -38,6 +61,7 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
     console.log('[MatchRealtime] Atualizando match:', { roomId, payload });
 
     try {
+      // 1. Atualizar no Supabase (Persistência)
       const { data, error: updateError } = await supabase
         .from('matches')
         .update(payload)
@@ -46,20 +70,21 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
         .single();
 
       if (updateError) {
-        console.error('[MatchRealtime] Erro do Supabase (detalhado):', {
-          message: updateError.message || 'Sem mensagem',
-          details: updateError.details || 'Sem detalhes',
-          hint: updateError.hint || 'Sem hint',
-          code: updateError.code || 'Sem código',
-          errorCompleto: updateError,
-          errorString: JSON.stringify(updateError, null, 2)
-        });
+        console.error('[MatchRealtime] Erro do Supabase:', updateError);
         throw updateError;
       }
 
       if (!data) {
         console.warn('[MatchRealtime] Nenhum dado retornado após update');
         return null;
+      }
+
+      // 2. Broadcast via PartyKit (Realtime)
+      if (socket && socket.readyState === 1) {
+        socket.send(JSON.stringify({
+          type: 'UPDATE_MATCH_STATE',
+          payload: data // Envia o objeto completo atualizado
+        }));
       }
 
       console.log('[MatchRealtime] Partida atualizada com sucesso:', data);
@@ -79,7 +104,7 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
       setError(errorMessage);
       return null;
     }
-  }, [roomId, onMatchUpdate]);
+  }, [roomId, onMatchUpdate, socket]);
 
   useEffect(() => {
     if (!roomId) {
@@ -88,7 +113,7 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
       return;
     }
 
-    // Carregar estado inicial da partida
+    // Carregar estado inicial da partida via Supabase
     const loadMatch = async () => {
       try {
         console.log('[MatchRealtime] Carregando match com room_id:', roomId);
@@ -100,12 +125,7 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
           .single();
 
         if (loadError) {
-          console.error('[MatchRealtime] Erro ao carregar:', {
-            message: loadError.message,
-            details: loadError.details,
-            hint: loadError.hint,
-            code: loadError.code
-          });
+          console.error('[MatchRealtime] Erro ao carregar:', loadError);
           throw loadError;
         }
 
@@ -118,14 +138,19 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
         if (onMatchUpdate) {
           onMatchUpdate(data);
         }
+        
+        // Opcional: Inicializar estado no PartyKit se necessário
+        if (socket && socket.readyState === 1) {
+           socket.send(JSON.stringify({
+             type: 'INIT_MATCH',
+             payload: data
+           }));
+        }
+
         setLoading(false);
       } catch (err) {
         const errorMessage = err?.message || err?.hint || 'Erro ao carregar partida';
-        console.error('[MatchRealtime] Erro ao carregar partida:', {
-          message: errorMessage,
-          error: err,
-          roomId
-        });
+        console.error('[MatchRealtime] Erro ao carregar partida:', err);
         setError(errorMessage);
         setLoading(false);
       }
@@ -133,36 +158,11 @@ export function useMatchRealtime(roomId, onMatchUpdate) {
 
     loadMatch();
 
-    // Subscrever a mudanças na tabela matches
-    const channel = supabase
-      .channel(`match:${roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'matches',
-          filter: `room_id=eq.${roomId}`
-        },
-        (payload) => {
-          console.log('[MatchRealtime] Partida atualizada em tempo real:', payload.new);
-          setMatch(payload.new);
-          
-          if (onMatchUpdate) {
-            onMatchUpdate(payload.new);
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('[MatchRealtime] Status da subscrição:', status);
-      });
-
     // Cleanup
     return () => {
-      console.log('[MatchRealtime] Desconectando do canal de match');
-      supabase.removeChannel(channel);
+      // PartySocket limpa automaticamente
     };
-  }, [roomId, onMatchUpdate]);
+  }, [roomId, onMatchUpdate, socket]); // socket dependency is stable
 
   return {
     match,
