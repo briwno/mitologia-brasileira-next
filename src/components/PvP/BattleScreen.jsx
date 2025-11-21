@@ -61,6 +61,8 @@ export default function BattleScreen({
     { type: 'inicio', text: 'Batalha iniciada!', timestamp: new Date().toISOString(), formatted: 'A batalha começou!' }
   ]);
   const [showTurnAlert, setShowTurnAlert] = useState(false);
+  const [defeatModal, setDefeatModal] = useState({ isOpen: false, message: '', isPlayer: false, cardName: '' });
+  const [isForcedSwitch, setIsForcedSwitch] = useState(false);
   const turnAlertTimeoutRef = useRef(null);
   const lastLoggedTurnRef = useRef(null);
   const actionLockRef = useRef(false);
@@ -649,6 +651,9 @@ export default function BattleScreen({
 
       if (dmgResult.isDefeated) {
         resultado.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+        setDefeatModal({ isOpen: true, message: `Sua lenda ${target.name} foi derrotada!`, isPlayer: true, cardName: target.name });
+        setIsForcedSwitch(true);
+        setTimeout(() => setDefeatModal(prev => ({ ...prev, isOpen: false })), 3000);
       }
     }
 
@@ -894,6 +899,12 @@ export default function BattleScreen({
     });
 
     const minhaLendaAtiva = battleData.myPlayer ? battleData.myPlayer.activeLegend : null;
+    
+    if (minhaLendaAtiva && minhaLendaAtiva.hp <= 0) {
+      handleAddLog('erro', 'Sua lenda está derrotada e não pode atacar!');
+      return;
+    }
+
     if (isLegendStunned(minhaLendaAtiva)) {
       let nomeLenda = 'Sua lenda';
       if (minhaLendaAtiva && typeof minhaLendaAtiva.name === 'string' && minhaLendaAtiva.name.length > 0) {
@@ -1002,6 +1013,8 @@ export default function BattleScreen({
 
             if (dmgResult.isDefeated) {
               resultadoAcao.logs.push({ type: 'derrota', message: `${target.name} foi derrotado!` });
+              setDefeatModal({ isOpen: true, message: `Você derrotou ${target.name}!`, isPlayer: false, cardName: target.name });
+              setTimeout(() => setDefeatModal(prev => ({ ...prev, isOpen: false })), 3000);
             }
           }
         }
@@ -1221,7 +1234,7 @@ export default function BattleScreen({
       return;
     }
 
-    if (!isMyTurn || hasPlayedThisTurn) {
+    if ((!isMyTurn && !isForcedSwitch) || (hasPlayedThisTurn && !isForcedSwitch)) {
       handleAddLog('erro', 'Aguarde sua vez ou você já jogou neste turno!');
       return;
     }
@@ -1249,7 +1262,12 @@ export default function BattleScreen({
 
     console.log('[handleSwitchLegend] ✅ Lenda trocada, ação concluída');
 
-    finalizeTurn('switch', `${battleData.myPlayer?.name || 'Jogador'} trocou de lenda e passou o turno automaticamente`);
+    if (isForcedSwitch) {
+      setIsForcedSwitch(false);
+      actionLockRef.current = false;
+    } else {
+      finalizeTurn('switch', `${battleData.myPlayer?.name || 'Jogador'} trocou de lenda e passou o turno automaticamente`);
+    }
   };
 
   const executeBotTurn = useCallback(() => {
@@ -1709,12 +1727,12 @@ export default function BattleScreen({
               <BenchRow
                 legends={battleData.myPlayer.bench}
                 onSelectCard={(legend) => {
-                  if (isMyTurn) {
+                  if (isMyTurn || isForcedSwitch) {
                     handleSwitchLegend(legend);
                   }
                 }}
                 selectedCard={selectedCard}
-                disabled={!isMyTurn}
+                disabled={!isMyTurn && !isForcedSwitch}
                 isEnemy={false}
               />
 
@@ -1811,6 +1829,47 @@ export default function BattleScreen({
                 Sair da Batalha
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Derrota de Carta */}
+      {defeatModal.isOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className={`
+            px-8 py-6 rounded-2xl border-2 shadow-2xl transform scale-100 animate-in zoom-in duration-300
+            ${defeatModal.isPlayer 
+              ? 'bg-gradient-to-b from-red-900/90 to-black border-red-500' 
+              : 'bg-gradient-to-b from-yellow-900/90 to-black border-yellow-500'}
+          `}>
+            <div className="text-center">
+              <div className="text-5xl mb-3">{defeatModal.isPlayer ? '💀' : '⚔️'}</div>
+              <h3 className={`text-2xl font-bold mb-2 ${defeatModal.isPlayer ? 'text-red-400' : 'text-yellow-400'}`}>
+                {defeatModal.isPlayer ? 'Lenda Derrotada!' : 'Inimigo Derrotado!'}
+              </h3>
+              <p className="text-lg text-white font-medium">
+                {defeatModal.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Troca Forçada */}
+      {isForcedSwitch && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+          <div className="text-center mb-8 animate-pulse">
+            <h2 className="text-3xl font-bold text-red-500 mb-2">SUA LENDA CAIU!</h2>
+            <p className="text-xl text-white">Escolha uma nova lenda para entrar em campo</p>
+          </div>
+          <div className="p-4 bg-red-900/20 rounded-xl border border-red-500/30">
+            <BenchRow
+              legends={battleData.myPlayer.bench}
+              onSelectCard={(legend) => handleSwitchLegend(legend)}
+              selectedCard={selectedCard}
+              disabled={false}
+              isEnemy={false}
+            />
           </div>
         </div>
       )}
