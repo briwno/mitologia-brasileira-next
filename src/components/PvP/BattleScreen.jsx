@@ -91,45 +91,6 @@ export default function BattleScreen({
 
   // ===== HOOKS DE TEMPO REAL (APENAS PVP) =====
   
-  // Handler para ações recebidas do oponente
-  const handleOpponentAction = useCallback((action) => {
-    console.log('[BattleScreen] Ação do oponente recebida:', action);
-    
-    const { type, payload } = action;
-    
-    switch (type) {
-      case 'USE_SKILL':
-        handleOpponentUseSkill(payload);
-        break;
-      
-      case 'SWITCH_LEGEND':
-        handleOpponentSwitchLegend(payload);
-        break;
-      
-      case 'END_TURN':
-        handleOpponentEndTurn(payload);
-        break;
-      
-      case 'USE_RELIC':
-        handleOpponentUseRelic(payload);
-        break;
-      
-      case 'USE_ITEM':
-        handleOpponentUseItem(payload);
-        break;
-      
-      default:
-        console.warn('[BattleScreen] Tipo de ação desconhecido:', type);
-    }
-  }, [handleOpponentUseSkill, handleOpponentSwitchLegend, handleOpponentEndTurn, handleOpponentUseRelic, handleOpponentUseItem]);
-
-  // Hook para canal de batalha (broadcast de ações)
-  const { sendAction, isConnected, opponentConnected } = useBattleChannel(
-    isPvP ? roomIdForApi : null,
-    user?.id,
-    handleOpponentAction
-  );
-
   // Hook para sincronização de match (estado da partida)
   const { match, updateMatch } = useMatchRealtime(
     isPvP ? roomIdForApi : null,
