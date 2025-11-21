@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import usePartySocket from 'partysocket/react';
 
-const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "mitologia-brasileira-party.briwno.partykit.dev";
 
 /**
  * Hook para comunicação em tempo real durante a batalha via PartyKit

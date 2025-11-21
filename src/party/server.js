@@ -1,10 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+export default class Server {
+  constructor(room) {
+    this.room = room;
+  }
 
-// Configuração do Supabase (opcional, se quisermos persistir)
-// const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-
-const Server = {
-  async onConnect(conn, room) {
+  async onConnect(conn) {
+    const room = this.room;
     console.log(`[PartyKit] Conexão estabelecida: ${conn.id} na sala ${room.id}`);
 
     // Notificar contagem de conexões
@@ -23,9 +23,10 @@ const Server = {
         payload: state
       }));
     }
-  },
+  }
 
-  async onMessage(message, conn, room) {
+  async onMessage(message, conn) {
+    const room = this.room;
     const data = JSON.parse(message);
     console.log(`[PartyKit] Mensagem recebida na sala ${room.id}:`, data.type);
 
@@ -111,9 +112,10 @@ const Server = {
       default:
         console.warn(`[PartyKit] Tipo de mensagem desconhecido: ${data.type}`);
     }
-  },
+  }
 
-  async onClose(conn, room) {
+  async onClose(conn) {
+    const room = this.room;
     console.log(`[PartyKit] Conexão fechada: ${conn.id}`);
     const connections = [...room.getConnections()];
     room.broadcast(JSON.stringify({
@@ -121,6 +123,27 @@ const Server = {
       payload: { count: connections.length, connectionIds: connections.map(c => c.id) }
     }));
   }
-};
 
-export default Server;
+  async onRequest(req) {
+    if (req.method === "GET") {
+      return new Response("PartyKit Server is running! 🎈", {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
+    return new Response("Method not allowed", { status: 405 });
+  }
+}
+
+/**
+ * Handler global para requisições que não são de sala (ex: raiz /)
+ */
+export async function onRequest(req) {
+  return new Response("PartyKit Server Online! 🎈", {
+    status: 200,
+    headers: { 
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": "*" 
+    },
+  });
+}

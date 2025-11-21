@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import usePartySocket from 'partysocket/react';
 
-const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
+const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "mitologia-brasileira-party.briwno.partykit.dev";
 
 /**
  * Hook para sincronizar estado da partida em tempo real via PartyKit (com persistência no Supabase)
